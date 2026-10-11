@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Laboratorium;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class LaboratoriumController extends Controller
 {
@@ -55,40 +55,23 @@ class LaboratoriumController extends Controller
     public function update(Request $request, Laboratorium $laboratorium)
     {
 
-        Log::info('Update request data:', $request->all());
-        Log::info('Files:', $request->allFiles());
-
         $request->validate([
             'nama' => 'required|string|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
         $data = ['nama' => $request->nama];
+        $oldLogo = $laboratorium->logo;
 
         if ($request->hasFile('logo')) {
-            Log::info('Logo file detected');
-
-            try {
-
-                if ($laboratorium->logo && file_exists(public_path('storage/' . $laboratorium->logo))) {
-                    unlink(public_path('storage/' . $laboratorium->logo));
-                }
-
-                $logoPath = $request->file('logo')->store('laboratorium-logos', 'public');
-                $data['logo'] = $logoPath;
-
-                Log::info('Logo stored at: ' . $logoPath);
-            } catch (\Exception $e) {
-                Log::error('Error uploading logo: ' . $e->getMessage());
-                return back()->withErrors(['logo' => 'Gagal mengupload logo: ' . $e->getMessage()]);
-            }
-        } else {
-            Log::info('No logo file uploaded');
+            $data['logo'] = $request->file('logo')->store('laboratorium', 'public');
+            if (!$data['logo']) return back()->withErrors(['logo' => 'Gagal mengupload logo.']);
         }
 
         $laboratorium->update($data);
-
-        Log::info('Laboratorium updated successfully');
+        if (isset($data['logo']) && $oldLogo && $oldLogo !== $data['logo']) {
+            Storage::disk('public')->delete($oldLogo);
+        }
 
         return redirect()->route('laboratorium.index')
             ->with('message', 'Data Laboratorium berhasil diperbarui.');

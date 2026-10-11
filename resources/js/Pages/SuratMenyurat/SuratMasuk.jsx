@@ -44,8 +44,8 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
 
     const debouncedSearch = useCallback(debounce((value) => navigate({ search: value, perPage }), 400), [kepengurusanLab, perPage, selected_kepengurusan]);
 
-    const onSearchChange = (event) => { setSearch(event.target.value); debouncedSearch(event.target.value); };
-    const onPerPageChange = (event) => { const value = Number(event.target.value); setPerPage(value); navigate({ perPage: value }); };
+    const onSearchChange = (value) => { setSearch(value); debouncedSearch(value); };
+    const onPerPageChange = (value) => { setPerPage(value); navigate({ perPage: value }); };
 
     const close = () => { setModal(null); setSelectedSurat(null); };
     const openCreateModal = () => {
@@ -57,7 +57,7 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
     };
     const openEditModal = (surat) => {
         setSelectedSurat(surat);
-        editForm.setData({ nomor_surat_asal: surat.nomor_surat_asal, asal_surat: surat.asal_surat, perihal: surat.perihal, tanggal_surat: surat.tanggal_surat, tanggal_terima: surat.tanggal_terima, isi_ringkas: surat.isi_ringkas || "", file_surat: null });
+        editForm.setData({ nomor_surat_asal: surat.nomor_surat_asal, asal_surat: surat.asal_surat, perihal: surat.perihal, tanggal_surat: surat.tanggal_surat?.slice(0, 10) || "", tanggal_terima: surat.tanggal_terima?.slice(0, 10) || "", isi_ringkas: surat.isi_ringkas || "", file_surat: null });
         editForm.clearErrors();
         setModal("edit");
     };
@@ -74,7 +74,8 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.post(route("surat-menyurat.surat-masuk.update", selectedSurat.id), { forceFormData: true, _method: "PUT", onSuccess: () => { close(); editForm.reset(); toast.success("Surat masuk berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal memperbarui surat masuk") });
+        editForm.transform((data) => ({ ...data, _method: "PUT" }));
+        editForm.post(route("surat-menyurat.surat-masuk.update", selectedSurat.id), { forceFormData: true, onSuccess: () => { close(); editForm.reset(); toast.success("Surat masuk berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal memperbarui surat masuk") });
     };
     const handleDelete = () => router.delete(route("surat-menyurat.surat-masuk.destroy", selectedSurat.id), { onSuccess: () => { close(); toast.success("Surat masuk berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus surat masuk") });
     const handleDisposisi = (event) => {

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import { AlertTriangle } from 'lucide-react';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
+import pdfWorkerUrl from '@/Support/pdfWorker';
 import { toolbarPlugin } from '@react-pdf-viewer/toolbar';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
@@ -530,7 +531,7 @@ export default function PublicModulViewer({
 
       
       <div className="mx-2 mb-2 flex-1 bg-base-200 sm:mx-4 sm:mb-4" style={{ height: 'calc(100vh - 120px)' }}>
-        <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+        <Worker workerUrl={pdfWorkerUrl}>
           <div className="flex h-full flex-col overflow-hidden rounded-box border border-base-content/10 bg-base-100">
             
             <div 
@@ -542,7 +543,8 @@ export default function PublicModulViewer({
                 msUserSelect: 'text'
               }}
             >
-              <Viewer 
+              <Viewer
+                transformGetDocumentParams={(params) => ({ ...params, isEvalSupported: false })}
                 fileUrl={fileUrl}
                 plugins={[
                   toolbarPluginInstance,

@@ -1,6 +1,9 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
+import Button from '@/Components/Button';
+import { Download } from 'lucide-react';
 import { Head } from "@inertiajs/react";
 import { Viewer, Worker } from "@react-pdf-viewer/core";
+import pdfWorkerUrl from '@/Support/pdfWorker';
 import "@react-pdf-viewer/core/lib/styles/index.css";
 import { pageNavigationPlugin } from "@react-pdf-viewer/page-navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -87,12 +90,9 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                             })}>
             <Head title={`Preview — ${title}`} />
 
-            <div
-                className="flex gap-4"
-                style={{ height: "calc(100vh - 110px)" }}
-            >
+            <div className="flex min-w-0 flex-col gap-4 lg:h-[calc(100dvh-110px)] lg:flex-row">
 
-                <div className="w-72 shrink-0 flex flex-col gap-3">
+                <div className="flex w-full shrink-0 flex-col gap-3 lg:w-72">
                     <div className="bg-base-100 rounded-lg shadow-sm border p-4 flex-1 overflow-y-auto">
 
 
@@ -252,35 +252,23 @@ export default function PreviewPage({ kepengurusanLab, type }) {
                     </div>
 
 
-                    <button
+                    <Button
                         type="button"
                         onClick={handleDownload}
-                        className="w-full px-4 py-3 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary transition-colors flex items-center justify-center gap-2"
+                        className="w-full"
                     >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
+                        <Download className="h-4 w-4" aria-hidden="true" />
                         Download PDF
-                    </button>
+                    </Button>
                 </div>
 
 
-                <div className="flex-1 rounded-lg overflow-hidden border bg-base-200">
+                <div className="h-[70dvh] min-w-0 flex-1 overflow-hidden rounded-lg border border-base-300 bg-base-200 lg:h-auto">
                     {previewUrl && (
-                        <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
+                        <Worker workerUrl={pdfWorkerUrl}>
                             <div style={{ height: "100%" }}>
                                 <Viewer
+                                    transformGetDocumentParams={(params) => ({ ...params, isEvalSupported: false })}
                                     key={previewUrl}
                                     fileUrl={previewUrl}
                                     plugins={[pageNavPlugin]}

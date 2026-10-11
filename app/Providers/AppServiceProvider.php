@@ -3,7 +3,6 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\URL;
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Laboratorium;
 use Inertia\Inertia;
@@ -78,7 +77,6 @@ class AppServiceProvider extends ServiceProvider
             return $user->hasRole('superadmin') ? true : null;
         });
 
-        Vite::prefetch(concurrency: 3);
         // Inertia::share('laboratorium', Laboratorium::select('id', 'nama', 'logo')->get());
         User::observe(UserObserver::class);
 

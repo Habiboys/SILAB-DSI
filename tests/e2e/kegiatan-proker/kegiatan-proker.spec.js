@@ -9,6 +9,7 @@ const FIXTURES = path.join(__dirname, '../fixtures/test-files');
 test.use({ storageState: ADMIN_AUTH_FILE });
 
 async function waitPage(page) {
+  await expect(page).not.toHaveURL(url => url.pathname === '/login');
   await expect(page.locator('main, [data-page]').first()).toBeVisible({ timeout: 15_000 });
 }
 
@@ -27,7 +28,7 @@ test.describe('TC-PROKER-01: Buat proker baru', () => {
     await expect(addBtn).toBeVisible({ timeout: 10_000 });
     await addBtn.click();
 
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });
 
     const strukturSelect = dialog.locator('select').first();
@@ -37,11 +38,11 @@ test.describe('TC-PROKER-01: Buat proker baru', () => {
       await strukturSelect.selectOption(firstVal);
     }
 
-    await dialog.locator('input[type="text"]').first().fill('Proker E2E Test');
+    await dialog.locator('input:is([type="text"], :not([type]))').first().fill('Proker E2E Test');
 
     await dialog.locator('textarea').first().fill('Deskripsi proker untuk E2E testing');
 
-    await dialog.locator('button[type="submit"]').click();
+    await dialog.locator('button[type="submit"]:not(.modal-backdrop button)').click();
 
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
   });
@@ -53,16 +54,16 @@ test.describe('TC-PROKER-02: Approval proker', () => {
     await page.goto('/proker');
     await waitPage(page);
     await page.locator('button:has-text("Tambah Proker")').click();
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });
     const strukturSelect = dialog.locator('select').first();
     const options = await strukturSelect.locator('option[value]:not([value=""])').all();
     if (options.length > 0) {
       await strukturSelect.selectOption(await options[0].getAttribute('value'));
     }
-    await dialog.locator('input[type="text"]').first().fill(nama);
+    await dialog.locator('input:is([type="text"], :not([type]))').first().fill(nama);
     await dialog.locator('textarea').first().fill('Deskripsi proker E2E');
-    await dialog.locator('button[type="submit"]').click();
+    await dialog.locator('button[type="submit"]:not(.modal-backdrop button)').click();
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
   }
 
@@ -84,17 +85,17 @@ test.describe('TC-PROKER-02: Approval proker', () => {
     const ajukanBtn = page.locator('button:has-text("Ajukan Persetujuan")');
     if (await ajukanBtn.count() > 0) {
       await ajukanBtn.click();
-      const confirmModal = page.locator('[role="dialog"]');
+      const confirmModal = page.getByRole('dialog');
       await expect(confirmModal).toBeVisible({ timeout: 5_000 });
-      await confirmModal.locator('button:not(:has-text("Batal"))').last().click();
+      await confirmModal.getByRole('button', { name: 'Ajukan', exact: true }).click();
       await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
     }
 
-    const setujuiBtn = page.locator('button:has-text("Setujui")');
+    const setujuiBtn = page.getByRole('button', { name: 'Setujui', exact: true });
     await expect(setujuiBtn).toBeVisible({ timeout: 5_000 });
     await setujuiBtn.click();
 
-    const approveDialog = page.locator('[role="dialog"]');
+    const approveDialog = page.getByRole('dialog');
     await expect(approveDialog).toBeVisible({ timeout: 5_000 });
     await approveDialog.locator('button:has-text("Setujui")').last().click();
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -118,17 +119,17 @@ test.describe('TC-PROKER-02: Approval proker', () => {
     const ajukanBtn = page.locator('button:has-text("Ajukan Persetujuan")');
     if (await ajukanBtn.count() > 0) {
       await ajukanBtn.click();
-      const confirmModal = page.locator('[role="dialog"]');
+      const confirmModal = page.getByRole('dialog');
       await expect(confirmModal).toBeVisible({ timeout: 5_000 });
-      await confirmModal.locator('button:not(:has-text("Batal"))').last().click();
+      await confirmModal.getByRole('button', { name: 'Ajukan', exact: true }).click();
       await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
     }
 
-    const tolakBtn = page.locator('button:has-text("Tolak")');
+    const tolakBtn = page.getByRole('button', { name: 'Tolak', exact: true });
     await expect(tolakBtn).toBeVisible({ timeout: 5_000 });
     await tolakBtn.click();
 
-    const rejectDialog = page.locator('[role="dialog"]');
+    const rejectDialog = page.getByRole('dialog');
     await expect(rejectDialog).toBeVisible({ timeout: 5_000 });
     await rejectDialog.locator('textarea').fill('Catatan penolakan dari E2E test');
     await rejectDialog.locator('button:has-text("Tolak")').last().click();
@@ -191,16 +192,16 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
     }
 
     await adminPage.locator('button:has-text("Tambah Proker")').click();
-    const dialog = adminPage.locator('[role="dialog"]');
+    const dialog = adminPage.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });
     const strukturSelect = dialog.locator('select').first();
     const options = await strukturSelect.locator('option[value]:not([value=""])').all();
     if (options.length > 0) {
       await strukturSelect.selectOption(await options[0].getAttribute('value'));
     }
-    await dialog.locator('input[type="text"]').first().fill(prokerName);
+    await dialog.locator('input:is([type="text"], :not([type]))').first().fill(prokerName);
     await dialog.locator('textarea').first().fill('Deskripsi proker untuk kegiatan E2E');
-    await dialog.locator('button[type="submit"]').click();
+    await dialog.locator('button[type="submit"]:not(.modal-backdrop button)').click();
     await expect(adminPage.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
 
     await adminPage.goto(prokerUrl);
@@ -215,7 +216,7 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
     const ajukanBtn = adminPage.locator('button:has-text("Ajukan Persetujuan")');
     await expect(ajukanBtn).toBeVisible({ timeout: 5_000 });
     await ajukanBtn.click();
-    const ajukanModal = adminPage.locator('[role="dialog"]');
+    const ajukanModal = adminPage.getByRole('dialog');
     await expect(ajukanModal).toBeVisible({ timeout: 5_000 });
     await ajukanModal.locator('button:has-text("Ajukan")').click();
     await expect(adminPage.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -236,7 +237,7 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
       await expect(setujuiBtn).toBeVisible({ timeout: 8_000 });
       await setujuiBtn.click();
 
-      const approveDialog = kalabPage.locator('[role="dialog"]');
+      const approveDialog = kalabPage.getByRole('dialog');
       await expect(approveDialog).toBeVisible({ timeout: 5_000 });
       await approveDialog.locator('button:has-text("Setujui")').last().click();
       await expect(kalabPage.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -271,7 +272,7 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
     await page.goto(createUrl);
     await waitPage(page);
 
-    await page.locator('input[type="text"]').first().fill(nama);
+    await page.getByLabel(/^Nama Kegiatan/).fill(nama);
 
     const prokerSelect = getProkerSelect(page);
     await expect(prokerSelect, 'Tidak ada proker disetujui di form create').toBeVisible({ timeout: 5_000 });
@@ -288,8 +289,8 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
 
     // Submit — tunggu redirect ke /kegiatan
     await Promise.all([
-      page.waitForURL('**/kegiatan**', { timeout: 15_000 }),
-      page.locator('button[type="submit"]').click(),
+      page.waitForURL(url => url.pathname === '/kegiatan', { timeout: 30_000 }),
+      page.locator('button[type="submit"]:not(.modal-backdrop button)').click(),
     ]);
     await waitPage(page);
     await page.waitForLoadState('networkidle', { timeout: 8_000 }).catch(() => {});
@@ -338,20 +339,18 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
     await createKegiatan(page, namaKegiatan);
 
     const href = await getKegiatanHref(page, namaKegiatan);
-    await page.goto(href);
-    await waitPage(page);
-
-    await expect(page.locator('h2', { hasText: namaKegiatan })).toBeVisible({ timeout: 10_000 });
-
-    const setujuiActionBtn = page.locator('button:has-text("Setujui")').first();
-    if (await setujuiActionBtn.isVisible()) {
-      await setujuiActionBtn.click();
-
-      const approveDialog = page.locator('[role="dialog"]');
-      await expect(approveDialog).toBeVisible({ timeout: 5_000 });
-
-      await approveDialog.locator('button:has-text("Setujui")').last().click();
-      await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
+    const context = await page.context().browser().newContext({ storageState: KALAB_AUTH_FILE });
+    try {
+      const reviewer = await context.newPage();
+      await reviewer.goto(href);
+      await expect(reviewer.getByRole('heading', { name: namaKegiatan, exact: true }).first()).toBeVisible();
+      await reviewer.getByRole('button', { name: 'Setujui', exact: true }).click();
+      await reviewer.getByRole('dialog').getByRole('button', { name: 'Setujui', exact: true }).click();
+      await expect(reviewer.getByRole('dialog')).not.toBeVisible();
+      await reviewer.reload();
+      await expect(reviewer.locator('[data-page]')).toHaveAttribute('data-page', /"status_approval":"disetujui"/);
+    } finally {
+      await context.close();
     }
   });
 
@@ -372,7 +371,7 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
       await expect(setujuiBtn).toBeVisible({ timeout: 8_000 });
       await setujuiBtn.click();
 
-      const approveDialog = kalabPage.locator('[role="dialog"]');
+      const approveDialog = kalabPage.getByRole('dialog');
       await expect(approveDialog).toBeVisible({ timeout: 5_000 });
       await approveDialog.locator('button:has-text("Setujui")').last().click();
       await expect(kalabPage.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -384,7 +383,7 @@ test.describe('TC-KEGIATAN-03: Mengelola Kegiatan', () => {
     await page.goto(href);
     await waitPage(page);
 
-    await expect(page.locator('h2', { hasText: namaKegiatan })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: namaKegiatan, exact: true }).first()).toBeVisible({ timeout: 10_000 });
 
     const uploadToggleBtn = page.locator('button:has-text("Upload Dokumentasi")').first();
     await expect(uploadToggleBtn).toBeVisible({ timeout: 8_000 });

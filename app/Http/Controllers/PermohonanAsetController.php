@@ -308,6 +308,7 @@ class PermohonanAsetController extends Controller
                     'kode_barang'     => $kodeBarang,
                     'status'          => 'tersedia',
                     'wishlist_aset_id'=> $wishlistItem->id,
+                    'foto'           => '',
                 ]));
 
                 RiwayatKondisiAset::create([

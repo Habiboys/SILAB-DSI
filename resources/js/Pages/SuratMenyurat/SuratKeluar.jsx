@@ -41,8 +41,8 @@ const SuratKeluar = ({ suratKeluar, kepengurusanLab, konfigurasi, filters, flash
 
     const debouncedSearch = useCallback(debounce((value) => navigate({ search: value, perPage }), 400), [kepengurusanLab, perPage, selected_kepengurusan]);
 
-    const onSearchChange = (event) => { setSearch(event.target.value); debouncedSearch(event.target.value); };
-    const onPerPageChange = (event) => { const value = Number(event.target.value); setPerPage(value); navigate({ perPage: value }); };
+    const onSearchChange = (value) => { setSearch(value); debouncedSearch(value); };
+    const onPerPageChange = (value) => { setPerPage(value); navigate({ perPage: value }); };
 
     const close = () => { setModal(null); setSelectedSurat(null); };
     const openCreateModal = () => {
@@ -54,7 +54,7 @@ const SuratKeluar = ({ suratKeluar, kepengurusanLab, konfigurasi, filters, flash
     };
     const openEditModal = (surat) => {
         setSelectedSurat(surat);
-        editForm.setData({ perihal: surat.perihal, tujuan: surat.tujuan, tanggal_surat: surat.tanggal_surat, isi_ringkas: surat.isi_ringkas || "", kode_klasifikasi: surat.kode_klasifikasi || "", file_surat: null });
+        editForm.setData({ perihal: surat.perihal, tujuan: surat.tujuan, tanggal_surat: surat.tanggal_surat?.slice(0, 10) || "", isi_ringkas: surat.isi_ringkas || "", kode_klasifikasi: surat.kode_klasifikasi || "", file_surat: null });
         editForm.clearErrors();
         setModal("edit");
     };
@@ -65,7 +65,8 @@ const SuratKeluar = ({ suratKeluar, kepengurusanLab, konfigurasi, filters, flash
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.post(route("surat-menyurat.surat-keluar.update", selectedSurat.id), { forceFormData: true, _method: "PUT", onSuccess: () => { close(); editForm.reset(); toast.success("Surat keluar berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal memperbarui surat keluar") });
+        editForm.transform((data) => ({ ...data, _method: "PUT" }));
+        editForm.post(route("surat-menyurat.surat-keluar.update", selectedSurat.id), { forceFormData: true, onSuccess: () => { close(); editForm.reset(); toast.success("Surat keluar berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal memperbarui surat keluar") });
     };
     const handleDelete = () => router.delete(route("surat-menyurat.surat-keluar.destroy", selectedSurat.id), { onSuccess: () => { close(); toast.success("Surat keluar berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus surat keluar") });
     const handleExport = () => { if (kepengurusanLab) window.location.href = route("surat-menyurat.surat-keluar.export", { kepengurusan_lab_id: kepengurusanLab.id }); };

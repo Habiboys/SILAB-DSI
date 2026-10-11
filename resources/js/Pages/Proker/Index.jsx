@@ -75,7 +75,7 @@ const Proker = ({
         return () => clearTimeout(searchTimer.current);
     }, [search]);
 
-    const handleSearchChange = (event) => setSearch(event.target.value);
+    const handleSearchChange = (value) => setSearch(value);
 
     const handleFilterChange = (key, value) => {
         if (key === "filter_struktur") setFilterStruktur(value);
@@ -301,7 +301,7 @@ const Proker = ({
                             onSearchChange={handleSearchChange}
                             searchPlaceholder="Cari nama program kerja..."
                             perPage={perPage}
-                            onPerPageChange={(event) => handleFilterChange("per_page", Number(event.target.value))}
+                            onPerPageChange={(value) => handleFilterChange("per_page", value)}
                             filters={[
                                 { key: "filter_struktur", label: "Divisi", control: <select className="select min-h-11" value={filterStruktur} onChange={(event) => handleFilterChange("filter_struktur", event.target.value)}><option value="">Semua</option>{(strukturList || []).map((item) => <option key={item.id} value={item.id}>{item.struktur}</option>)}</select> },
                                 { key: "filter_status_pengajuan", label: "Status Pengajuan", control: <select className="select min-h-11" value={filterSP} onChange={(event) => handleFilterChange("filter_status_pengajuan", event.target.value)}><option value="">Semua</option><option value="draft">Draft</option><option value="diajukan">Diajukan</option><option value="disetujui">Disetujui</option><option value="ditolak">Ditolak</option></select> },

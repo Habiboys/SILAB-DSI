@@ -56,17 +56,17 @@ export default function InventarisIndex({
         );
     }, 300);
 
-    const onSearchChange = (event) => {
-        setSearchTerm(event.target.value);
-        applyFilters(event.target.value, selectedCategory, perPage);
+    const onSearchChange = (value) => {
+        setSearchTerm(value);
+        applyFilters(value, selectedCategory, perPage);
     };
     const onCategoryChange = (event) => {
         setSelectedCategory(event.target.value);
         applyFilters(searchTerm, event.target.value, perPage);
     };
-    const onPerPageChange = (event) => {
-        setPerPage(Number(event.target.value));
-        applyFilters(searchTerm, selectedCategory, event.target.value);
+    const onPerPageChange = (value) => {
+        setPerPage(value);
+        applyFilters(searchTerm, selectedCategory, value);
     };
 
     const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]);

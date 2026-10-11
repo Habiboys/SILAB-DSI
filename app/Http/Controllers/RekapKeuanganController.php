@@ -55,10 +55,7 @@ class RekapKeuanganController extends Controller
 
             if ($kepengurusanlab) {
 
-                $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
-
                 $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->whereYear('tanggal', $tahunKepengurusan)
                     ->select(
                         DB::raw('MONTH(tanggal) as bulan'),
                         DB::raw('YEAR(tanggal) as tahun'),
@@ -68,7 +65,6 @@ class RekapKeuanganController extends Controller
                     ->groupBy('tahun', 'bulan');
 
                 $pengeluaranByMonth = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                    ->whereYear('tanggal', $tahunKepengurusan)
                     ->select(
                         DB::raw('MONTH(tanggal) as bulan'),
                         DB::raw('YEAR(tanggal) as tahun'),
@@ -164,10 +160,7 @@ class RekapKeuanganController extends Controller
             return back()->with('error', 'Data kepengurusan lab tidak ditemukan');
         }
 
-        $tahunKepengurusan = $kepengurusanlab->tahunKepengurusan->tahun;
-
         $pemasukanByMonth = PemasukanKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->whereYear('tanggal', $tahunKepengurusan)
             ->select(
                 DB::raw('MONTH(tanggal) as bulan'),
                 DB::raw('YEAR(tanggal) as tahun'),
@@ -177,7 +170,6 @@ class RekapKeuanganController extends Controller
             ->groupBy('tahun', 'bulan');
 
         $pengeluaranByMonth = PengeluaranKeuangan::where('kepengurusan_lab_id', $kepengurusanlab->id)
-            ->whereYear('tanggal', $tahunKepengurusan)
             ->select(
                 DB::raw('MONTH(tanggal) as bulan'),
                 DB::raw('YEAR(tanggal) as tahun'),

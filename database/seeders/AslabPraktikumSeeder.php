@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\AslabPraktikum;
 use App\Models\Praktikum;
@@ -24,9 +23,10 @@ class AslabPraktikumSeeder extends Seeder
         if ($praktikum && $asistenUsers->count() > 0) {
             // Assign asisten as aslab
             foreach ($asistenUsers as $asisten) {
-                AslabPraktikum::create([
+                AslabPraktikum::firstOrCreate([
                     'praktikum_id' => $praktikum->id,
                     'user_id' => $asisten->id,
+                ], [
                     'catatan' => 'Aslab praktikum'
                 ]);
             }

@@ -26,7 +26,10 @@ class CheckAslabAccess
 
         $praktikumId = $this->resolvePraktikumId($request);
         if ($praktikumId === null) {
-            return $next($request);
+            if ($request->isMethodSafe()) return $next($request);
+            if (class_basename($request->route()->getControllerClass()) === 'PraktikumController'
+                && $request->route()->getActionMethod() === 'store') return $next($request);
+            abort(403, 'Konteks praktikum tidak ditemukan.');
         }
 
         if ($user->hasRole('asisten') && $user->canManagePraktikum($praktikumId)) {
@@ -52,6 +55,11 @@ class CheckAslabAccess
         }
 
         $tugas = $route->parameter('tugas');
+        if ($tugas === null && class_basename($route->getControllerClass()) === 'PengumpulanTugasController'
+            && in_array($route->getActionMethod(), ['storeNilaiRubrik', 'storeMatrixNilaiRubrik'], true)) {
+            $tugas = $request->input('tugas_id');
+            if (!is_string($tugas)) return null;
+        }
         if ($tugas !== null) {
             $model = $tugas instanceof TugasPraktikum ? $tugas : TugasPraktikum::find($tugas);
             if ($model) {
@@ -95,6 +103,11 @@ class CheckAslabAccess
             return $model?->praktikum_id;
         }
 
+        if (class_basename($route->getControllerClass()) === 'PraktikanController'
+            && $route->getActionMethod() === 'destroy') {
+            $id = $request->input('praktikum_id');
+            return is_string($id) ? Praktikum::find($id)?->id : null;
+        }
         return null;
     }
 }

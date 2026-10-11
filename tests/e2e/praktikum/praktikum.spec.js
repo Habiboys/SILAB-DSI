@@ -9,6 +9,7 @@ const FIXTURES = path.join(__dirname, '../fixtures/test-files');
 const LAB_ID = process.env.E2E_LAB_ID || 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
 
 async function waitPage(page) {
+  await expect(page).not.toHaveURL(url => url.pathname === '/login');
   await expect(page.locator('main').first()).toBeVisible({ timeout: 15_000 });
 }
 
@@ -73,7 +74,7 @@ function formatDatetimeLocal(date) {
 
 async function createMataKuliahAsSuperadmin(page, tag) {
 
-  await postForm(page, '/praktikum/mata-kuliah', {
+  await postForm(page, '/data-master/mata-kuliah', {
     kode_mata_kuliah: `E2E-${tag}`,
     nama: `E2E Mata Kuliah ${tag}`,
     sks: '1',
@@ -101,7 +102,7 @@ async function openOrCreatePraktikumShow(page, browser) {
 
   const mataKuliahBaru = (props?.mataKuliah ?? []).find((mk) => mk.kode_mata_kuliah === kodeMataKuliah);
   if (!mataKuliahBaru) {
-    throw new Error(`Gagal membuat mata kuliah ${kodeMataKuliah}. Pastikan superadmin punya akses ke endpoint /praktikum/mata-kuliah.`);
+    throw new Error(`Gagal membuat mata kuliah ${kodeMataKuliah}. Pastikan superadmin punya akses ke endpoint /data-master/mata-kuliah.`);
   }
   const mataKuliahId = mataKuliahBaru.id;
 
@@ -141,18 +142,10 @@ async function openKelasFeature(page, kelasName, label) {
   await expect(kelasHeading).toBeVisible({ timeout: 10_000 });
   await kelasHeading.scrollIntoViewIfNeeded();
 
-  const kelasCard = page.locator('div.p-5').filter({ has: kelasHeading }).first();
+  const kelasCard = page.locator('section').filter({ has: kelasHeading }).last();
   await expect(kelasCard).toBeVisible({ timeout: 10_000 });
 
-  const menuButton = kelasCard.locator('button:has(svg.lucide-more-horizontal)').first();
-  if (await menuButton.count()) {
-    await menuButton.click();
-  } else {
-    const fallbackButton = kelasCard.locator('button').first();
-    await expect(fallbackButton).toBeVisible({ timeout: 10_000 });
-    await fallbackButton.click();
-  }
-  await page.locator('div.absolute button').filter({ hasText: label }).first().click();
+  await kelasCard.getByRole('link', { name: label, exact: true }).click();
   await waitPage(page);
 }
 
@@ -161,15 +154,15 @@ async function createKelas(page, praktikumUrl, kelasName) {
   await waitPage(page);
 
   await page.locator('button:has-text("Tambah Kelas")').click();
-  const modal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Kelas' }).first();
+  const modal = page.getByRole('dialog').filter({ hasText: 'Tambah Kelas' }).first();
   await expect(modal).toBeVisible({ timeout: 10_000 });
 
-  await modal.locator('input[type="text"]').first().fill(kelasName);
+  await modal.locator('input:is([type="text"], :not([type]))').first().fill(kelasName);
   await modal.locator('select').first().selectOption('Senin');
-  await modal.locator('input[type="text"]').nth(1).fill('Lab 1');
+  await modal.locator('input:is([type="text"], :not([type]))').nth(1).fill('Lab 1');
   await modal.locator('input[type="time"]').nth(0).fill('08:00');
   await modal.locator('input[type="time"]').nth(1).fill('10:00');
-  await modal.locator('button[type="submit"]:has-text("Simpan")').click();
+  await modal.locator('button[type="submit"]:not(.modal-backdrop button):has-text("Simpan")').click();
 
   await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
   await expect(page.getByRole('heading', { name: kelasName })).toBeVisible({ timeout: 10_000 });
@@ -181,7 +174,7 @@ async function addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearc
   await openKelasFeature(page, kelasName, 'Peserta');
 
   await page.locator('button:has-text("Tambah Existing User")').click();
-  const existingModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Existing User' }).first();
+  const existingModal = page.getByRole('dialog').filter({ hasText: 'Tambah Existing User' }).first();
   await expect(existingModal).toBeVisible({ timeout: 10_000 });
 
   const searchInput = existingModal.locator('input[placeholder*="Cari berdasarkan"]').first();
@@ -201,7 +194,7 @@ async function addPraktikanToKelas(page, praktikumUrl, kelasName, praktikanSearc
   ).toBeVisible({ timeout: 10_000 });
 
   await existingModal.locator('input[type="radio"][name="user_id"]').first().check();
-  await existingModal.locator('button[type="submit"]:has-text("Tambah")').click();
+  await existingModal.locator('button[type="submit"]:not(.modal-backdrop button):has-text("Tambah")').click();
   await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
 }
 
@@ -211,12 +204,12 @@ async function createPertemuan(page, praktikumUrl, kelasName, pertemuanJudul) {
   await openKelasFeature(page, kelasName, 'Pertemuan');
 
   await page.locator('button:has-text("Buat Pertemuan")').first().click();
-  const pertemuanModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Pertemuan' }).first();
+  const pertemuanModal = page.getByRole('dialog').filter({ hasText: 'Tambah Pertemuan' }).first();
   await expect(pertemuanModal).toBeVisible({ timeout: 10_000 });
 
-  await pertemuanModal.locator('input[type="text"]').first().fill(pertemuanJudul);
+  await pertemuanModal.locator('input:is([type="text"], :not([type]))').first().fill(pertemuanJudul);
   await pertemuanModal.locator('input[type="date"]').first().fill(formatDateYYYYMMDD(new Date()));
-  await pertemuanModal.locator('button[type="submit"]').filter({ hasText: 'Simpan Pertemuan' }).click();
+  await pertemuanModal.locator('button[type="submit"]:not(.modal-backdrop button)').filter({ hasText: 'Simpan Pertemuan' }).click();
 
   await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
   await expect(page.locator(`text=${pertemuanJudul}`).first()).toBeVisible({ timeout: 10_000 });
@@ -228,10 +221,10 @@ async function createTugas(page, praktikumUrl, kelasName, pertemuanJudul, tugasJ
   await openKelasFeature(page, kelasName, 'Tugas');
 
   await page.locator('button:has-text("Tambah Tugas")').click();
-  const tugasModal = page.locator('[role="dialog"]').filter({ hasText: 'Tambah Tugas Praktikum' }).first();
+  const tugasModal = page.getByRole('dialog').filter({ hasText: 'Tambah Tugas Praktikum' }).first();
   await expect(tugasModal).toBeVisible({ timeout: 10_000 });
 
-  await tugasModal.locator('input[type="text"]').first().fill(tugasJudul);
+  await tugasModal.locator('input:is([type="text"], :not([type]))').first().fill(tugasJudul);
 
   const selects = tugasModal.locator('select');
   if (await selects.count() > 0) {
@@ -244,7 +237,7 @@ async function createTugas(page, praktikumUrl, kelasName, pertemuanJudul, tugasJ
 
   const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await tugasModal.locator('input[type="datetime-local"]').fill(formatDatetimeLocal(deadline));
-  await tugasModal.locator('button[type="submit"]:has-text("Tambah")').click();
+  await tugasModal.locator('button[type="submit"]:not(.modal-backdrop button):has-text("Tambah")').click();
 
   await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
   await expect(page.locator(`text=${tugasJudul}`).first()).toBeVisible({ timeout: 10_000 });
@@ -258,7 +251,7 @@ test.describe('TC-PRAK-01: buat praktikum', () => {
 
   test('admin dapat membuat / membuka praktikum', async ({ page, browser }) => {
     const praktikumUrl = await openOrCreatePraktikumShow(page, browser);
-    await expect(page).toHaveURL(/\/praktikum\
+    await expect(page).toHaveURL(praktikumUrl);
   });
 });
 
@@ -342,11 +335,7 @@ test.describe('TC-PRAK-06: praktikan lihat tugas', () => {
     await page.goto('/praktikan/daftar-tugas', { waitUntil: 'domcontentloaded' });
     await page.waitForURL('**/praktikan/daftar-tugas', { timeout: 10_000 });
     await waitPage(page);
-    const searchInput = page.getByPlaceholder('Cari judul tugas...');
-    if (await searchInput.count()) {
-      await expect(searchInput).toBeVisible({ timeout: 10_000 });
-      await searchInput.fill(tugasJudul);
-    }
+    await page.getByPlaceholder('Cari judul tugas atau praktikum...').fill(tugasJudul);
     await expect(page.locator('main').getByText(tugasJudul).first()).toBeVisible({ timeout: 10_000 });
   });
 });
@@ -373,19 +362,21 @@ test.describe('TC-PRAK-07: praktikan submit tugas', () => {
     await page.waitForURL('**/praktikan/daftar-tugas', { timeout: 10_000 });
     await waitPage(page);
 
-    await expect(page.getByRole('heading', { name: 'Daftar Tugas Praktikum' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Kelas Praktikum Saya' })).toBeVisible({ timeout: 10_000 });
 
-    const searchInput = page.getByPlaceholder('Cari judul tugas...');
-    if (await searchInput.count()) {
-      await expect(searchInput).toBeVisible({ timeout: 10_000 });
-      await searchInput.fill(tugasJudul);
-    }
-
-    const tugasHeading = page.getByRole('heading', { name: tugasJudul }).first();
-    await expect(tugasHeading).toBeVisible({ timeout: 10_000 });
-
-    const tugasCard = page.locator('main').locator('div', { has: tugasHeading }).first();
-    const detailLink = tugasCard.getByRole('link', { name: /Lihat & Kumpulkan/i }).first();
-    await expect(detailLink, 'Link detail tugas tidak ditemukan di kartu tugas').toBeVisible({ timeout: 10_000 });
+    await page.getByPlaceholder('Cari judul tugas atau praktikum...').fill(tugasJudul);
+    const tugasRow = page.getByRole('row').filter({ hasText: tugasJudul });
+    const detailLink = tugasRow.getByRole('link', { name: 'Lihat dan Kumpulkan', exact: true });
+    await expect(detailLink, 'Link detail tugas tidak ditemukan pada baris tugas').toBeVisible({ timeout: 10_000 });
     await detailLink.click();
-    await page.waitForURL('**/praktikan/tugas
+    await page.waitForURL('**/praktikan/tugas/*');
+    await expect(page.getByRole('heading', { name: tugasJudul })).toBeVisible();
+    await page.locator('input[type="file"]').setInputFiles(path.join(FIXTURES, 'test.pdf'));
+    await page.getByRole('button', { name: 'Kumpulkan Tugas', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Status Pengumpulan' })).toBeVisible();
+    await expect(page.getByText('test.pdf', { exact: true }).first()).toBeVisible();
+    await page.reload();
+    await expect(page.getByRole('heading', { name: 'Status Pengumpulan' })).toBeVisible();
+    await expect(page.getByText('test.pdf', { exact: true }).first()).toBeVisible();
+  });
+});

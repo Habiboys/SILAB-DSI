@@ -46,7 +46,9 @@ class EnsureKepengurusanWritable
             }
             abort_if($request->filled('tahun_id') && (string) $request->input('tahun_id') !== (string) $period->tahun_kepengurusan_id, 403, 'Periode tidak sesuai dengan kepengurusan.');
             $current = $request->user()?->getCurrentLab() ?? [];
-            if (empty($current['all_access'])) {
+            $studentSubmission = $request->routeIs('praktikum.tugas.pengumpulan.store', 'praktikum.pengumpulan.cancel')
+                && $request->user()->hasRole('praktikan');
+            if (empty($current['all_access']) && !$studentSubmission) {
                 $lab = $current['laboratorium']->id ?? $request->user()?->access_lab_id;
                 abort_unless($lab && (string) $lab === (string) $period->laboratorium_id, 403, 'Unauthorized laboratory access');
             }

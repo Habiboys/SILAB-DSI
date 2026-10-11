@@ -4,6 +4,8 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\Struktur;
+use App\Models\Permission\Permission;
 
 class StrukturPermissionSeeder extends Seeder
 {
@@ -63,11 +65,13 @@ class StrukturPermissionSeeder extends Seeder
         ];
 
         foreach ($mappings as $jabatan => $permissions) {
+            $struktur = Struktur::where('struktur', $jabatan)->first();
+            if (!$struktur) continue;
             foreach ($permissions as $permission) {
-                DB::table('struktur_permissions')->insert([
-                    'jabatan' => $jabatan,
-                    'permission' => $permission,
-                    'description' => null,
+                $permissionModel = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'web']);
+                DB::table('struktur_permissions')->insertOrIgnore([
+                    'struktur_id' => $struktur->id,
+                    'permission_id' => $permissionModel->id,
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);

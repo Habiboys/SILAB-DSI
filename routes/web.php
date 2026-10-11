@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TahunKepengurusanController;
 use App\Http\Controllers\KepengurusanLabController;
@@ -150,13 +151,15 @@ Route::middleware([
         AnggotaController::class,
         "getActiveMembersFromPrevious",
     ])->name("anggota.active-members-from-previous");
-    Route::resource("anggota", AnggotaController::class);
+    Route::resource("anggota", AnggotaController::class)->only(['index', 'store', 'update', 'destroy']);
     Route::resource("tahun-kepengurusan", TahunKepengurusanController::class)
+        ->only(['index', 'store', 'update', 'destroy'])
         ->middlewareFor(["index", "show"], "permission:tahun_kepengurusan.view")
         ->middlewareFor(["create", "store"], "permission:tahun_kepengurusan.create")
         ->middlewareFor(["edit", "update"], "permission:tahun_kepengurusan.update")
         ->middlewareFor(["destroy"], "permission:tahun_kepengurusan.delete");
     Route::resource("kepengurusan-lab", KepengurusanLabController::class)
+        ->only(['index', 'store', 'update'])
         ->middlewareFor(["index", "show"], "permission:kepengurusan.view")
         ->middlewareFor(
             ["create", "store", "edit", "update"],
@@ -498,10 +501,6 @@ Route::middleware([
                 App\Http\Controllers\PraktikanController::class,
                 "pindahKelasMassal",
             ])->name("praktikum.praktikan.pindah-kelas-massal");
-            Route::put("praktikum/praktikan/{praktikan}/status", [
-                App\Http\Controllers\PraktikanController::class,
-                "updateStatus",
-            ])->name("praktikum.praktikan.update-status");
             Route::delete("praktikum/praktikan/{praktikan}", [
                 App\Http\Controllers\PraktikanController::class,
                 "destroy",
@@ -818,7 +817,6 @@ Route::middleware([
 
     Route::get("/api/check-kepengurusan-status", function (Request $request) {
         $lab_id = $request->input("lab_id");
-        $modul = $request->input("modul");
 
         if (!$lab_id) {
             return response()->json(["error" => "Lab ID tidak ditemukan"], 400);
@@ -827,17 +825,11 @@ Route::middleware([
         $hasActiveKepengurusan = \App\Helpers\KepengurusanHelper::hasActiveKepengurusan(
             $lab_id,
         );
-        $canAccessModul = $hasActiveKepengurusan
-            ? \App\Helpers\KepengurusanHelper::canAccessModul($lab_id, $modul)
-            : false;
 
         return response()->json([
             "has_active_kepengurusan" => $hasActiveKepengurusan,
-            "can_access_modul" => $canAccessModul,
-            "message" => \App\Helpers\KepengurusanHelper::getModulAccessMessage(
-                $lab_id,
-                $modul,
-            ),
+            "can_access_modul" => $hasActiveKepengurusan,
+            "message" => \App\Helpers\KepengurusanHelper::getWarningMessage($lab_id),
         ]);
     })->name("api.check-kepengurusan-status");
 
@@ -1085,20 +1077,10 @@ Route::middleware([
             Route::get("/jadwal", [JadwalPiketController::class, "index"])
                 ->name("jadwal.index")
                 ->can("viewAny", \App\Models\JadwalPiket::class);
-            Route::get("/jadwal/{jadwalPiket}", [
-                JadwalPiketController::class,
-                "show",
-            ])
-                ->name("jadwal.show")
-                ->can("view", "jadwalPiket");
             Route::get("/periode-piket", [
                 PeriodePiketController::class,
                 "index",
             ])->name("periode-piket.index");
-            Route::get("/periode-piket/{periodePiket}", [
-                PeriodePiketController::class,
-                "show",
-            ])->name("periode-piket.show");
             Route::get("/absensi", [AbsensiController::class, "index"])
                 ->name("absensi.index")
                 ->can("viewAny", \App\Models\Absensi::class);
@@ -1271,7 +1253,7 @@ Route::middleware(["auth", "role:superadmin|kadep|admin"])->group(function () {
     Route::prefix("data-master")
         ->name("data-master.")
         ->group(function () {
-            Route::resource("struktur", StrukturController::class);
+            Route::resource("struktur", StrukturController::class)->only(['index', 'store', 'update', 'destroy']);
             Route::resource("mata-kuliah", MataKuliahController::class)->only([
                 "index",
                 "store",
@@ -1280,7 +1262,7 @@ Route::middleware(["auth", "role:superadmin|kadep|admin"])->group(function () {
             ]);
 
             Route::middleware("role:superadmin")->group(function () {
-                Route::resource("kategori-aset", KategoriAsetController::class);
+                Route::resource("kategori-aset", KategoriAsetController::class)->only(['index', 'store', 'update', 'destroy']);
                 Route::post("/kategori-aset/bulk-delete", [
                     KategoriAsetController::class,
                     "bulkDelete",

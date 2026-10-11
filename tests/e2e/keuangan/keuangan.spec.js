@@ -3,10 +3,11 @@ import { ADMIN_AUTH_FILE } from '../fixtures/auth.js';
 
 test.use({ storageState: ADMIN_AUTH_FILE });
 
-const LAB_ID = 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
+const LAB_ID = process.env.E2E_LAB_ID || 'd04210fb-8255-11f0-b26d-bc2411aaebcd';
 const KEUANGAN_URL = `/riwayat-keuangan?lab_id=${LAB_ID}`;
 
 async function waitPage(page) {
+  await expect(page).not.toHaveURL(url => url.pathname === '/login');
     await page.waitForLoadState('load');
     await page.waitForTimeout(800);
 }
@@ -20,22 +21,22 @@ test.describe('TC-KEU-02: Transaksi keuangan', () => {
     await expect(tambahBtn).toBeVisible({ timeout: 10_000 });
     await tambahBtn.click();
 
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });
 
-    const tipeSelect = dialog.locator('select[name="jenis"]').first();
+    const tipeSelect = dialog.getByLabel(/^Jenis Transaksi/);
     await tipeSelect.selectOption('masuk');
 
     const dateInput = dialog.locator('input[type="date"]').first();
-    await dateInput.fill('2025-06-01');
+    await dateInput.fill(new Date().toISOString().slice(0, 10));
 
-    const nominalInput = dialog.locator('input[name="nominal"]').first();
+    const nominalInput = dialog.getByLabel(/^Nominal/);
     await nominalInput.fill('10000');
 
-    const deskripsiInput = dialog.locator('textarea[name="deskripsi"]').first();
+    const deskripsiInput = dialog.getByLabel(/^Deskripsi/);
     await deskripsiInput.fill('Pemasukan test E2E');
 
-    const submitBtn = dialog.locator('button[type="submit"]');
+    const submitBtn = dialog.locator('button[type="submit"]:not(.modal-backdrop button)');
     await submitBtn.click();
 
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -49,22 +50,22 @@ test.describe('TC-KEU-02: Transaksi keuangan', () => {
     await expect(tambahBtn).toBeVisible({ timeout: 10_000 });
     await tambahBtn.click();
 
-    const dialog = page.locator('[role="dialog"]');
+    const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible({ timeout: 5_000 });
 
-    const tipeSelect = dialog.locator('select[name="jenis"]').first();
+    const tipeSelect = dialog.getByLabel(/^Jenis Transaksi/);
     await tipeSelect.selectOption('keluar');
 
     const dateInput = dialog.locator('input[type="date"]').first();
-    await dateInput.fill('2025-06-01');
+    await dateInput.fill(new Date().toISOString().slice(0, 10));
 
-    const nominalInput = dialog.locator('input[name="nominal"]').first();
+    const nominalInput = dialog.getByLabel(/^Nominal/);
     await nominalInput.fill('10000');
 
-    const deskripsiInput = dialog.locator('textarea[name="deskripsi"]').first();
+    const deskripsiInput = dialog.getByLabel(/^Deskripsi/);
     await deskripsiInput.fill('Pengeluaran test E2E');
 
-    const submitBtn = dialog.locator('button[type="submit"]');
+    const submitBtn = dialog.locator('button[type="submit"]:not(.modal-backdrop button)');
     await submitBtn.click();
 
     await expect(page.locator('[data-sonner-toast]').first()).toBeVisible({ timeout: 10_000 });
@@ -78,41 +79,37 @@ test.describe('TC-KEU-03: Filter laporan', () => {
     await expect(page.locator('h1, h2').first()).toBeVisible();
   });
 
-  test('filter berdasarkan rentang tanggal memperbarui hasil', async ({ page }) => {
+  test('rekap bulanan konsisten dengan total pemasukan dan pengeluaran', async ({ page }) => {
     await page.goto(`/rekap-keuangan?lab_id=${LAB_ID}`);
     await waitPage(page);
 
-    const dateInputs = page.locator('input[type="date"]');
-    if (await dateInputs.count() >= 2) {
-      await dateInputs.nth(0).fill('2025-01-01');
-      await dateInputs.nth(1).fill('2025-12-31');
-
-      const filterBtn = page.locator('button:has-text("Filter"), button:has-text("Cari"), button[type="submit"]').first();
-      if (await filterBtn.isVisible()) {
-        await filterBtn.click();
-        await waitPage(page);
-      }
-    }
-
-    await expect(page.locator('table, [data-testid="rekap"], main').first()).toBeVisible();
+    const props = await page.locator('[data-page]').evaluate(element => JSON.parse(element.dataset.page).props);
+    expect(props.rekapKeuangan.length).toBeGreaterThan(0);
+    const income = props.rekapKeuangan.reduce((sum, month) => sum + Number(month.pemasukan), 0);
+    const expense = props.rekapKeuangan.reduce((sum, month) => sum + Number(month.pengeluaran), 0);
+    expect(income).toBeGreaterThanOrEqual(10000);
+    expect(expense).toBeGreaterThanOrEqual(10000);
+    expect(props.keuanganSummary.totalPemasukan).toBe(income);
+    expect(props.keuanganSummary.totalPengeluaran).toBe(expense);
+    expect(props.keuanganSummary.saldoAkhir).toBe(income - expense);
+    await expect(page.getByRole('table')).toBeVisible();
   });
 });
 
 test.describe('TC-KEU-04: Ekspor laporan keuangan', () => {
-  test('ekspor laporan keuangan memicu popup download', async ({ page, context }) => {
+  test('ekspor laporan keuangan menghasilkan file PDF', async ({ page }) => {
     await page.goto(KEUANGAN_URL);
     await waitPage(page);
 
     const exportBtn = page.locator('button:has-text("Download")').first();
     await expect(exportBtn).toBeVisible({ timeout: 10_000 });
 
-    const [popup] = await Promise.all([
-      context.waitForEvent('page', { timeout: 15_000 }),
+    const [download] = await Promise.all([
+      page.waitForEvent('download', { timeout: 30_000 }),
       exportBtn.click(),
     ]);
 
-    expect(popup).toBeTruthy();
-    expect(popup.url()).not.toBe('');
+    expect(download.suggestedFilename()).toMatch(/\.pdf$/);
+    expect(await download.failure()).toBeNull();
   });
 });
-

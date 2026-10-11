@@ -12,7 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('praktikan', function (Blueprint $table) {
-            // Only add foreign key constraint since columns already exist
+            if (!Schema::hasColumn('praktikan', 'kelas_id')) {
+                $table->uuid('kelas_id')->nullable();
+            }
             $table->foreign('kelas_id')->references('id')->on('kelas')->onDelete('set null');
             $table->index(['kelas_id', 'praktikum_id']);
         });

@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class PeminjamanAsetController extends Controller
@@ -106,9 +107,6 @@ class PeminjamanAsetController extends Controller
         }
 
         $suratPath = null;
-        if ($request->hasFile('surat_peminjaman')) {
-            $suratPath = $request->file('surat_peminjaman')->store('surat-peminjaman', 'public');
-        }
 
         $laboratoriumIds = $asets->pluck('laboratorium_id')->filter()->unique()->values();
         if ($laboratoriumIds->count() !== 1 || $asets->contains(fn($aset) => empty($aset->laboratorium_id))) {
@@ -125,7 +123,19 @@ class PeminjamanAsetController extends Controller
             }
         }
 
-        DB::transaction(function () use ($validated, $asetIds, $suratPath) {
+        DB::transaction(function () use ($request, $validated, $asetIds, &$suratPath) {
+            $lockedAssets = DetailAset::whereIn('id', $asetIds)->orderBy('id')->lockForUpdate()->get();
+            if ($lockedAssets->count() !== count($asetIds)) {
+                throw ValidationException::withMessages(['aset_ids' => 'Sebagian aset tidak ditemukan.']);
+            }
+            foreach ($lockedAssets as $asset) {
+                if ($asset->status !== 'tersedia' || $asset->keadaan === 'hilang') {
+                    throw ValidationException::withMessages(['aset_ids' => "Aset {$asset->kode_barang} tidak tersedia untuk dipinjam."]);
+                }
+            }
+            if ($request->hasFile('surat_peminjaman')) {
+                $suratPath = $request->file('surat_peminjaman')->store('surat-peminjaman', 'public');
+            }
 
             $peminjaman = PeminjamanAset::create([
                 'nama_peminjam'           => $validated['nama_peminjam'],

@@ -31,6 +31,18 @@ class PengumpulanTugas extends Model
         'dinilai_at' => 'datetime'
     ];
 
+    protected static function booted(): void
+    {
+        static::created(function (self $submission) {
+            if (\Illuminate\Support\Facades\Schema::hasColumn('nilai_tambahan', 'tugas_praktikum_id')) {
+                NilaiTambahan::where('tugas_praktikum_id', $submission->tugas_praktikum_id)
+                    ->where('praktikan_id', $submission->praktikanPraktikum->praktikan_id)
+                    ->whereNull('pengumpulan_tugas_id')
+                    ->update(['pengumpulan_tugas_id' => $submission->id]);
+            }
+        });
+    }
+
     public function tugasPraktikum()
     {
         return $this->belongsTo(TugasPraktikum::class);

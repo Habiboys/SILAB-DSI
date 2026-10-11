@@ -10,6 +10,9 @@ class CheckLabAccess
     public function handle(Request $request, Closure $next)
     {
         $user = $request->user();
+        if (in_array(class_basename($request->route()->getControllerClass()), ['InventarisController', 'DetailInventarisController', 'PeminjamanAsetController', 'PermohonanAsetController'], true)) {
+            return app(EnsureInventoryAccess::class)->handle($request, $next);
+        }
         $currentLab = $user->getCurrentLab();
         
         // Allow superadmin and kadep to access all labs

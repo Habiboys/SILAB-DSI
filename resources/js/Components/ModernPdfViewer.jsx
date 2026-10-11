@@ -1,5 +1,6 @@
 import React from 'react';
 import { Worker, Viewer } from '@react-pdf-viewer/core';
+import pdfWorkerUrl from '@/Support/pdfWorker';
 import { toolbarPlugin } from '@react-pdf-viewer/toolbar';
 import { zoomPlugin } from '@react-pdf-viewer/zoom';
 import { pageNavigationPlugin } from '@react-pdf-viewer/page-navigation';
@@ -120,8 +121,9 @@ export default function ModernPdfViewer({
 
         {/* PDF Viewer */}
         <div className="flex-1" style={{ height: fullscreen ? 'calc(95vh - 80px)' : 'calc(100% - 80px)' }}>
-          <Worker workerUrl="https://unpkg.com/pdfjs-dist@3.4.120/build/pdf.worker.min.js">
-            <Viewer 
+          <Worker workerUrl={pdfWorkerUrl}>
+            <Viewer
+              transformGetDocumentParams={(params) => ({ ...params, isEvalSupported: false })}
               fileUrl={fileUrl}
               renderError={(error) => (
                 <div className="flex items-center justify-center h-full">

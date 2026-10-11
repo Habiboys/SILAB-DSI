@@ -42,6 +42,7 @@ class KategoriAsetController extends Controller
             'deskripsi' => 'nullable|string',
         ]);
 
+        $validated['deskripsi'] ??= '';
         KategoriAset::create($validated);
 
         return redirect()->back()->with('message', 'Kategori aset berhasil ditambahkan');
@@ -55,6 +56,7 @@ class KategoriAsetController extends Controller
             'deskripsi' => 'nullable|string',
         ]);
 
+        $validated['deskripsi'] ??= '';
         KategoriAset::findOrFail($id)->update($validated);
 
         return redirect()->back()->with('message', 'Kategori aset berhasil diperbarui');

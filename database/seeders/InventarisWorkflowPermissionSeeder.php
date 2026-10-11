@@ -14,6 +14,7 @@ class InventarisWorkflowPermissionSeeder extends Seeder
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         $newPermissions = [
+            'inventaris.view',
             'inventaris.review-permohonan', // Kalab: review & approve/reject di level Kalab
             'inventaris.approve-final',     // Kadep: ACC final permohonan
             'inventaris.convert-to-aset',   // Admin/Kalab: konversi item wishlist ke aset
@@ -41,6 +42,7 @@ class InventarisWorkflowPermissionSeeder extends Seeder
         // Kalab dapat review (via position permission, tapi tetap assign sebagai fallback)
         $kalab = Role::firstOrCreate(['name' => 'kalab', 'guard_name' => 'web']);
         $kalab->givePermissionTo([
+            'inventaris.view',
             'inventaris.review-permohonan',
             'inventaris.convert-to-aset',
         ]);

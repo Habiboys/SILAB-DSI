@@ -6,7 +6,7 @@ for (const width of [1440, 768, 390]) {
         await page.goto('/login');
         await page.locator('#email').fill(process.env.E2E_SUPERADMIN_EMAIL || 'superadmin1@admin.com');
         await page.locator('#password').fill(process.env.E2E_SUPERADMIN_PASSWORD || 'adminlsd123');
-        await page.locator('button[type="submit"]').click();
+        await page.locator('button[type="submit"]:not(.modal-backdrop button)').click();
         await page.waitForURL(url => url.pathname !== '/login');
         for (const path of ['/kegiatan/create', '/kuesioner/create', '/surat-menyurat/konfigurasi']) {
             await page.goto(path);

@@ -32,7 +32,7 @@ class KomponenRubrikController extends Controller
             'nama_komponen' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'bobot' => 'required|numeric|min:0|max:100',
-            'nilai_maksimal' => 'required|numeric|min:0|max:100',
+            'nilai_maksimal' => 'required|numeric|gt:0|max:100',
         ]);
 
         $currentTotal = (float) $tugas->komponenRubriks()->sum('bobot');
@@ -63,7 +63,7 @@ class KomponenRubrikController extends Controller
             'nama_komponen' => 'required|string|max:255',
             'deskripsi' => 'nullable|string',
             'bobot' => 'required|numeric|min:0|max:100',
-            'nilai_maksimal' => 'required|numeric|min:0|max:100',
+            'nilai_maksimal' => 'required|numeric|gt:0|max:100',
         ]);
 
         $currentTotalWithoutThis = (float) $tugas->komponenRubriks()
@@ -117,21 +117,23 @@ class KomponenRubrikController extends Controller
             'keterangan' => 'nullable|string'
         ]);
 
+        $kelas = $tugas->kelas ?? $tugas->pertemuan?->kelas;
+        abort_unless($kelas, 422, 'Tugas belum terhubung dengan kelas.');
+        $enrollment = \App\Models\PraktikanPraktikum::where('praktikan_id', $request->praktikan_id)
+            ->where('praktikum_id', $kelas->praktikum_id)
+            ->whereIn('kelas_id', $kelas->subKelas()->pluck('id')->push($kelas->id))
+            ->first();
+        if (!$enrollment) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['praktikan_id' => 'Praktikan tidak terdaftar pada kelas tugas ini.']);
+        }
         try {
-
-            $pengumpulan = \App\Models\PengumpulanTugas::firstOrCreate(
-                [
-                    'tugas_praktikum_id' => $tugas->id,
-                    'praktikan_id' => $request->praktikan_id,
-                ],
-                [
-                    'status' => 'belum-submit',
-                    'nilai' => 0,
-                ]
-            );
+            $pengumpulan = \App\Models\PengumpulanTugas::where('tugas_praktikum_id', $tugas->id)
+                ->where('praktikan_praktikum_id', $enrollment->id)->first();
 
             $nilaiTambahan = NilaiTambahan::create([
-                'pengumpulan_tugas_id' => $pengumpulan->id,
+                'pengumpulan_tugas_id' => $pengumpulan?->id,
+                'tugas_praktikum_id' => $tugas->id,
+                'praktikan_id' => $request->praktikan_id,
                 'nilai' => $request->nilai,
                 'kategori' => $request->kategori,
                 'keterangan' => $request->keterangan,
@@ -145,9 +147,10 @@ class KomponenRubrikController extends Controller
                 'data' => $nilaiTambahan
             ]);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menyimpan nilai tambahan: ' . $e->getMessage()
+                'message' => 'Gagal menyimpan nilai tambahan.'
             ], 500);
         }
     }
@@ -161,9 +164,10 @@ class KomponenRubrikController extends Controller
                 'message' => 'Nilai tambahan berhasil dihapus'
             ]);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus nilai tambahan: ' . $e->getMessage()
+                'message' => 'Gagal menghapus nilai tambahan.'
             ], 500);
         }
     }
@@ -171,25 +175,20 @@ class KomponenRubrikController extends Controller
     public function getNilaiTambahan(TugasPraktikum $tugas, Praktikan $praktikan)
     {
         try {
-            $pengumpulan = \App\Models\PengumpulanTugas::where('tugas_praktikum_id', $tugas->id)
-                ->where('praktikan_id', $praktikan->id)
-                ->first();
-
-            $nilaiTambahans = $pengumpulan
-                ? NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)
+            $nilaiTambahans = NilaiTambahan::forPraktikanTask($praktikan->id, $tugas->id)
                     ->with(['pengumpulanTugas.praktikan.user', 'diberikanOleh'])
                     ->orderBy('diberikan_at', 'desc')
-                    ->get()
-                : collect();
+                    ->get();
 
             return response()->json([
                 'success' => true,
                 'data' => $nilaiTambahans
             ]);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal mengambil data nilai tambahan: ' . $e->getMessage()
+                'message' => 'Gagal mengambil data nilai tambahan.'
             ], 500);
         }
     }
@@ -215,9 +214,10 @@ class KomponenRubrikController extends Controller
                 'data' => $nilai
             ]);
         } catch (\Exception $e) {
+            report($e);
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memperbarui nilai tambahan: ' . $e->getMessage()
+                'message' => 'Gagal memperbarui nilai tambahan.'
             ], 500);
         }
     }

@@ -11,55 +11,33 @@ class AdminAccountsSeeder extends Seeder
 {
     public function run()
     {
-        // Create superadmin (no lab assignment needed)
-        $superadmin = User::create([
+        if (app()->environment('production')) {
+            throw new \RuntimeException('Akun contoh tidak boleh dibuat pada lingkungan production.');
+        }
+        $superadmin = User::firstOrCreate(['email' => 'superadmin1@admin.com'], [
             'name' => 'Super Admin',
-            'email' => 'superadmin1@admin.com',
             'password' => Hash::make('password'),
-            // laboratory_id remains null
+            'must_change_password' => true,
         ]);
         $superadmin->assignRole('superadmin');
 
-        // Create kadep (no lab assignment needed)
-        $kadep = User::create([
+        $kadep = User::firstOrCreate(['email' => 'kadep1@admin.com'], [
             'name' => 'Kepala Departemen',
-            'email' => 'kadep1@admin.com',
             'password' => Hash::make('password'),
-            // laboratory_id remains null
+            'must_change_password' => true,
         ]);
         $kadep->assignRole('kadep');
 
-        // Create admin for each lab
         $laboratories = Laboratorium::all();
         foreach ($laboratories as $lab) {
-            $admin = User::create([
+            $admin = User::firstOrCreate(['email' => "admin.{$lab->id}@admin.com"], [
                 'name' => "Admin {$lab->nama}",
-                'email' => "admin.{$lab->id}@admin.com",
                 'password' => Hash::make('password'),
-                'laboratory_id' => $lab->id
+                'access_lab_id' => $lab->id,
+                'must_change_password' => true,
             ]);
             $admin->assignRole('admin');
         }
 
-        // // Create dosen and asisten with lab assignments
-        // foreach ($laboratories as $lab) {
-        //     // Create dosen
-        //     $dosen = User::create([
-        //         'name' => "Dosen {$lab->nama}",
-        //         'email' => "dosen.{$lab->id}@example.com",
-        //         'password' => Hash::make('password'),
-        //         'laboratory_id' => $lab->id
-        //     ]);
-        //     $dosen->assignRole('dosen');
-
-        //     // Create asisten
-        //     $asisten = User::create([
-        //         'name' => "Asisten {$lab->nama}",
-        //         'email' => "asisten.{$lab->id}@example.com",
-        //         'password' => Hash::make('password'),
-        //         'laboratory_id' => $lab->id
-        //     ]);
-        //     $asisten->assignRole('asisten');
-        // }
     }
 }

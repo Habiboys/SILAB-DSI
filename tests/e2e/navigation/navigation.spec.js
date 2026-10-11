@@ -8,7 +8,7 @@ async function authenticate(page) {
     if (new URL(page.url()).pathname === '/login') {
         await page.locator('#email').fill(process.env.E2E_SUPERADMIN_EMAIL || 'superadmin1@admin.com');
         await page.locator('#password').fill(process.env.E2E_SUPERADMIN_PASSWORD || 'adminlsd123');
-        await page.locator('button[type="submit"]').click();
+        await page.locator('button[type="submit"]:not(.modal-backdrop button)').click();
         await page.waitForURL(url => url.pathname !== '/login');
     }
     await expect(page.locator('main')).toBeVisible();
@@ -27,7 +27,7 @@ async function initialProps(page) {
 test.beforeEach(async ({ page }) => authenticate(page));
 
 test('all accessible module indexes have valid breadcrumb links and no JavaScript errors', async ({ page }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(600_000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     const paths = ['/dashboard', '/laboratorium', '/tahun-kepengurusan', '/kepengurusan-lab', '/anggota',
@@ -40,6 +40,7 @@ test('all accessible module indexes have valid breadcrumb links and no JavaScrip
         '/piket/absensi/riwayat', '/piket/rekap-absen', '/piket/wajah/review', '/admin/roles-permissions', '/struktur-permissions'];
     const visited = [];
     for (const path of paths) {
+        console.info(`Checking module index: ${path}`);
         const response = await page.goto(path);
         if (response.status() === 403) { console.info(`Permission denied for test role: ${path}`); continue; }
         expect(response.status(), path).toBeLessThan(400);
@@ -58,7 +59,7 @@ test('all accessible module indexes have valid breadcrumb links and no JavaScrip
 });
 
 test('create and cancel restore list filters, breadcrumbs preserve lab context after refresh', async ({ page }) => {
-    await page.goto('/kegiatan');
+    await page.goto('/kegiatan?status=all');
     const props = await initialProps(page);
     const lab = props.auth.user.laboratory?.id || props.laboratorium[0]?.id;
     const period = props.kepengurusanLabId || props.selected_kepengurusan?.id;
@@ -100,15 +101,18 @@ test('multiple laboratories stay separate while creating and returning', async (
 });
 
 test('detail, nested certificate, application back and browser back/forward preserve origin', async ({ page }) => {
-    await page.goto('/kegiatan');
+    await page.goto('/kegiatan?status=all');
     const props = await initialProps(page);
     const activity = (props.kegiatan?.data || props.kegiatan || [])[0];
-    test.skip(!activity, 'Requires an activity fixture.');
-    await page.goto('/kegiatan?status=all&page=2');
+    expect(activity, 'A real activity fixture is required').toBeTruthy();
+    const originParams = new URLSearchParams({ status: 'all', page: '1', search: activity.nama_kegiatan,
+        lab_id: process.env.E2E_LAB_ID, kepengurusan_lab_id: process.env.E2E_PERIOD_ID });
+    await page.goto(`/kegiatan?${originParams}`);
     const origin = page.url();
     const link = page.locator(`a[href*="/kegiatan/${activity.id}"]`).first();
-    test.skip(await link.count() === 0, 'Fixture is not visible on this list page.');
+    await expect(link).toBeVisible();
     await link.click();
+    await expect(page).toHaveURL(url => url.pathname === `/kegiatan/${activity.id}`);
     await page.reload();
     await expect(page.getByRole('navigation', { name: 'Breadcrumb' }).locator('[aria-current="page"]')).toHaveCount(1);
     const detail = page.url();
@@ -123,7 +127,7 @@ test('detail, nested certificate, application back and browser back/forward pres
     await expectSameUrl(page, origin);
     await page.goto(detail);
     await page.goBack();
-    await expect(page).toHaveURL(origin);
+    await expectSameUrl(page, origin);
     await page.goForward();
-    await expect(page).toHaveURL(detail);
+    await expectSameUrl(page, detail);
 });

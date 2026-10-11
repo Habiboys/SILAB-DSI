@@ -69,7 +69,7 @@ class DetailInventarisController extends Controller
         $validated = $request->validate([
             'kategori_aset_id'   => 'required|exists:kategori_aset,id',
             'laboratorium_id'    => 'required|exists:laboratorium,id',
-            'nama'               => 'required|string|max:255',
+            'nama'               => 'nullable|string|max:255',
             'kode_barang'        => 'required|string|max:255|unique:aset,kode_barang',
             'keadaan'            => 'required|in:baik,rusak,hilang',
             'status'             => 'required|in:tersedia,dipinjam',
@@ -84,6 +84,8 @@ class DetailInventarisController extends Controller
         if ($request->hasFile('foto')) {
             $validated['foto'] = $request->file('foto')->store('detail-aset', 'public');
         }
+        $validated['foto'] ??= '';
+        $validated['nama'] = $validated['nama'] ?? KategoriAset::findOrFail($validated['kategori_aset_id'])->nama;
 
         $detailAset = DetailAset::create($validated);
 

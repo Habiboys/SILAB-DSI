@@ -39,8 +39,8 @@ async function loginAndSave(page, email, password, authFile) {
   await page.locator('input#password').click({ clickCount: 3 });
   await page.keyboard.type(password);
 
-  await expect(page.locator('button[type="submit"]:not([disabled])')).toBeVisible({ timeout: 5_000 });
-  await page.locator('button[type="submit"]').click();
+  await expect(page.locator('button[type="submit"]:not(.modal-backdrop button):not([disabled])')).toBeVisible({ timeout: 5_000 });
+  await page.locator('button[type="submit"]:not(.modal-backdrop button)').click();
 
   await page.waitForURL(url => !url.toString().includes('/login'), { timeout: 60_000 });
 

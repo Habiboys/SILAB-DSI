@@ -35,8 +35,8 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
     const navigate = (extra = {}) => router.visit("/data-master/mata-kuliah", { data: { search, perPage, ...extra }, preserveState: true, preserveScroll: true, replace: true });
     const debouncedSearch = debounce((value) => navigate({ search: value }), 300);
 
-    const onSearchChange = (event) => { setSearch(event.target.value); debouncedSearch(event.target.value); };
-    const onPerPageChange = (event) => { setPerPage(event.target.value); navigate({ perPage: event.target.value }); };
+    const onSearchChange = (value) => { setSearch(value); debouncedSearch(value); };
+    const onPerPageChange = (value) => { setPerPage(value); navigate({ perPage: value }); };
 
     const close = () => { setModal(null); setSelectedItem(null); };
     const openCreateModal = () => { createForm.reset(); createForm.clearErrors(); setModal("create"); };

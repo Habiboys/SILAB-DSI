@@ -30,6 +30,7 @@ vendor/
 /tests/e2e/fixtures/.auth/
 /playwright-report/
 /test-results/
+/.audit/
 /public/build
 __pycache__/
 *.pyc

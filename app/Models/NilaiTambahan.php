@@ -14,6 +14,8 @@ class NilaiTambahan extends Model
 
     protected $fillable = [
         'pengumpulan_tugas_id',
+        'tugas_praktikum_id',
+        'praktikan_id',
         'nilai',
         'kategori',
         'keterangan',
@@ -36,8 +38,27 @@ class NilaiTambahan extends Model
         return $this->belongsTo(\App\Models\User::class, 'diberikan_oleh');
     }
 
+    public function tugasPraktikum()
+    {
+        return $this->belongsTo(TugasPraktikum::class);
+    }
+
+    public function praktikan()
+    {
+        return $this->belongsTo(Praktikan::class);
+    }
+
     public function scopeByKategori($query, $kategori)
     {
         return $query->where('kategori', $kategori);
+    }
+
+    public function scopeForPraktikanTask($query, string $praktikanId, string $tugasId)
+    {
+        return $query->where(function ($query) use ($praktikanId, $tugasId) {
+            $query->where(fn ($legacy) => $legacy->where('tugas_praktikum_id', $tugasId)->where('praktikan_id', $praktikanId))
+                ->orWhereHas('pengumpulanTugas', fn ($submission) => $submission->where('tugas_praktikum_id', $tugasId)
+                    ->whereHas('praktikanPraktikum', fn ($enrollment) => $enrollment->where('praktikan_id', $praktikanId)));
+        });
     }
 }

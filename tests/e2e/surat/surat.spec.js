@@ -3,64 +3,56 @@ import { ADMIN_AUTH_FILE } from '../fixtures/auth.js';
 
 test.use({ storageState: ADMIN_AUTH_FILE });
 
-test.describe('TC-SURAT-01: Buat surat baru', () => {
-  test('dapat membuat surat keluar', async ({ page }) => {
-    await page.goto('/surat-menyurat/surat-keluar');
-    await page.waitForLoadState('networkidle');
+test.beforeEach(async ({ page }) => {
+  page.on('pageerror', error => { throw error; });
+});
 
-    await page.click(
-      'button:has-text("Tambah Surat"), button:has-text("Buat Surat"), button:has-text("Tambah")'
-    );
-    await expect(page.locator('[role="dialog"]')).toBeVisible();
-
-    const perihalInput = page.locator('[role="dialog"] input[name*="perihal"]').first();
-    if (await perihalInput.count() > 0) {
-      await perihalInput.fill('Surat E2E Keluar Test');
-    }
-
-    const tujuanInput = page.locator('[role="dialog"] input[name*="tujuan"]').first();
-    if (await tujuanInput.count() > 0) {
-      await tujuanInput.fill('Dekan FMIPA');
-    }
-
-    const dateInput = page.locator('[role="dialog"] input[type="date"]').first();
-    if (await dateInput.count() > 0) {
-      await dateInput.fill('2025-06-15');
-    }
-
-    await page.locator('[role="dialog"] button[type="submit"]').click();
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-sonner-toast]')).toBeVisible({ timeout: 10_000 });
-  });
-
-  test('dapat membuat surat masuk', async ({ page }) => {
-    await page.goto('/surat-menyurat/surat-masuk');
-    await page.waitForLoadState('networkidle');
-
-    await page.click(
-      'button:has-text("Tambah Surat Masuk"), button:has-text("Tambah"), button:has-text("Buat")'
-    );
-    await expect(page.locator('[role="dialog"]')).toBeVisible();
-
-    const perihalInput = page.locator('[role="dialog"] input[name*="perihal"]').first();
-    if (await perihalInput.count() > 0) {
-      await perihalInput.fill('Surat E2E Masuk Test');
-    }
-
-    const pengirimInput = page.locator('[role="dialog"] input[name*="pengirim"]').first();
-    if (await pengirimInput.count() > 0) {
-      await pengirimInput.fill('Pengirim Test E2E');
-    }
-
-    const dateInput = page.locator('[role="dialog"] input[type="date"]').first();
-    if (await dateInput.count() > 0) {
-      await dateInput.fill('2025-06-15');
-    }
-
-    await page.locator('[role="dialog"] button[type="submit"]').click();
-    await page.waitForLoadState('networkidle');
-    await expect(page.locator('[data-sonner-toast]')).toBeVisible({ timeout: 10_000 });
-  });
+test.describe('TC-SURAT-01: Simpan, edit, dan hapus surat', () => {
+  for (const type of ['keluar', 'masuk']) {
+    test(`CRUD surat ${type} tersimpan setelah reload`, async ({ page }) => {
+      const url = `/surat-menyurat/surat-${type}`;
+      const title = `Surat E2E ${type} ${Date.now()}`;
+      const today = new Date().toISOString().slice(0, 10);
+      await page.goto(url);
+      await expect(page).not.toHaveURL(/\/login/);
+      await page.getByRole('button', { name: 'Tambah surat', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      await expect(dialog).toBeVisible();
+      await dialog.getByLabel(/^Perihal/).fill(title);
+      await dialog.getByLabel(/^Tanggal surat/).fill(today);
+      if (type === 'keluar') {
+        await dialog.getByLabel(/^Tujuan/).fill('Dekan FMIPA');
+      } else {
+        await dialog.getByLabel(/^Nomor surat asal/).fill(`AUDIT-${Date.now()}`);
+        await dialog.getByLabel(/^Asal surat/).fill('Pengirim audit');
+        await dialog.getByLabel(/^Tanggal terima/).fill(today);
+      }
+      await dialog.getByLabel(/^File surat/).setInputFiles('tests/e2e/fixtures/test-files/test.pdf');
+      const submit = async () => {
+        const [response] = await Promise.all([
+          page.waitForResponse(response => response.url().includes(url) && response.request().method() === 'POST'),
+          dialog.getByRole('button', { name: 'Simpan', exact: true }).click(),
+        ]);
+        expect(response.status()).toBeLessThan(400);
+        await expect(dialog).not.toBeVisible({ timeout: 30_000 });
+        await page.reload();
+      };
+      await submit();
+      let row = page.getByRole('row').filter({ hasText: title });
+      await expect(row).toBeVisible();
+      await row.getByRole('button', { name: 'Edit', exact: true }).click();
+      await expect(dialog.getByLabel(/^Tanggal surat/)).toHaveValue(today);
+      await dialog.getByLabel(/^Perihal/).fill(`${title} diperbarui`);
+      await submit();
+      row = page.getByRole('row').filter({ hasText: `${title} diperbarui` });
+      await expect(row).toBeVisible();
+      await row.getByRole('button', { name: 'Hapus', exact: true }).click();
+      await page.getByRole('dialog').getByRole('button', { name: /Hapus/, exact: false }).click();
+      await expect(page.getByRole('dialog')).not.toBeVisible({ timeout: 30_000 });
+      await page.reload();
+      await expect(page.getByRole('row').filter({ hasText: title })).toHaveCount(0);
+    });
+  }
 });
 
 test.describe('TC-SURAT-02: Arsip surat', () => {
@@ -99,17 +91,13 @@ test.describe('TC-SURAT-03: Cari dan filter surat', () => {
     await expect(page.locator('main, [data-list], table').first()).toBeVisible();
   });
 
-  test('filter berdasarkan tanggal pada surat masuk', async ({ page }) => {
+  test('pencarian surat masuk mempertahankan filter setelah reload', async ({ page }) => {
     await page.goto('/surat-menyurat/surat-masuk');
-    await page.waitForLoadState('networkidle');
-
-    const dateFilter = page.locator('input[type="date"]').first();
-    if (await dateFilter.count() > 0) {
-      await dateFilter.fill('2025-06-01');
-      await page.waitForLoadState('networkidle');
-    }
-
-    await expect(page.locator('main, [data-list], table').first()).toBeVisible();
+    const search = page.getByPlaceholder('Cari surat...');
+    await search.fill('Surat E2E');
+    await expect(page).toHaveURL(url => url.searchParams.get('search') === 'Surat E2E');
+    await page.reload();
+    await expect(search).toHaveValue('Surat E2E');
   });
 });
 

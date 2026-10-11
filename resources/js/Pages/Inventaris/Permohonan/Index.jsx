@@ -40,17 +40,17 @@ export default function PermohonanIndex({ permohonan, filters }) {
         router.get(route("inventaris.permohonan.index"), { search, status, perPage: pageSize, lab_id: filters.lab_id }, { preserveState: true, preserveScroll: true, replace: true });
     }, 300);
 
-    const onSearchChange = (event) => {
-        setSearchTerm(event.target.value);
-        applyFilters(event.target.value, statusFilter, perPage);
+    const onSearchChange = (value) => {
+        setSearchTerm(value);
+        applyFilters(value, statusFilter, perPage);
     };
     const onStatusChange = (event) => {
         setStatusFilter(event.target.value);
         applyFilters(searchTerm, event.target.value, perPage);
     };
-    const onPerPageChange = (event) => {
-        setPerPage(Number(event.target.value));
-        applyFilters(searchTerm, statusFilter, event.target.value);
+    const onPerPageChange = (value) => {
+        setPerPage(value);
+        applyFilters(searchTerm, statusFilter, value);
     };
 
     const toggleSelect = (id) => setSelectedIds((prev) => prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]);

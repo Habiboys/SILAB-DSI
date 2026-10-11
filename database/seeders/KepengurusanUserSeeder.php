@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\KepengurusanUser;
 use App\Models\User;
@@ -18,7 +17,7 @@ class KepengurusanUserSeeder extends Seeder
     {
         // Ambil data yang diperlukan
         $users = User::with('profile')->get();
-        $kepengurusanLabs = KepengurusanLab::all();
+        $kepengurusanLabs = KepengurusanLab::where('is_active', true)->get();
         $strukturs = Struktur::all();
 
         if ($users->isEmpty() || $kepengurusanLabs->isEmpty() || $strukturs->isEmpty()) {
@@ -36,7 +35,7 @@ class KepengurusanUserSeeder extends Seeder
             $this->command->info('Processing KepengurusanLab: ' . $kepengurusanLab->id);
             
             // Ambil user yang sudah ada di lab ini
-            $labUsers = $users->where('laboratory_id', $kepengurusanLab->laboratorium_id);
+            $labUsers = $users->where('access_lab_id', $kepengurusanLab->laboratorium_id);
             
             if ($labUsers->isEmpty()) {
                 $this->command->warn('Tidak ada user untuk lab: ' . $kepengurusanLab->laboratorium_id);
@@ -50,10 +49,10 @@ class KepengurusanUserSeeder extends Seeder
                     ->exists();
                 
                 if (!$existing) {
-                    // Gunakan struktur yang sudah ada di user, atau ambil random
-                    $struktur = $user->struktur ?: $strukturs->random();
+                    $struktur = $strukturs->firstWhere('struktur', 'Anggota');
+                    if (!$struktur) continue;
                     
-                    $kepengurusanUser = KepengurusanUser::create([
+                    KepengurusanUser::create([
                         'kepengurusan_lab_id' => $kepengurusanLab->id,
                         'user_id' => $user->id,
                         'struktur_id' => $struktur->id,
@@ -73,4 +72,3 @@ class KepengurusanUserSeeder extends Seeder
         $this->command->info("Total KepengurusanUser created: {$totalCreated}");
     }
 }
-

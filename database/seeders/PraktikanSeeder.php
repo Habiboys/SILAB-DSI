@@ -4,8 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Praktikan;
 use App\Models\User;
-use App\Models\Laboratorium;
-use App\Models\Praktikum;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -20,15 +18,12 @@ class PraktikanSeeder extends Seeder
             // Generate email unik untuk praktikan
             $email = $this->generateUniqueEmail($praktikan->nim, $praktikan->nama);
             
-            // Get lab_id from praktikum
-            $labId = $praktikan->praktikum->kepengurusanLab->laboratorium_id ?? null;
-            
             // Buat user baru
             $user = User::create([
                 'name' => $praktikan->nama,
                 'email' => $email,
                 'password' => Hash::make($praktikan->nim), // Password default: NIM
-                'laboratory_id' => $labId // Assign ke lab yang sama
+                'must_change_password' => true,
             ]);
             
             // Assign role praktikan

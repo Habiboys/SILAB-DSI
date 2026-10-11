@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\Permission\Permission;
 use App\Models\Permission\Role;
+use App\Models\Struktur;
 use Spatie\Permission\PermissionRegistrar;
 
 class ProkerPermissionSeeder extends Seeder
@@ -143,22 +144,15 @@ class ProkerPermissionSeeder extends Seeder
         ];
 
         foreach ($mappings as $jabatan => $perms) {
+            $struktur = Struktur::where('struktur', $jabatan)->first();
+            if (!$struktur) continue;
             foreach ($perms as $perm) {
-                // Avoid duplicates
-                $exists = DB::table('struktur_permissions')
-                    ->where('jabatan', $jabatan)
-                    ->where('permission', $perm)
-                    ->exists();
-
-                if (! $exists) {
-                    DB::table('struktur_permissions')->insert([
-                        'jabatan'     => $jabatan,
-                        'permission'  => $perm,
-                        'description' => null,
-                        'created_at'  => now(),
-                        'updated_at'  => now(),
-                    ]);
-                }
+                $permission = Permission::findByName($perm, 'web');
+                DB::table('struktur_permissions')->insertOrIgnore([
+                    'struktur_id' => $struktur->id,
+                    'permission_id' => $permission->id,
+                    'created_at' => now(), 'updated_at' => now(),
+                ]);
             }
         }
     }

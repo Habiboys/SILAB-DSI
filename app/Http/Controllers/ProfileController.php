@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -137,7 +136,8 @@ class ProfileController extends Controller
 
         $user->delete();
 
-        Auth::logout();
+        Auth::guard('web')->logoutCurrentDevice();
+        Auth::shouldUse('web');
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

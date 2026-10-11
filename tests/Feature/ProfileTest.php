@@ -24,12 +24,16 @@ class ProfileTest extends TestCase
     public function test_profile_information_can_be_updated(): void
     {
         $user = User::factory()->create();
+        $originalEmail = $user->email;
+        $verifiedAt = $user->email_verified_at->toISOString();
 
         $response = $this
             ->actingAs($user)
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => 'test@example.com',
+                'jenis_kelamin' => 'laki-laki',
+                'nomor_induk' => 'AUDIT-001',
             ]);
 
         $response
@@ -39,8 +43,10 @@ class ProfileTest extends TestCase
         $user->refresh();
 
         $this->assertSame('Test User', $user->name);
-        $this->assertSame('test@example.com', $user->email);
-        $this->assertNull($user->email_verified_at);
+        $this->assertSame($originalEmail, $user->email);
+        $this->assertSame($verifiedAt, $user->email_verified_at->toISOString());
+        $this->assertSame('laki-laki', $user->profile->jenis_kelamin);
+        $this->assertSame('AUDIT-001', $user->profile->nomor_induk);
     }
 
     public function test_email_verification_status_is_unchanged_when_the_email_address_is_unchanged(): void
@@ -52,6 +58,8 @@ class ProfileTest extends TestCase
             ->patch('/profile', [
                 'name' => 'Test User',
                 'email' => $user->email,
+                'jenis_kelamin' => 'perempuan',
+                'nomor_induk' => 'AUDIT-002',
             ]);
 
         $response
@@ -77,6 +85,15 @@ class ProfileTest extends TestCase
 
         $this->assertGuest();
         $this->assertNull($user->fresh());
+    }
+
+    public function test_staff_profile_requires_identity_fields_and_preserves_existing_data(): void
+    {
+        $user = User::factory()->create(['name' => 'Nama Awal']);
+        $this->actingAs($user)->patch('/profile', ['name' => 'Tidak Tersimpan'])
+            ->assertSessionHasErrors(['jenis_kelamin', 'nomor_induk']);
+        $this->assertSame('Nama Awal', $user->fresh()->name);
+        $this->assertNull($user->profile()->first());
     }
 
     public function test_correct_password_must_be_provided_to_delete_account(): void

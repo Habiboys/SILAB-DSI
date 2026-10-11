@@ -15,6 +15,9 @@ class PreserveNavigationContext
         if (!$request->user() || $request->isMethod('GET') || !$response instanceof RedirectResponse) {
             return $response;
         }
+        if ($request->routeIs('praktikum.tugas.pengumpulan.store')) {
+            return $response;
+        }
 
         $location = $response->getTargetUrl();
         $target = $this->internalParts($location, $request);

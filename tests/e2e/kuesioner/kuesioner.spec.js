@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { ADMIN_AUTH_FILE, PRAKTIKAN_AUTH_FILE } from '../fixtures/auth.js';
 
 async function waitPage(page) {
+  await expect(page).not.toHaveURL(url => url.pathname === '/login');
     await page.waitForLoadState('load');
     await page.waitForTimeout(800);
 }
@@ -28,11 +29,11 @@ test.describe('TC-KUE-01: Buat kuesioner baru', () => {
 
     const uniqueTitle = `Kuesioner E2E Test ${Date.now()}`;
 
-    const judulInput = page.locator('label:has-text("Judul") + input[type="text"]').first();
+    const judulInput = page.getByLabel(/^Judul/);
     await expect(judulInput).toBeVisible({ timeout: 10_000 });
     await judulInput.fill(uniqueTitle);
 
-    const deskripsiInput = page.locator('label:has-text("Deskripsi") + textarea').first();
+    const deskripsiInput = page.getByLabel('Deskripsi', { exact: true });
     await expect(deskripsiInput).toBeVisible({ timeout: 10_000 });
     await deskripsiInput.fill('Deskripsi kuesioner untuk E2E testing');
 
@@ -40,27 +41,26 @@ test.describe('TC-KUE-01: Buat kuesioner baru', () => {
     const endDate = new Date();
     endDate.setDate(startDate.getDate() + 7);
     const formatDate = (d) => d.toISOString().slice(0, 10);
-    const tanggalMulai = page.locator('label:has-text("Tanggal Mulai")').locator('..').locator('input[type="date"]').first();
-    const tanggalSelesai = page.locator('label:has-text("Tanggal Selesai")').locator('..').locator('input[type="date"]').first();
+    const tanggalMulai = page.getByLabel('Tanggal Mulai', { exact: true });
+    const tanggalSelesai = page.getByLabel('Tanggal Selesai', { exact: true });
     await expect(tanggalMulai).toBeVisible({ timeout: 10_000 });
     await expect(tanggalSelesai).toBeVisible({ timeout: 10_000 });
     await tanggalMulai.fill(formatDate(startDate));
     await tanggalSelesai.fill(formatDate(endDate));
 
-    const targetSection = page.locator('div:has-text("Target Responden")').first();
-    const praktikanCheckbox = targetSection.locator('label:has-text("praktikan") input[type="checkbox"]').first();
+    const praktikanCheckbox = page.getByRole('checkbox', { name: 'praktikan', exact: true });
     await expect(praktikanCheckbox).toBeVisible({ timeout: 10_000 });
     await praktikanCheckbox.check();
 
-    const wajibCheckbox = page.locator('label:has-text("Wajib Diisi") input[type="checkbox"]').first();
+    const wajibCheckbox = page.getByRole('checkbox', { name: /Wajib diisi sebelum/i });
     await expect(wajibCheckbox).toBeVisible({ timeout: 10_000 });
     await wajibCheckbox.check();
 
-    const pertanyaanInput = page.locator('input[placeholder="Tulis pertanyaan..."]').first();
+    const pertanyaanInput = page.getByLabel(/^Pertanyaan \*/).first();
     await expect(pertanyaanInput).toBeVisible({ timeout: 10_000 });
     await pertanyaanInput.fill('Apa pendapat Anda tentang praktikum ini?');
 
-    const submitBtn = page.locator('button[type="submit"]:has-text("Simpan")').first();
+    const submitBtn = page.locator('button[type="submit"]:not(.modal-backdrop button):has-text("Simpan")').first();
     await expect(submitBtn).toBeVisible({ timeout: 10_000 });
     await submitBtn.click();
     await waitPage(page);
@@ -86,7 +86,7 @@ test.describe('TC-KUE-02: Submit jawaban kuesioner', () => {
     await waitPage(page);
 
     if (!/\/kuesioner\/[^/]+\/isi(\?|$)/.test(page.url())) {
-      const detailLink = page.locator('a[title="Detail"]').first();
+      const detailLink = page.getByRole('link', { name: 'Detail', exact: true }).first();
       await expect(detailLink).toBeVisible({ timeout: 10_000 });
       await detailLink.click();
       await waitPage(page);
@@ -99,7 +99,7 @@ test.describe('TC-KUE-02: Submit jawaban kuesioner', () => {
 
     await expect(page).toHaveURL(/\/kuesioner\/[^/]+\/isi/);
 
-    const textAnswer = page.locator('input[type="text"], textarea').first();
+    const textAnswer = page.locator('input:is([type="text"], :not([type])), textarea').first();
     if (await textAnswer.count() > 0) {
       await textAnswer.fill('Jawaban E2E Test');
     }
@@ -110,7 +110,7 @@ test.describe('TC-KUE-02: Submit jawaban kuesioner', () => {
     }
 
     const submitBtn = page.locator(
-      'button[type="submit"]:has-text("Kirim"), button[type="submit"]:has-text("Submit"), button[type="submit"]'
+      'button[type="submit"]:not(.modal-backdrop button):has-text("Kirim"), button[type="submit"]:not(.modal-backdrop button):has-text("Submit"), button[type="submit"]:not(.modal-backdrop button)'
     ).last();
     await submitBtn.click();
     await waitPage(page);

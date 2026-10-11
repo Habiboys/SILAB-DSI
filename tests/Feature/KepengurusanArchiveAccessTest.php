@@ -284,9 +284,10 @@ class KepengurusanArchiveAccessTest extends TestCase
     public function test_account_without_period_history_can_still_be_deleted(): void
     {
         Schema::create('users', fn (Blueprint $table) => $table->string('id')->primary());
-        foreach (['kepengurusan_user', 'aslab_praktikum', 'kegiatan_peserta', 'proker_pj', 'ganti_jadwal_piket', 'sertifikat', 'praktikan'] as $name) {
+        foreach (['kepengurusan_user', 'aslab_praktikum', 'kegiatan_peserta', 'proker_pj', 'sertifikat', 'praktikan'] as $name) {
             Schema::create($name, function (Blueprint $table) { $table->string('id')->primary(); $table->string('user_id'); });
         }
+        Schema::create('ganti_jadwal_piket', function (Blueprint $table) { $table->string('id')->primary(); $table->string('kepengurusan_user_id'); });
         Schema::table('face_enrollments', fn (Blueprint $table) => $table->string('user_id')->nullable());
         foreach (['pemasukan_keuangan', 'pengeluaran_keuangan'] as $name) {
             Schema::table($name, fn (Blueprint $table) => $table->string('user_id')->nullable());

@@ -9,14 +9,12 @@ return new class extends Migration
 {
     public function up(): void
     {
-        $columns = array_column(DB::select('SHOW COLUMNS FROM `users`'), 'Field');
-        if (in_array('struktur_id', $columns)) {
-            $fks = array_column(
-                DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_NAME='users' AND CONSTRAINT_TYPE='FOREIGN KEY' AND TABLE_SCHEMA=DATABASE()"),
-                'CONSTRAINT_NAME'
-            );
-            if (in_array('users_struktur_id_foreign', $fks)) {
-                DB::statement('ALTER TABLE `users` DROP FOREIGN KEY `users_struktur_id_foreign`');
+        if (!Schema::hasTable('users')) return;
+        if (Schema::hasColumn('users', 'struktur_id')) {
+            foreach (Schema::getForeignKeys('users') as $foreignKey) {
+                if (in_array('struktur_id', $foreignKey['columns'], true)) {
+                    Schema::table('users', fn (Blueprint $table) => $table->dropForeign($foreignKey['name']));
+                }
             }
             Schema::table('users', function (Blueprint $table) {
                 $table->dropColumn('struktur_id');

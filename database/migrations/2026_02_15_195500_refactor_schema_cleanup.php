@@ -35,6 +35,12 @@ return new class extends Migration
         });
         */
 
+        foreach (Schema::getForeignKeys('nilai_rubrik') as $foreignKey) {
+            if (in_array('praktikan_id', $foreignKey['columns'], true)) {
+                Schema::table('nilai_rubrik', fn (Blueprint $table) => $table->dropForeign($foreignKey['name']));
+            }
+        }
+
         // 3. Modify nilai_rubrik
         Schema::table('nilai_rubrik', function (Blueprint $table) {
             // 3a. Add index for komponen_rubrik_id safely

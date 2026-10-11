@@ -12,6 +12,7 @@ use App\Exports\MultipleTugasSubmissionExport;
 use App\Support\KelasScopeResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -22,18 +23,9 @@ class PengumpulanTugasController extends Controller
      */
     public function index(Request $request, $tugasId)
     {
-        $tugas = TugasPraktikum::with(['praktikum.kepengurusanLab'])->findOrFail($tugasId);
+        TugasPraktikum::findOrFail($tugasId);
 
-        $pengumpulan = PengumpulanTugas::with(['praktikan.user', 'praktikan.labs'])
-            ->where('tugas_praktikum_id', $tugasId)
-            ->orderBy('submitted_at', 'desc')
-            ->get();
-
-        return Inertia::render('PengumpulanTugas/Index', [
-            'tugas' => $tugas,
-            'pengumpulan' => $pengumpulan,
-            'lab' => $tugas->praktikum->lab
-        ]);
+        return redirect()->route('praktikum.tugas.submissions', ['tugas' => $tugasId]);
     }
 
     /**
@@ -68,11 +60,12 @@ class PengumpulanTugasController extends Controller
 
         $request->validate($validationRules);
 
-        $tugas = TugasPraktikum::with('kelas')->findOrFail($tugasId);
+        $tugas = TugasPraktikum::with(['kelas', 'pertemuan.kelas'])->findOrFail($tugasId);
 
         // Ambil praktikan_id dari user yang sedang login
         $user = auth()->user();
-        $praktikanPraktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : null;
+        $kelas = $tugas->kelas ?? $tugas->pertemuan?->kelas;
+        $praktikanPraktikumId = $kelas?->praktikum_id;
         $praktikan = Praktikan::where('user_id', $user->id)
             ->whereHas('praktikanPraktikums', function ($query) use ($praktikanPraktikumId) {
                 $query->where('praktikum_id', $praktikanPraktikumId)
@@ -90,19 +83,14 @@ class PengumpulanTugasController extends Controller
         // Ambil PraktikanPraktikum record untuk FK baru
         $praktikanPraktikum = $praktikan->praktikanPraktikums()
             ->where('praktikum_id', $praktikanPraktikumId)
+            ->where('status', 'aktif')
+            ->whereIn('kelas_id', KelasScopeResolver::resolve($kelas?->id))
             ->first();
 
         if (!$praktikanPraktikum) {
             return response()->json([
                 'success' => false,
                 'message' => 'Data enrollment praktikum tidak ditemukan'
-            ], 403);
-        }
-
-        if (!$praktikan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak terdaftar di praktikum ini'
             ], 403);
         }
 
@@ -129,7 +117,7 @@ class PengumpulanTugasController extends Controller
         // Handle file upload jika ada
         if ($hasFiles) {
             foreach ($request->file('files') as $file) {
-                $filename = time() . '_' . $file->getClientOriginalName();
+                $filename = Str::uuid() . '_' . basename($file->getClientOriginalName());
                 $path = $file->storeAs('pengumpulan_tugas', $filename, 'private');
                 $submissionData[] = [
                     'type' => 'file',
@@ -219,6 +207,7 @@ class PengumpulanTugasController extends Controller
     public function downloadFile($id)
     {
         $pengumpulan = PengumpulanTugas::findOrFail($id);
+        $this->authorizeSubmissionDownload($pengumpulan);
 
         if (!$pengumpulan->file_pengumpulan) {
             abort(404, 'File tidak ditemukan');
@@ -258,6 +247,7 @@ class PengumpulanTugasController extends Controller
     {
         // Decode URL-encoded filename
         $filename = urldecode($filename);
+        abort_if($filename !== basename($filename) || str_contains($filename, '\\'), 404, 'File tidak ditemukan');
 
         // Find pengumpulan that contains this filename
         $pengumpulan = PengumpulanTugas::where('file_pengumpulan', 'like', '%' . $filename . '%')->first();
@@ -265,6 +255,7 @@ class PengumpulanTugasController extends Controller
         if (!$pengumpulan) {
             abort(404, 'File tidak ditemukan');
         }
+        $this->authorizeSubmissionDownload($pengumpulan);
 
         // Parse the JSON submission data
         $submissionData = json_decode($pengumpulan->file_pengumpulan, true);
@@ -276,7 +267,7 @@ class PengumpulanTugasController extends Controller
         // Find the matching file path
         $matchingPath = null;
         foreach ($submissionData as $item) {
-            if (isset($item['type']) && $item['type'] === 'file' && strpos($item['data'], $filename) !== false) {
+            if (isset($item['type']) && $item['type'] === 'file' && basename($item['data']) === $filename) {
                 $matchingPath = $item['data'];
                 break;
             }
@@ -290,6 +281,21 @@ class PengumpulanTugasController extends Controller
         $originalFilename = preg_replace('/^\d+_/', '', $filename);
 
         return Storage::disk('private')->download($matchingPath, $originalFilename);
+    }
+
+    private function authorizeSubmissionDownload(PengumpulanTugas $submission): void
+    {
+        $user = auth()->user();
+        abort_unless($user, 403);
+        if ((string) $submission->praktikanPraktikum?->praktikan?->user_id === (string) $user->id) return;
+        $period = \App\Services\KepengurusanAccess::forModel($submission);
+        $currentLab = $user->getCurrentLab();
+        if (!empty($currentLab['all_access'])) return;
+        $labId = $currentLab['laboratorium']->id ?? $user->access_lab_id;
+        $tugas = $submission->tugasPraktikum;
+        $praktikumId = $tugas?->kelas?->praktikum_id ?? $tugas?->pertemuan?->kelas?->praktikum_id;
+        abort_unless($period && $labId && (string) $period->laboratorium_id === (string) $labId
+            && $praktikumId && $user->canManagePraktikum($praktikumId), 403, 'Anda tidak memiliki akses ke pengumpulan ini.');
     }
 
     /**
@@ -389,14 +395,7 @@ class PengumpulanTugasController extends Controller
 
         // Tambahkan nilai tambahan untuk praktikan yang belum submit
         $nonSubmittedWithBonus = $nonSubmittedPraktikans->map(function ($praktikan) use ($tugasId, $kelasById) {
-            $pengumpulan = PengumpulanTugas::where('tugas_praktikum_id', $tugasId)
-                ->whereHas('praktikanPraktikum', function ($q) use ($praktikan) {
-                    $q->where('praktikan_id', $praktikan->id);
-                })
-                ->first();
-            $nilaiTambahans = $pengumpulan
-                ? NilaiTambahan::where('pengumpulan_tugas_id', $pengumpulan->id)->get()
-                : collect();
+            $nilaiTambahans = NilaiTambahan::forPraktikanTask($praktikan->id, $tugasId)->get();
 
             return (object) [
                 'id' => null, // tidak ada submission
@@ -415,14 +414,6 @@ class PengumpulanTugasController extends Controller
                 'total_nilai_with_bonus' => $nilaiTambahans->sum('nilai') // hanya bonus karena belum ada nilai dasar
             ];
         })->values(); // Pastikan ini adalah collection yang bisa di-filter
-
-        // Debug log untuk melihat data sebelum dikirim ke frontend
-        \Log::info('Data sent to frontend:', [
-            'submissions_count' => $submissions->count(),
-            'first_submission_praktikan_id' => $submissions->first()?->praktikan_id,
-            'nonSubmitted_count' => $nonSubmittedWithBonus->count(),
-            'first_nonSubmitted_praktikan_id' => $nonSubmittedWithBonus->first()?->praktikan_id
-        ]);
 
         return Inertia::render('TugasPraktikum/TugasSubmissions', [
             'tugas' => $tugas,
@@ -505,6 +496,7 @@ class PengumpulanTugasController extends Controller
     public function cancelSubmission($pengumpulanId)
     {
         $pengumpulan = PengumpulanTugas::findOrFail($pengumpulanId);
+        abort_unless((string) $pengumpulan->praktikanPraktikum?->praktikan?->user_id === (string) auth()->id(), 403);
 
         // Cek apakah sudah dinilai
         if ($pengumpulan->status === 'dinilai') {
@@ -516,17 +508,15 @@ class PengumpulanTugasController extends Controller
 
         // Hapus file lama jika ada
         if ($pengumpulan->file_pengumpulan) {
-            try {
-                $files = json_decode($pengumpulan->file_pengumpulan, true);
-                if (is_array($files)) {
-                    foreach ($files as $file) {
-                        Storage::delete($file);
+            $files = json_decode($pengumpulan->file_pengumpulan, true);
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    if (($file['type'] ?? null) === 'file' && isset($file['data'])) {
+                        Storage::disk('private')->delete($file['data']);
                     }
-                } else {
-                    Storage::delete($pengumpulan->file_pengumpulan);
                 }
-            } catch (Exception $e) {
-                // Ignore file deletion errors
+            } else {
+                Storage::disk('private')->delete($pengumpulan->file_pengumpulan);
             }
         }
 
@@ -581,16 +571,20 @@ class PengumpulanTugasController extends Controller
             'praktikan_id' => 'required|exists:praktikan,id',
             'tugas_id' => 'required|exists:tugas_praktikum,id',
             'nilai_rubrik' => 'required|array',
-            'nilai_rubrik.*.komponen_rubrik_id' => 'required|exists:komponen_rubrik,id',
+            'nilai_rubrik.*.komponen_rubrik_id' => ['required', \Illuminate\Validation\Rule::exists('komponen_rubrik', 'id')->where('tugas_praktikum_id', $request->input('tugas_id'))],
             'nilai_rubrik.*.nilai' => 'required|numeric|min:0',
             'nilai_rubrik.*.catatan' => 'nullable|string'
         ]);
 
         // Resolve praktikan_praktikum_id from praktikan_id + tugas's praktikum
         $tugas = TugasPraktikum::with('kelas')->findOrFail($request->tugas_id);
-        $praktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : null;
+        $this->validateRubricScores($tugas, $request->nilai_rubrik, 'nilai_rubrik');
+        $kelas = $tugas->kelas ?? $tugas->pertemuan?->kelas;
+        abort_unless($kelas, 422, 'Tugas belum terhubung dengan kelas.');
+        $praktikumId = $kelas->praktikum_id;
         $ppRecord = \App\Models\PraktikanPraktikum::where('praktikan_id', $request->praktikan_id)
             ->where('praktikum_id', $praktikumId)
+            ->whereIn('kelas_id', KelasScopeResolver::resolve($kelas->id))
             ->first();
 
         if (!$ppRecord) {
@@ -600,6 +594,7 @@ class PengumpulanTugasController extends Controller
         // Jika pengumpulan_tugas_id null, cari atau buat pengumpulan tugas baru
         if ($request->pengumpulan_tugas_id) {
             $pengumpulan = PengumpulanTugas::findOrFail($request->pengumpulan_tugas_id);
+            abort_unless($pengumpulan->tugas_praktikum_id === $tugas->id && $pengumpulan->praktikan_praktikum_id === $ppRecord->id, 403, 'Pengumpulan tidak sesuai tugas dan praktikan.');
         } else {
             // Cari pengumpulan tugas yang sudah ada atau buat yang baru
             $pengumpulan = PengumpulanTugas::firstOrCreate(
@@ -621,10 +616,9 @@ class PengumpulanTugasController extends Controller
             \App\Models\NilaiRubrik::updateOrCreate(
                 [
                     'komponen_rubrik_id' => $nilaiData['komponen_rubrik_id'],
-                    'praktikan_id' => $request->praktikan_id
+                    'pengumpulan_tugas_id' => $pengumpulan->id
                 ],
                 [
-                    'pengumpulan_tugas_id' => $pengumpulan->id,
                     'nilai' => $nilaiData['nilai'],
                     'catatan' => $nilaiData['catatan'] ?? null,
                     'dinilai_oleh' => auth()->id(),
@@ -673,17 +667,24 @@ class PengumpulanTugasController extends Controller
         return $totalBobot > 0 ? $totalNilai : 0;
     }
 
+    private function validateRubricScores(TugasPraktikum $tugas, array $scores, string $prefix): void
+    {
+        $components = $tugas->komponenRubriks->keyBy('id');
+        foreach ($scores as $index => $score) {
+            $component = $components->get($score['komponen_rubrik_id']);
+            if (!$component || (float) $component->nilai_maksimal <= 0 || (float) $score['nilai'] > (float) $component->nilai_maksimal) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    $prefix.'.'.$index.'.nilai' => 'Nilai harus sesuai batas maksimal komponen rubrik yang lebih besar dari nol.',
+                ]);
+            }
+        }
+    }
+
     /**
      * Store nilai matrix untuk multiple praktikan sekaligus
      */
     public function storeMatrixNilaiRubrik(Request $request)
     {
-        // Debug log untuk melihat data yang diterima
-        \Log::info('Matrix grade request data:', [
-            'tugas_id' => $request->tugas_id,
-            'matrix_data' => $request->matrix_data
-        ]);
-
         $request->validate([
             'tugas_id' => 'required|exists:tugas_praktikum,id',
             'matrix_data' => 'required|array',
@@ -691,15 +692,23 @@ class PengumpulanTugasController extends Controller
             'matrix_data.*.praktikan_praktikum_id' => 'nullable|string',
             'matrix_data.*.pengumpulan_tugas_id' => 'nullable|exists:pengumpulan_tugas,id',
             'matrix_data.*.nilai_rubrik' => 'required|array',
-            'matrix_data.*.nilai_rubrik.*.komponen_rubrik_id' => 'required|exists:komponen_rubrik,id',
+            'matrix_data.*.nilai_rubrik.*.komponen_rubrik_id' => ['required', \Illuminate\Validation\Rule::exists('komponen_rubrik', 'id')->where('tugas_praktikum_id', $request->input('tugas_id'))],
             'matrix_data.*.nilai_rubrik.*.nilai' => 'required|numeric|min:0',
             'matrix_data.*.nilai_rubrik.*.catatan' => 'nullable|string',
             'matrix_data.*.feedback' => 'nullable|string|max:1000'
         ]);
 
         $tugas = TugasPraktikum::with('kelas')->findOrFail($request->tugas_id);
-        $praktikumId = $tugas->kelas ? $tugas->kelas->praktikum_id : $tugas->praktikum_id;
-        $kelasIds = $tugas->kelas_id ? KelasScopeResolver::resolve($tugas->kelas_id) : [];
+        $kelas = $tugas->kelas ?? $tugas->pertemuan?->kelas;
+        abort_unless($kelas, 422, 'Tugas belum terhubung dengan kelas.');
+        $praktikumId = $kelas->praktikum_id;
+        $kelasIds = KelasScopeResolver::resolve($kelas->id);
+        foreach ($request->matrix_data as $index => $row) {
+            $this->validateRubricScores($tugas, $row['nilai_rubrik'], 'matrix_data.'.$index.'.nilai_rubrik');
+            if (!empty($row['pengumpulan_tugas_id'])) {
+                abort_unless(PengumpulanTugas::whereKey($row['pengumpulan_tugas_id'])->where('tugas_praktikum_id', $tugas->id)->exists(), 403, 'Pengumpulan tidak sesuai tugas.');
+            }
+        }
         $results = [];
 
         foreach ($request->matrix_data as $praktikanData) {
@@ -757,6 +766,7 @@ class PengumpulanTugasController extends Controller
                                 ->orWhere('id', $incomingId);
                         })
                         ->where('praktikum_id', $praktikumId)
+                        ->whereIn('kelas_id', $kelasIds)
                         ->first();
                 }
 

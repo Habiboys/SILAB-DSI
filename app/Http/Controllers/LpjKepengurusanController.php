@@ -116,7 +116,7 @@ class LpjKepengurusanController extends Controller
         $type        = $request->query('type', 'rangkuman');
         $personalia  = $this->buildPersonalia($kepengurusanLab);
         $lpjDto      = $this->makeLpjDto($kepengurusanLab);
-        $baseFilename = 'lpj-' . Str::slug($kepengurusanLab->laboratorium?->nama ?? 'lab') . '-' . ($kepengurusanLab->tahunKepengurusan?->tahun ?? '');
+        $baseFilename = 'lpj-' . Str::slug($kepengurusanLab->laboratorium?->nama ?? 'lab') . '-' . Str::slug($kepengurusanLab->tahunKepengurusan?->tahun ?? '');
 
         if ($type === 'lengkap') {
             $detail = $this->buildDetailLengkap($kepengurusanLab);

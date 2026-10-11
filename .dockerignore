@@ -13,6 +13,11 @@ bootstrap/cache/*.php
 *.sql
 *.md
 .phpunit.result.cache
+.audit
+playwright-report
+test-results
+playwright.audit.config.js
+phpunit.audit.xml
 phpunit.xml
 tests
 docker/nginx/conf.d

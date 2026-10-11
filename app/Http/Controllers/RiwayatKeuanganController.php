@@ -562,8 +562,7 @@ class RiwayatKeuanganController extends Controller
         $totalPengeluaran = $pengeluaran->sum('nominal');
         $saldo = $totalPemasukan - $totalPengeluaran;
 
-        $filename = 'laporan_keuangan_' . $kepengurusanLab->laboratorium->nama . '_' . $kepengurusanLab->tahunKepengurusan->nama . '.pdf';
-        $filename = str_replace(' ', '_', $filename);
+        $filename = 'laporan_keuangan_' . \Illuminate\Support\Str::slug($kepengurusanLab->laboratorium->nama, '_') . '_' . \Illuminate\Support\Str::slug($kepengurusanLab->tahunKepengurusan->tahun, '_') . '.pdf';
 
         $pdf = PDF::loadView('pdf.laporan-keuangan', [
             'laboratorium' => $kepengurusanLab->laboratorium,

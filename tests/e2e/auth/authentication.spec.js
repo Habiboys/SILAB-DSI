@@ -5,11 +5,12 @@ test.describe('TC-AUTH-01: Login valid admin', () => {
   test('admin login redirects to /dashboard', async ({ page }) => {
     await page.goto('/login');
     await expect(page.locator('input#email')).toBeVisible();
-    await page.fill('input#email', 'superadmin1@admin.com');
-    await page.fill('input#password', 'adminlsd123');
-    await page.click('button[type="submit"]');
-    await page.waitForURL('**/dashboard', { timeout: 15_000 });
-    await expect(page).toHaveURL(/dashboard/);
+    await page.fill('input#email', process.env.E2E_ADMIN_EMAIL || 'admin.lsd@silab.com');
+    await page.fill('input#password', process.env.E2E_ADMIN_PASSWORD || 'adminlsd123');
+    await page.click('button[type="submit"]:not(.modal-backdrop button)');
+    await page.waitForURL(url => url.pathname === '/dashboard', { timeout: 15_000, waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(url => url.pathname === '/dashboard');
+    await expect(page.locator('main')).toBeVisible();
   });
 });
 
@@ -21,7 +22,7 @@ test.describe('TC-AUTH-01b: Login valid praktikan', () => {
     await page.goto('/login');
     await page.fill('input#email', email);
     await page.fill('input#password', password);
-    await page.click('button[type="submit"]');
+    await page.click('button[type="submit"]:not(.modal-backdrop button)');
     await page.waitForURL('**/praktikan/daftar-tugas', { timeout: 15_000 });
     await expect(page).toHaveURL(/daftar-tugas/);
   });
@@ -30,16 +31,19 @@ test.describe('TC-AUTH-01b: Login valid praktikan', () => {
 test.describe('TC-AUTH-02: Login gagal', () => {
   test('password salah menampilkan pesan error', async ({ page }) => {
     await page.goto('/login');
-    await page.fill('input#email', 'superadmin1@admin.com');
+    await page.fill('input#email', process.env.E2E_ADMIN_EMAIL || 'admin.lsd@silab.com');
     await page.fill('input#password', 'passwordsalah');
-    await page.click('button[type="submit"]');
+    await Promise.all([
+      page.waitForResponse(response => new URL(response.url()).pathname === '/login' && response.request().method() === 'POST'),
+      page.click('button[type="submit"]:not(.modal-backdrop button)'),
+    ]);
     await page.waitForURL('**/login', { timeout: 10_000 });
     await expect(page.locator('body')).toContainText(/These credentials|salah|invalid/i);
   });
 
   test('field kosong menampilkan validasi', async ({ page }) => {
     await page.goto('/login');
-    await page.click('button[type="submit"]');
+    await page.click('button[type="submit"]:not(.modal-backdrop button)');
 
     await expect(page.locator('input#email')).toBeVisible();
 
@@ -60,4 +64,3 @@ test.describe('TC-AUTH-03: Akses tanpa autentikasi', () => {
     await expect(page).toHaveURL(/login/);
   });
 });
-

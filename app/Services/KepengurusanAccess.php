@@ -76,6 +76,9 @@ class KepengurusanAccess
         if ($model instanceof \App\Models\TugasPraktikum) {
             return self::forModel($model->kelas ?? $model->pertemuan, $depth + 1);
         }
+        if ($model instanceof \App\Models\NilaiTambahan) {
+            return self::forModel($model->pengumpulanTugas ?? $model->tugasPraktikum, $depth + 1);
+        }
         $parent = self::PARENTS[class_basename($model)] ?? null;
         return $parent ? self::forModel($model->{$parent}, $depth + 1) : null;
     }
@@ -90,7 +93,6 @@ class KepengurusanAccess
         $references = [
             ['KepengurusanUser', 'user_id'], ['AslabPraktikum', 'user_id'],
             ['KegiatanPeserta', 'user_id'], ['ProkerPj', 'user_id'],
-            ['GantiJadwalPiket', 'user_id'],
             ['FaceEnrollment', 'user_id'], ['Sertifikat', 'user_id'],
             ['TagihanKas', 'user_id'], ['DendaPiket', 'user_id'],
             ['PemasukanKeuangan', 'user_id'], ['PengeluaranKeuangan', 'user_id'],
@@ -103,6 +105,10 @@ class KepengurusanAccess
                 $period = self::lockedOwner($resource);
                 abort_if($period && !$period->is_active, 403, 'Akun terhubung dengan riwayat kepengurusan arsip dan tidak dapat dihapus.');
             }
+        }
+        foreach (\App\Models\GantiJadwalPiket::whereHas('kepengurusanUser', fn ($query) => $query->where('user_id', $user->id))->cursor() as $resource) {
+            $period = self::lockedOwner($resource);
+            abort_if($period && !$period->is_active, 403, 'Akun terhubung dengan riwayat perubahan piket arsip dan tidak dapat dihapus.');
         }
         foreach (\App\Models\AbsensiAslab::whereHas('aslabPraktikum', fn ($query) => $query->where('user_id', $user->id))->cursor() as $resource) {
             $period = self::lockedOwner($resource);
@@ -145,6 +151,7 @@ class KepengurusanAccess
             for ($depth = 0; $current && $depth < 8; $depth++) {
                 $parent = self::PARENTS[class_basename($current)] ?? null;
                 if ($current instanceof \App\Models\TugasPraktikum) $parent = $current->kelas_id ? 'kelas' : 'pertemuan';
+                if ($current instanceof \App\Models\NilaiTambahan) $parent = $current->pengumpulan_tugas_id ? 'pengumpulanTugas' : 'tugasPraktikum';
                 if (!$parent) break;
                 $current = $current->{$parent};
                 if ($current && isset($parents[$name = class_basename($current)])) {
