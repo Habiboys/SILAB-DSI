@@ -12,7 +12,7 @@ class AboutController extends Controller
         $appInfo = [
             'name' => 'SILAB-DSI',
             'full_name' => 'Sistem Informasi Laboratorium Departemen Sistem Informasi',
-            'version' => '2.0.0',
+            'version' => 'v2',
             'description' => 'SILAB-DSI adalah platform operasional laboratorium akademik yang mengintegrasikan proses inti dalam satu sistem: inventaris, keuangan, praktikum, absensi, modul, tugas dan penilaian, piket, kegiatan/proker, surat menyurat, kepengurusan, sertifikat, dan kuesioner.',
             'development_story' => 'Pengembangan SILAB-DSI dimulai pada awal tahun 2025 sebagai kelanjutan dari tugas besar mata kuliah Project Based Framework (PBF), lalu dikembangkan bertahap menjadi sistem terintegrasi lintas modul hingga versi 2.0.',
             'features' => [
@@ -39,7 +39,7 @@ class AboutController extends Controller
                 'type' => 'utama',
                 'photo' => '/images/nouval.jpeg',
                 'email' => '2211521020_muhammad@student.unand.ac.id',
-                'quote' => 'Fokus kami adalah membuat SILAB-DSI stabil, terukur, dan benar-benar membantu operasional laboratorium.',
+                'quote' => 'Fokus kami adalah membuat S',
                 'social_media' => [
                     'instagram' => 'https://www.instagram.com/nuval18_/',
                     'linkedin' => 'https://www.linkedin.com/in/nouvalhabibie',
@@ -74,37 +74,10 @@ class AboutController extends Controller
             ]
         ];
 
-        $serverProviders = [
-            [
-                'name' => 'Nabil Rizki Navisa',
-                'role' => 'Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi',
-                'photo' => '/images/nabil.jpeg',
-                'email' => '2211522018_nabil@student.unand.ac.id',
-                'quote' => 'Makin sedikit yang kau tau makin baik',
-                'social_media' => [
-                    'instagram' => 'https://instagram.com/nabilrizkinavisa',
-                    'linkedin' => 'https://www.linkedin.com/in/nabilrizkinavisa2004',
-                    'github' => 'https://github.com/nabilrn'
-                ]
-            ],
-            [
-                'name' => 'Khalied Nauly Maturino',
-                'role' => 'Laboratorium Tata Kelola & Infrastruktur Teknologi Informasi',
-                'photo' => '/images/khalied.jpeg',
-                'email' => '2211523030_khalied@student.unand.ac.id',
-                'quote' => 'The less you speak, the louder your presence.',
-                'social_media' => [
-                    'instagram' => 'https://www.instagram.com/khaliedmtrn?igsh=enZ0NGNzb2F5eDE4',
-                    'linkedin' => 'https://www.linkedin.com/in/khaliedmtrn/',
-                    'github' => 'https://github.com/paybackretr0'
-                ]
-            ]
-        ];
 
         return Inertia::render('About', [
             'appInfo' => $appInfo,
-            'developers' => $developers,
-            'serverProviders' => $serverProviders
+            'developers' => $developers
         ]);
     }
 }

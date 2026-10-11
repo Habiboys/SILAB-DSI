@@ -11,7 +11,9 @@ const cleanLabel = (label) => String(label)
 
 export function pageNumbers(currentPage, totalPages) {
   const pages = new Set([1, totalPages]);
-  for (let page = Math.max(1, currentPage - 2); page <= Math.min(totalPages, currentPage + 2); page++) pages.add(page);
+  const start = Math.max(1, Math.min(currentPage - 1, totalPages - 2));
+  const end = Math.min(totalPages, Math.max(currentPage + 1, 3));
+  for (let page = start; page <= end; page++) pages.add(page);
   const sorted = [...pages].sort((a, b) => a - b);
   return sorted.flatMap((page, index) => {
     if (!index) return [page];
@@ -38,11 +40,18 @@ export function NumberPagination({ currentPage, totalPages, onPageChange, disabl
 
 export default function Pagination({ links, className = 'mt-5' }) {
   if (!links || links.length <= 3) return null;
+  const numbered = links.filter((link) => /^\d+$/.test(String(link.label)));
+  const current = Number(numbered.find((link) => link.active)?.label ?? 1);
+  const total = Math.max(...numbered.map((link) => Number(link.label)));
+  const compactLinks = [links[0], ...pageNumbers(current, total).map((page) =>
+    typeof page === 'number' ? numbered.find((link) => Number(link.label) === page) : { label: '...', url: null }
+  ).filter(Boolean), links[links.length - 1]];
   return (
     <nav className={`${className} flex flex-wrap items-center justify-center gap-1`} aria-label="Navigasi halaman">
-      {links.map((link, index) => {
+      {compactLinks.map((link, index) => {
         const label = cleanLabel(link.label);
-        const isArrow = index === 0 || index === links.length - 1;
+        const isArrow = index === 0 || index === compactLinks.length - 1;
+        if (label === '...') return <span key={`gap-${index}`} className="flex min-h-11 min-w-8 items-center justify-center text-base-content/60" aria-hidden="true">…</span>;
         const content = isArrow ? index === 0 ? <ChevronLeft className="h-4 w-4" aria-hidden="true" /> : <ChevronRight className="h-4 w-4" aria-hidden="true" /> : label;
         const ariaLabel = isArrow ? index === 0 ? 'Halaman sebelumnya' : 'Halaman berikutnya' : label === '...' ? 'Halaman lain' : `Halaman ${label}`;
         return link.url ? (

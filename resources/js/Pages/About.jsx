@@ -28,13 +28,12 @@ const PersonAvatar = ({ person }) => {
     );
 };
 
-const About = ({ appInfo, developers, serverProviders }) => {
+const About = ({ appInfo, developers }) => {
     const mainDeveloper = developers.find((developer) => developer.type === 'utama') || developers[0];
     const supportingDevelopers = developers.filter((developer) => developer !== mainDeveloper);
     const collaboratorSlides = useMemo(() => [
         ...supportingDevelopers.map((item) => ({ ...item, category: 'Tim Pendukung' })),
-        ...(serverProviders || []).map((item) => ({ ...item, category: 'Penyedia Server' })),
-    ], [supportingDevelopers, serverProviders]);
+    ], [supportingDevelopers]);
     const cardsPerView = 3;
     const totalPages = Math.max(1, Math.ceil(collaboratorSlides.length / cardsPerView));
     const [slideIndex, setSlideIndex] = useState(0);
@@ -51,7 +50,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <p className="text-sm text-base-content/60">Versi</p>
-                            <p className="font-semibold text-base-content">{appInfo.version} (Major Release 2.0)</p>
+                            <p className="font-semibold text-base-content">{appInfo.version} (Pembaruan besar)</p>
                         </div>
                         <div>
                             <p className="text-sm text-base-content/60">Status</p>
@@ -90,7 +89,7 @@ const About = ({ appInfo, developers, serverProviders }) => {
                     )}
 
                     <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <h3 className="font-semibold text-base-content">Tim Pendukung dan Penyedia Server</h3>
+                        <h3 className="font-semibold text-base-content">Tim Pendukung</h3>
                         {collaboratorSlides.length > cardsPerView && (
                             <div className="flex gap-2" aria-label={`Halaman ${slideIndex + 1} dari ${totalPages}`}>
                                 <Button variant="ghost" size="sm" onClick={() => moveSlide(-1)} aria-label="Halaman sebelumnya"><ChevronLeft className="h-4 w-4" /></Button>
