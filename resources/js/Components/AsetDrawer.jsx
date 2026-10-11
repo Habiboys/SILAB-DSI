@@ -37,6 +37,7 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
     const [riwayatLoading, setRiwayatLoading] = useState(false);
     const [riwayatPeminjaman, setRiwayatPeminjaman] = useState([]);
     const [riwayatPeminjamanLoading, setRiwayatPeminjamanLoading] = useState(false);
+    const [riwayatPeminjamanError, setRiwayatPeminjamanError] = useState(null);
     const [expandedPeminjamanId, setExpandedPeminjamanId] = useState(null);
     const [isDeleteConfirm, setIsDeleteConfirm] = useState(false);
     const closeTimerRef = useRef(null);
@@ -70,10 +71,17 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
     const loadRiwayatPeminjaman = () => {
         if (!item) return;
         setRiwayatPeminjamanLoading(true);
+        setRiwayatPeminjamanError(null);
         fetch(route("detail-inventaris.riwayat-peminjaman", item.id))
-            .then((r) => r.json())
+            .then((r) => {
+                if (!r.ok) throw new Error("Gagal memuat riwayat peminjaman. Silakan coba lagi.");
+                return r.json();
+            })
             .then((d) => setRiwayatPeminjaman(Array.isArray(d) ? d : []))
-            .catch(() => setRiwayatPeminjaman([]))
+            .catch(() => {
+                setRiwayatPeminjaman([]);
+                setRiwayatPeminjamanError("Gagal memuat riwayat peminjaman. Silakan coba lagi.");
+            })
             .finally(() => setRiwayatPeminjamanLoading(false));
     };
 
@@ -497,6 +505,11 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                                 <div className="silab-table-skeleton w-3/4" />
                                 <div className="silab-table-skeleton w-1/2" />
                                 <div className="silab-table-skeleton w-2/3" />
+                            </div>
+                        ) : riwayatPeminjamanError ? (
+                            <div role="alert" className="space-y-2 py-4 text-sm text-error">
+                                <p>{riwayatPeminjamanError}</p>
+                                <Button variant="outline" onClick={loadRiwayatPeminjaman}>Coba lagi</Button>
                             </div>
                         ) : riwayatPeminjaman.length === 0 ? (
                             <p className="py-6 text-center text-sm text-base-content/60">Belum ada riwayat peminjaman.</p>

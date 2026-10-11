@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Laboratorium;
 use App\Models\Sertifikat;
 use App\Models\Praktikum;
+use App\Services\KepengurusanAccess;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -49,6 +50,23 @@ class SertifikatController extends Controller
             }
         }
 
+        $selectedPeriod = KepengurusanAccess::selected($request);
+        $selectedLabId = $selectedPeriod?->laboratorium_id ?? $request->input('lab_id');
+        if ($selectedPeriod) {
+            $query->where(function ($scope) use ($selectedPeriod) {
+                $scope->where('kepengurusan_lab_id', $selectedPeriod->id)
+                    ->orWhere(function ($fallback) use ($selectedPeriod) {
+                        $fallback->whereNull('kepengurusan_lab_id')
+                            ->whereHas('praktikum', fn ($praktikum) => $praktikum->where('kepengurusan_lab_id', $selectedPeriod->id));
+                    });
+            });
+        } elseif ($selectedLabId) {
+            $query->where(function ($scope) use ($selectedLabId) {
+                $scope->whereHas('kepengurusanLab', fn ($period) => $period->where('laboratorium_id', $selectedLabId))
+                    ->orWhereHas('praktikum.kepengurusanLab', fn ($period) => $period->where('laboratorium_id', $selectedLabId));
+            });
+        }
+
         $visible = clone $query;
 
         // Filter search by user name/email
@@ -90,7 +108,9 @@ class SertifikatController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $laboratories = Laboratorium::whereHas('kepengurusanLab', fn ($period) => $period->whereIn('id', (clone $visible)->pluck('kepengurusan_lab_id')))->orderBy('nama')->get(['id', 'nama']);
+        $visiblePeriodIds = (clone $visible)->pluck('kepengurusan_lab_id')->filter()
+            ->merge(Praktikum::whereIn('id', (clone $visible)->pluck('praktikum_id'))->pluck('kepengurusan_lab_id'))->unique();
+        $laboratories = Laboratorium::whereHas('kepengurusanLab', fn ($period) => $period->whereIn('id', $visiblePeriodIds))->orderBy('nama')->get(['id', 'nama']);
         $praktikums = Praktikum::whereIn('id', (clone $visible)->pluck('praktikum_id'))->orderBy('mata_kuliah')->get(['id', 'mata_kuliah']);
 
         return Inertia::render('Sertifikat/Index', [

@@ -13,6 +13,33 @@ class CertificateScopeTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_navbar_period_scopes_global_access_and_filter_options(): void
+    {
+        $this->withoutVite();
+        $staff = User::factory()->create();
+        $staff->assignRole(Role::findOrCreate('superadmin', 'web'));
+        $year = TahunKepengurusan::create(['tahun' => '2026/2027', 'mulai' => '2026-01-01', 'selesai' => '2027-12-31', 'isactive' => true]);
+        $periods = collect();
+        foreach (['A', 'B'] as $name) {
+            $lab = Laboratorium::create(['nama' => 'Navbar '.$name, 'is_active' => true]);
+            $period = KepengurusanLab::create(['laboratorium_id' => $lab->id, 'tahun_kepengurusan_id' => $year->id, 'is_active' => true]);
+            $periods->push($period);
+            Sertifikat::create(['user_id' => $staff->id, 'kepengurusan_lab_id' => $period->id,
+                'nomor_sertifikat' => 'NAV-'.$name, 'jenis_sertifikat' => 'kepengurusan',
+                'tanggal_terbit' => '2026-10-11', 'file_path' => 'sertifikat/'.$name.'.docx']);
+        }
+        foreach ($periods as $index => $period) {
+            $this->actingAs($staff)->get(route('sertifikat.all', ['lab_id' => $period->laboratorium_id,
+                'kepengurusan_lab_id' => $period->id, 'search' => $staff->name]))
+                ->assertOk()->assertInertia(fn (Assert $page) => $page
+                    ->has('sertifikats.data', 1)
+                    ->where('sertifikats.data.0.kepengurusan_lab_id', $period->id)
+                    ->has('laboratories', 1)->where('laboratories.0.id', $period->laboratorium_id));
+        }
+        $this->get(route('sertifikat.all'))->assertOk()->assertInertia(fn (Assert $page) => $page
+            ->has('sertifikats.data', 1)->where('sertifikats.data.0.kepengurusan_lab_id', $periods[1]->id));
+    }
+
     public function test_generated_certificate_is_private_and_downloadable_by_its_owner(): void
     {
         Storage::fake('public');

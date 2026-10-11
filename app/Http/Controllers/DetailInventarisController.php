@@ -283,7 +283,6 @@ class DetailInventarisController extends Controller
         $detailAset = DetailAset::findOrFail($id);
 
         $items = \App\Models\PeminjamanAsetItem::with([
-                'peminjaman.peminjam:id,name',
                 'peminjaman.diprosesoleh:id,name',
             ])
             ->where('aset_id', $detailAset->id)
@@ -293,7 +292,7 @@ class DetailInventarisController extends Controller
         // Gabungkan record legacy agar riwayat aset tetap lengkap.
         $legacyItems = collect();
         if (\Illuminate\Support\Facades\Schema::hasColumn('peminjaman_aset', 'aset_id')) {
-            $legacyItems = \App\Models\PeminjamanAset::with(['peminjam:id,name', 'diprosesoleh:id,name'])
+            $legacyItems = \App\Models\PeminjamanAset::with(['diprosesoleh:id,name'])
                 ->where('aset_id', $detailAset->id)
                 ->get()
                 ->map(fn ($p) => (object) [
@@ -338,7 +337,6 @@ class DetailInventarisController extends Controller
                         ? Storage::url($p->surat_peminjaman_path)
                         : null,
                     'catatan'                  => $p->catatan,
-                    'peminjam'                 => $p->peminjam,
                     'diprosesoleh'             => $p->diprosesoleh,
                     'created_at'               => $item->created_at,
                     'updated_at'               => $item->updated_at,

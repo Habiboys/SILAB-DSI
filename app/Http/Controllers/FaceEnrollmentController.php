@@ -131,6 +131,12 @@ class FaceEnrollmentController extends Controller
         abort_unless($request->user()->hasRole(['admin', 'superadmin']), 403);
         $this->expirePending();
         $query = FaceEnrollment::with(['user:id,name,email', 'kepengurusanLab'])->where('status', 'pending');
+        $selectedPeriod = \App\Services\KepengurusanAccess::selected($request);
+        if ($selectedPeriod) {
+            $query->where('kepengurusan_lab_id', $selectedPeriod->id);
+        } elseif ($labId = $request->input('lab_id')) {
+            $query->whereHas('kepengurusanLab', fn ($period) => $period->where('laboratorium_id', $labId));
+        }
         if (!$request->user()->hasRole('superadmin')) {
             $labId = $request->user()->getCurrentLab()['laboratorium']->id ?? null;
             abort_unless($labId && $request->user()->hasPermissionInLab('absensi.verify', $labId), 403);

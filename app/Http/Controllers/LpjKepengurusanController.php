@@ -169,7 +169,7 @@ class LpjKepengurusanController extends Controller
         $currentLab = $user->getCurrentLab();
 
         $kepengurusanLabId = $request->input('kepengurusan_lab_id');
-        if (! isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
+        if (! $kepengurusanLabId && ! isset($currentLab['all_access']) && isset($currentLab['kepengurusan_lab_id'])) {
             $kepengurusanLabId = $currentLab['kepengurusan_lab_id'];
         }
 

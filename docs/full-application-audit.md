@@ -27,6 +27,14 @@ Inventaris terdapat dalam `full-application-audit-map.json`: 345 route sebelum p
 
 ## Pengujian sementara
 
+### Pemeriksaan konteks navbar lanjutan
+
+- Kuesioner dikonfirmasi pengguna sebagai fitur global untuk semua lab; tidak ditambahkan filter lab.
+- Review wajah: daftar pending untuk superadmin sebelumnya tidak memakai konteks navbar. Sekarang dibatasi oleh kepengurusan yang dipilih, atau lab apabila tidak ada periode terpilih; pembatasan izin admin lab tetap berlaku.
+- LPJ: resolver sebelumnya menimpa pilihan periode arsip dengan periode aktif milik anggota. Pilihan eksplisit kini dipertahankan dan tetap diperiksa terhadap hak akses lab.
+- Regresi terarah review wajah, LPJ, laporan dan akses wajah lulus: **9 tes / 98 assertion** (`.audit/navbar-related-regression.log`). Pengujian memakai database audit terpisah.
+- Pemeriksaan sumber terarah juga mencakup index dashboard, proker, praktikum, kegiatan, surat masuk/keluar, keuangan, inventaris dan permohonan aset. Pemeriksaan ini belum merupakan pengujian seluruh kombinasi role, session dan parameter pada semua halaman. Graph MCP tidak tersedia pada sesi ini; sumber dibaca langsung.
+
 ### Audit lanjutan kas, denda, disposisi dan sertifikat
 
 - Aturan denda dikonfirmasi pengguna: **per hari ketidakhadiran**. Jadwal Senin dan Kamis yang keduanya terlewat berarti dua kali nominal denda. Perhitungan sekarang menghitung tanggal jadwal yang sudah lewat (sampai kemarin), dalam rentang periode dan masa keberadaan jadwal; tanggal mendatang tidak ditagih. Absensi selesai berstatus approved dihitung hadir, sesuai syarat verifikasi sebelumnya. Jadwal soft-delete tetap berkontribusi pada riwayat sebelum dihapus. Rekap dan sinkronisasi memakai kalkulator yang sama.
