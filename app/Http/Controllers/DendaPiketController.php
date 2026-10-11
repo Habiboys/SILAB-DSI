@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Absensi;
 use App\Models\DendaPiket;
 use App\Models\JadwalPiket;
 use App\Models\PemasukanKeuangan;
@@ -11,11 +10,14 @@ use App\Models\PeriodePiket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class DendaPiketController extends Controller
 {
     public function sync($periodePiketId)
     {
+        Gate::authorize('create', PemasukanKeuangan::class);
         $periode = PeriodePiket::findOrFail($periodePiketId);
         $pengaturan = PengaturanPiket::where('kepengurusan_lab_id', $periode->kepengurusan_lab_id)->first();
         $nominalDenda = ($pengaturan && $pengaturan->ada_denda) ? $pengaturan->nominal_denda : 0;
@@ -29,18 +31,9 @@ class DendaPiketController extends Controller
             ->values();
 
         foreach ($userIds as $userId) {
-            $jadwalIds = JadwalPiket::where('kepengurusan_lab_id', $periode->kepengurusan_lab_id)
-                ->whereHas('kepengurusanUser', fn($q) => $q->where('user_id', $userId))
-                ->pluck('id');
-
-            $totalJadwal = $jadwalIds->count();
-            $hadir = Absensi::whereIn('jadwal_piket_id', $jadwalIds)
-                ->whereBetween('tanggal', [$periode->tanggal_mulai, $periode->tanggal_selesai])
-                ->whereNotNull('jam_keluar')
-                ->where('verification_status', 'approved')
-                ->count();
-            $tidakHadir = max(0, $totalJadwal - $hadir);
-            $totalDenda = $tidakHadir * $nominalDenda;
+            if (!$userId) continue;
+            $summary = \App\Services\PiketAttendanceSummary::forUser($periode, $userId);
+            $totalDenda = $summary['tidak_hadir'] * $nominalDenda;
 
             $existing = DendaPiket::where('user_id', $userId)
                 ->where('periode_piket_id', $periode->id)
@@ -52,7 +45,7 @@ class DendaPiketController extends Controller
                     'kepengurusan_lab_id' => $periode->kepengurusan_lab_id,
                     'total_denda' => $totalDenda,
                     'sudah_dibayar' => $existing ? $existing->sudah_dibayar : 0,
-                    'status' => ($existing && $existing->sudah_dibayar >= $totalDenda) ? 'lunas' : 'belum_lunas',
+                    'status' => ($existing?->sudah_dibayar ?? 0) >= $totalDenda ? 'lunas' : 'belum_lunas',
                 ]
             );
         }
@@ -62,6 +55,7 @@ class DendaPiketController extends Controller
 
     public function bayar(Request $request)
     {
+        Gate::authorize('create', PemasukanKeuangan::class);
         $validated = $request->validate([
             'denda_piket_id' => 'required|exists:denda_piket,id',
             'nominal' => 'required|numeric|min:1',
@@ -78,11 +72,15 @@ class DendaPiketController extends Controller
         }
 
         $buktiPath = null;
-        if ($request->hasFile('bukti')) {
-            $buktiPath = $request->file('bukti')->store('bukti-denda-piket', 'public');
-        }
 
-        DB::transaction(function () use ($validated, $dendaPiket, $buktiPath) {
+        DB::transaction(function () use ($request, $validated, $dendaPiket, &$buktiPath) {
+            $dendaPiket = DendaPiket::whereKey($dendaPiket->id)->lockForUpdate()->firstOrFail();
+            if ($validated['nominal'] > $dendaPiket->total_denda - $dendaPiket->sudah_dibayar) {
+                throw ValidationException::withMessages(['nominal' => 'Nominal melebihi sisa denda.']);
+            }
+            if ($request->hasFile('bukti')) {
+                $buktiPath = $request->file('bukti')->store('bukti-denda-piket', 'public');
+            }
             PemasukanKeuangan::create([
                 'tanggal' => $validated['tanggal'],
                 'nominal' => $validated['nominal'],

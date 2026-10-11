@@ -6,6 +6,8 @@ use App\Models\DisposisiSurat;
 use App\Models\SuratMasuk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\KepengurusanUser;
+use Illuminate\Validation\ValidationException;
 
 class DisposisiSuratController extends Controller
 {
@@ -23,6 +25,10 @@ class DisposisiSuratController extends Controller
             'kepada_user_id' => ['required', 'uuid', 'exists:users,id'],
             'catatan'        => ['nullable', 'string', 'max:1000'],
         ]);
+        if (!KepengurusanUser::where('kepengurusan_lab_id', $surat->kepengurusan_lab_id)
+            ->where('user_id', $validated['kepada_user_id'])->where('is_active', true)->exists()) {
+            throw ValidationException::withMessages(['kepada_user_id' => 'Penerima harus anggota aktif kepengurusan surat.']);
+        }
 
         DisposisiSurat::create([
             'surat_masuk_id' => $surat->id,

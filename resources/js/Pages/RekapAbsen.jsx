@@ -1,4 +1,5 @@
 import Button from '@/Components/Button';
+import FineSyncButton from './RekapAbsen/Partials/FineSyncButton';
 import { useLab } from "@/Components/LabContext";
 import { usePermission } from "@/Components/PermissionContext";
 import Modal from "@/Components/Modal";
@@ -20,6 +21,7 @@ const RekapAbsen = ({
     currentLabId,
     flash,
     pengaturanPiket,
+    canSyncDenda = false,
 }) => {
     
     const { auth } = usePage().props;
@@ -197,6 +199,9 @@ const RekapAbsen = ({
                         </h2>
 
                         <div className="flex flex-wrap items-center gap-4 w-full lg:w-auto">
+                            {canSyncDenda && periode && (
+                                <FineSyncButton periodId={periode.id} />
+                            )}
                             
 
                             
@@ -611,7 +616,7 @@ const RekapAbsen = ({
                                                                 )}
                                                             </td>
                                                             <td className="px-3 sm:px-6 py-3 whitespace-nowrap text-sm">
-                                                                {item.denda_piket &&
+                                                                {canSyncDenda && item.denda_piket &&
                                                                     item.denda_piket.status === "belum_lunas" &&
                                                                     item.denda_piket.sisa > 0 && (
                                                                         <Button type="button"

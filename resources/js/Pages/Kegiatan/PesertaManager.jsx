@@ -169,9 +169,9 @@ export default function PesertaManager({
                 sortable: false,
                 searchable: false,
                 render: (p) =>
-                    p.file_sertifikat ? (
+                    p.certificate_download_url ? (
                         <a
-                            href={`/storage/${p.file_sertifikat}`}
+                            href={p.certificate_download_url}
                             target="_blank"
                             rel="noreferrer"
                             className="link link-primary text-xs"

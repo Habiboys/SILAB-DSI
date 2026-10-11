@@ -16,6 +16,9 @@ use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
+use App\Services\PaymentBalance;
 
 class RiwayatKeuanganController extends Controller
 {
@@ -191,6 +194,7 @@ class RiwayatKeuanganController extends Controller
 
     public function store(Request $request)
     {
+        Gate::authorize('create', PemasukanKeuangan::class);
 
         \Illuminate\Support\Facades\Log::info('Store request data:', $request->all());
 
@@ -308,6 +312,7 @@ class RiwayatKeuanganController extends Controller
     {
 
         $riwayatKeuangan = PemasukanKeuangan::find($id) ?? PengeluaranKeuangan::findOrFail($id);
+        Gate::authorize('update', $riwayatKeuangan);
 
         $validatedData = $request->validate([
             'tanggal' => 'required|date',
@@ -318,7 +323,6 @@ class RiwayatKeuanganController extends Controller
 
         ]);
 
-        \Illuminate\Support\Facades\Log::info('Validated Data:', $validatedData);
 
         if ($request->filled('bukti')) {
 
@@ -367,9 +371,12 @@ class RiwayatKeuanganController extends Controller
             unset($validatedData['bukti']);
         }
 
-        $result = $riwayatKeuangan->update($validatedData);
-
-        \Illuminate\Support\Facades\Log::info('Update result:', ['success' => $result]);
+        DB::transaction(function () use ($riwayatKeuangan, $validatedData) {
+            $bill = PaymentBalance::lockFor($riwayatKeuangan);
+            $increasing = (float) $validatedData['nominal'] > (float) $riwayatKeuangan->getRawOriginal('nominal');
+            $riwayatKeuangan->update($validatedData);
+            PaymentBalance::refresh($bill, $increasing);
+        });
 
         return back()->with('message', 'Riwayat keuangan berhasil diperbarui');
     }
@@ -377,7 +384,12 @@ class RiwayatKeuanganController extends Controller
     public function destroy(string $id)
     {
         $riwayatKeuangan = PemasukanKeuangan::find($id) ?? PengeluaranKeuangan::findOrFail($id);
-        $riwayatKeuangan->delete();
+        Gate::authorize('delete', $riwayatKeuangan);
+        DB::transaction(function () use ($riwayatKeuangan) {
+            $bill = PaymentBalance::lockFor($riwayatKeuangan);
+            $riwayatKeuangan->delete();
+            PaymentBalance::refresh($bill);
+        });
 
         return back()->with('message', 'Riwayat keuangan berhasil dihapus');
     }
@@ -624,6 +636,7 @@ class RiwayatKeuanganController extends Controller
 
     public function storeNominalKas(Request $request)
     {
+        Gate::authorize('manageNominalKas', PemasukanKeuangan::class);
         $request->validate([
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'nominal' => 'required|numeric|min:0',
@@ -648,7 +661,8 @@ class RiwayatKeuanganController extends Controller
 
     public function updateNominalKas(Request $request, NominalKas $nominalKas)
     {
-        $request->validate([
+        Gate::authorize('manageNominalKas', PemasukanKeuangan::class);
+        $validated = $request->validate([
             'nominal' => 'required|numeric|min:0',
             'periode' => 'required|in:mingguan,bulanan',
             'deskripsi' => 'nullable|string|max:500',
@@ -662,19 +676,21 @@ class RiwayatKeuanganController extends Controller
                 ->update(['is_active' => false]);
         }
 
-        $nominalKas->update($request->all());
+        $nominalKas->update($validated);
 
         return redirect()->back()->with('success', 'Nominal kas berhasil diperbarui');
     }
 
     public function destroyNominalKas(NominalKas $nominalKas)
     {
+        Gate::authorize('manageNominalKas', PemasukanKeuangan::class);
         $nominalKas->delete();
         return redirect()->back()->with('success', 'Nominal kas berhasil dihapus');
     }
 
     public function toggleActiveNominalKas(NominalKas $nominalKas)
     {
+        Gate::authorize('manageNominalKas', PemasukanKeuangan::class);
         if ($nominalKas->is_active) {
             $nominalKas->update(['is_active' => false]);
         } else {

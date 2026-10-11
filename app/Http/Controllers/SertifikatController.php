@@ -9,7 +9,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class SertifikatController extends Controller
 {
@@ -30,11 +29,27 @@ class SertifikatController extends Controller
 
     public function indexAll(Request $request)
     {
+        $user = $request->user();
+        $currentLab = $user->getCurrentLab() ?? [];
         $query = Sertifikat::with([
             'user',
             'praktikum',
             'kepengurusanLab.laboratorium',
         ]);
+        if (empty($currentLab['all_access'])) {
+            if ($user->hasAnyRole(['admin', 'kalab', 'asisten'])) {
+                $labId = $currentLab['laboratorium']->id ?? $user->access_lab_id;
+                abort_unless($labId, 403);
+                $query->where(function ($scope) use ($labId) {
+                    $scope->whereHas('kepengurusanLab', fn ($period) => $period->where('laboratorium_id', $labId))
+                        ->orWhereHas('praktikum.kepengurusanLab', fn ($period) => $period->where('laboratorium_id', $labId));
+                });
+            } else {
+                $query->where('user_id', $user->id);
+            }
+        }
+
+        $visible = clone $query;
 
         // Filter search by user name/email
         if ($search = $request->search) {
@@ -75,8 +90,8 @@ class SertifikatController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        $laboratories = Laboratorium::orderBy('nama')->get(['id', 'nama']);
-        $praktikums = Praktikum::orderBy('mata_kuliah')->get(['id', 'mata_kuliah']);
+        $laboratories = Laboratorium::whereHas('kepengurusanLab', fn ($period) => $period->whereIn('id', (clone $visible)->pluck('kepengurusan_lab_id')))->orderBy('nama')->get(['id', 'nama']);
+        $praktikums = Praktikum::whereIn('id', (clone $visible)->pluck('praktikum_id'))->orderBy('mata_kuliah')->get(['id', 'mata_kuliah']);
 
         return Inertia::render('Sertifikat/Index', [
             'sertifikats' => $sertifikats,
@@ -93,14 +108,21 @@ class SertifikatController extends Controller
     {
 
         $user = Auth::user();
-        if ($sertifikat->user_id !== $user->id && !$user->hasRole(['admin', 'superadmin', 'asisten', 'kadep'])) {
-             abort(403, 'Unauthorized access.');
+        if ($sertifikat->user_id !== $user->id) {
+            $currentLab = $user->getCurrentLab() ?? [];
+            if (empty($currentLab['all_access'])) {
+                $period = $sertifikat->kepengurusanLab ?? $sertifikat->praktikum?->kepengurusanLab;
+                $labId = $currentLab['laboratorium']->id ?? $user->access_lab_id;
+                abort_unless($user->hasAnyRole(['admin', 'kalab', 'asisten']) && $user->can('sertifikat.view')
+                    && $period && $labId && (string) $period->laboratorium_id === (string) $labId, 403, 'Unauthorized access.');
+            }
         }
 
-        if (!Storage::disk('public')->exists($sertifikat->file_path)) {
+        $disk = Storage::disk('private')->exists($sertifikat->file_path) ? 'private' : 'public';
+        if (!Storage::disk($disk)->exists($sertifikat->file_path)) {
             return redirect()->back()->with('error', 'File sertifikat tidak ditemukan.');
         }
 
-        return Storage::disk('public')->download($sertifikat->file_path);
+        return Storage::disk($disk)->download($sertifikat->file_path);
     }
 }

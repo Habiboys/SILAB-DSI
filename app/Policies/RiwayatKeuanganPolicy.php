@@ -34,7 +34,7 @@ class RiwayatKeuanganPolicy
      */
     public function create(User $user): bool
     {
-        return $user->hasPermissionTo('keuangan.create-transaksi');
+        return $user->hasPositionPermission('keuangan.create-transaksi');
     }
 
     /**
@@ -48,7 +48,9 @@ class RiwayatKeuanganPolicy
             return $user->hasPermissionTo('keuangan.update-transaksi');
         }
 
-        return $user->hasPermissionInLab('keuangan.update-transaksi', $labId);
+        $currentLab = $user->getCurrentLab() ?? [];
+        return $user->hasPositionPermission('keuangan.update-transaksi')
+            && (!empty($currentLab['all_access']) || (string) ($currentLab['laboratorium']->id ?? '') === (string) $labId);
     }
 
     /**
@@ -67,13 +69,8 @@ class RiwayatKeuanganPolicy
      */
     public function manageNominalKas(User $user): bool
     {
-        // Bendahara position gets this automatically
-        if ($user->hasPosition('Bendahara')) {
-            return true;
-        }
-
-        // Or if user has the explicit permission
-        return $user->hasPermissionTo('keuangan.manage-nominal-kas');
+        return $user->hasRole(['admin', 'superadmin']) || $user->hasStrukturAktif('Bendahara')
+            || $user->hasPositionPermission('keuangan.manage-nominal-kas');
     }
 
     /**

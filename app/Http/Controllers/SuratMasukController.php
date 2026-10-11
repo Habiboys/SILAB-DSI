@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Exports\SuratMasukExport;
-use App\Models\DisposisiSurat;
 use App\Models\KepengurusanLab;
 use App\Models\KepengurusanUser;
 use App\Models\Laboratorium;
@@ -289,15 +288,6 @@ class SuratMasukController extends Controller
             ->map(fn ($ku) => ['id' => $ku->user_id, 'name' => $ku->user?->name ?? '-'])
             ->unique('id')
             ->values();
-
-        // Mark belum_dibaca disposisi as sudah_dibaca when the recipient views
-        DisposisiSurat::where('surat_masuk_id', $id)
-            ->where('kepada_user_id', $user->id)
-            ->where('status', 'belum_dibaca')
-            ->update([
-                'status'    => 'sudah_dibaca',
-                'dibaca_at' => now(),
-            ]);
 
         return Inertia::render('SuratMenyurat/Disposisi', [
             'surat'       => [

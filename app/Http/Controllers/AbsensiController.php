@@ -1317,9 +1317,6 @@ class AbsensiController extends Controller
             $adaDenda        = $pengaturanPiket && $pengaturanPiket->ada_denda;
             $nominalDenda    = $adaDenda ? (float) ($pengaturanPiket->nominal_denda ?? 0) : 0;
 
-            // Sync denda piket
-            app(\App\Http\Controllers\DendaPiketController::class)->sync($periode->id);
-
             $jadwalByDay = $this->getJadwalByDay($periode->id, $kepengurusanLabId);
 
             $userAttendance = [];
@@ -1341,31 +1338,15 @@ class AbsensiController extends Controller
 
                 foreach ($users as $user) {
 
-                    $userJadwalIds = JadwalPiket::withTrashed()
-                        ->where('kepengurusan_lab_id', $kepengurusanLabId)
-                        ->whereHas('kepengurusanUser', function ($query) use ($user) {
-                            $query->where('user_id', $user->id);
-                        })
-                        ->pluck('id')
-                        ->toArray();
-
-                    $totalJadwal = count($userJadwalIds);
+                    $summary = \App\Services\PiketAttendanceSummary::forUser($periode, $user->id);
+                    $totalJadwal = $summary['total_jadwal'];
 
                     if ($totalJadwal === 0) {
                         continue;
                     }
 
-                    $hadir = Absensi::whereIn('jadwal_piket_id', $userJadwalIds)
-                        ->whereBetween('tanggal', [
-                            $periode->tanggal_mulai->format('Y-m-d'),
-                            $periode->tanggal_selesai->format('Y-m-d'),
-                        ])
-                        ->whereNotNull('jam_keluar')
-                        ->where('verification_status', 'approved')
-                        ->count();
-
-                    $tidakHadir = $totalJadwal - $hadir;
-                    $tidakHadir = max(0, $tidakHadir);
+                    $hadir = $summary['hadir'];
+                    $tidakHadir = $summary['tidak_hadir'];
 
                     $ganti = 0;
 
@@ -1404,6 +1385,8 @@ class AbsensiController extends Controller
         ]);
 
         return Inertia::render('RekapAbsen', [
+            'canSyncDenda' => (bool) ($periode?->kepengurusanLab?->is_active)
+                && \Illuminate\Support\Facades\Gate::allows('create', \App\Models\PemasukanKeuangan::class),
             'rekapAbsensi' => $rekapAbsensi,
             'jadwalByDay' => $jadwalByDay,
             'periode' => $periode,

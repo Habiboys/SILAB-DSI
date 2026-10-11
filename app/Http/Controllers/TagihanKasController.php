@@ -9,11 +9,14 @@ use App\Models\TagihanKas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 class TagihanKasController extends Controller
 {
     public function sync($nominalKasId)
     {
+        Gate::authorize('manageNominalKas', PemasukanKeuangan::class);
         $nominalKas = NominalKas::findOrFail($nominalKasId);
 
         $userIds = KepengurusanUser::where('kepengurusan_lab_id', $nominalKas->kepengurusan_lab_id)
@@ -41,6 +44,7 @@ class TagihanKasController extends Controller
 
     public function bayar(Request $request)
     {
+        Gate::authorize('create', PemasukanKeuangan::class);
         $validated = $request->validate([
             'tagihan_kas_id' => 'required|exists:tagihan_kas,id',
             'nominal' => 'required|numeric|min:1',
@@ -57,11 +61,15 @@ class TagihanKasController extends Controller
         }
 
         $buktiPath = null;
-        if ($request->hasFile('bukti')) {
-            $buktiPath = $request->file('bukti')->store('bukti-tagihan-kas', 'public');
-        }
 
-        DB::transaction(function () use ($validated, $tagihanKas, $buktiPath) {
+        DB::transaction(function () use ($request, $validated, $tagihanKas, &$buktiPath) {
+            $tagihanKas = TagihanKas::whereKey($tagihanKas->id)->lockForUpdate()->firstOrFail();
+            if ($validated['nominal'] > $tagihanKas->total_tagihan - $tagihanKas->sudah_dibayar) {
+                throw ValidationException::withMessages(['nominal' => 'Nominal melebihi sisa tagihan kas.']);
+            }
+            if ($request->hasFile('bukti')) {
+                $buktiPath = $request->file('bukti')->store('bukti-tagihan-kas', 'public');
+            }
             PemasukanKeuangan::create([
                 'tanggal' => $validated['tanggal'],
                 'nominal' => $validated['nominal'],

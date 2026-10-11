@@ -391,10 +391,13 @@ class KegiatanController extends Controller
     {
         $this->assertProkerLab($kegiatan->proker);
 
-        $user = Auth::user();
-        $currentLab = $user->getCurrentLab();
-
         $peserta = $kegiatan->peserta()->with('user')->get();
+        $certificateIds = \App\Models\Sertifikat::where('kepengurusan_lab_id', $kegiatan->proker->kepengurusan_lab_id)
+            ->whereIn('file_path', $peserta->pluck('file_sertifikat')->filter())->pluck('id', 'file_path');
+        foreach ($peserta as $participant) {
+            $certificateId = $certificateIds[$participant->file_sertifikat] ?? null;
+            $participant->setAttribute('certificate_download_url', $certificateId ? route('sertifikat.download', $certificateId) : null);
+        }
         return response()->json($peserta);
     }
 

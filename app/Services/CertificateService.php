@@ -25,6 +25,8 @@ class CertificateService
      */
     public function generate(string $templatePath, array $data, string $outputPath, string $format = 'docx')
     {
+        $tempDocx = null;
+        $qrImagePath = null;
         try {
             if (!file_exists($templatePath)) {
                 Log::error("Certificate template not found: $templatePath");
@@ -61,10 +63,12 @@ class CertificateService
             }
 
             // Save as DOCX
-            $tempDocx = tempnam(sys_get_temp_dir(), 'cert_') . '.docx';
+            $tempDocx = tempnam(sys_get_temp_dir(), 'cert_');
             $templateProcessor->saveAs($tempDocx);
 
-            Storage::disk('public')->put($outputPath, file_get_contents($tempDocx));
+            if (!Storage::disk('private')->put($outputPath, file_get_contents($tempDocx))) {
+                throw new \RuntimeException('Certificate file could not be stored.');
+            }
 
             // Cleanup temp files
             @unlink($tempDocx);
@@ -77,6 +81,9 @@ class CertificateService
         } catch (\Exception $e) {
             Log::error("Certificate generation error: " . $e->getMessage());
             return false;
+        } finally {
+            if ($tempDocx && is_file($tempDocx)) @unlink($tempDocx);
+            if ($qrImagePath && is_file($qrImagePath)) @unlink($qrImagePath);
         }
     }
 

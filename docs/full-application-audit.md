@@ -2,7 +2,7 @@
 
 Status: **berlangsung**. Dokumen ini mencatat bukti pengujian; belum menyatakan seluruh aplikasi selesai diaudit atau bebas error.
 
-Hasil putaran regresi lengkap pada **11 Oktober 2026**: **99 tes backend / 1.056 assertion lulus**, **87 tes browser lulus tanpa skip**, **420 probe HTTP tanpa error server**, build produksi lulus. Perbaikan peminjaman bersamaan, upload tugas, pembatalan milik sendiri, navigasi dan CRUD surat tercakup. Status audit menyeluruh tetap berlangsung karena batas cakupan dan integrasi nyata yang dicatat di bagian akhir; hasil ini tidak dianggap bukti setiap fitur/cabang sudah diuji.
+Hasil pengujian pada **11 Oktober 2026**: **112 tes backend / 1.152 assertion lulus**, putaran browser lengkap sebelumnya **87 tes lulus tanpa skip**, **420 probe HTTP tanpa error server**, build produksi lulus. Perubahan lanjutan diuji dengan regresi terarah yang dicatat di bawah. Status audit menyeluruh tetap berlangsung karena batas cakupan dan integrasi nyata yang dicatat di bagian akhir; hasil ini tidak dianggap bukti setiap fitur/cabang sudah diuji.
 
 ## Lingkungan dan batas data
 
@@ -26,6 +26,19 @@ Inventaris terdapat dalam `full-application-audit-map.json`: 345 route sebelum p
 | Low | Tes bawaan tidak sesuai proses login/profil saat ini | Akun tanpa role diarahkan ke approval; profil staff tidak mengubah email dan membutuhkan identitas | Tambahkan skenario login admin, praktikan dan pending approval; periksa identitas profil tersimpan dan email/verifikasi tetap persis sama. |
 
 ## Pengujian sementara
+
+### Audit lanjutan kas, denda, disposisi dan sertifikat
+
+- Aturan denda dikonfirmasi pengguna: **per hari ketidakhadiran**. Jadwal Senin dan Kamis yang keduanya terlewat berarti dua kali nominal denda. Perhitungan sekarang menghitung tanggal jadwal yang sudah lewat (sampai kemarin), dalam rentang periode dan masa keberadaan jadwal; tanggal mendatang tidak ditagih. Absensi selesai berstatus approved dihitung hadir, sesuai syarat verifikasi sebelumnya. Jadwal soft-delete tetap berkontribusi pada riwayat sebelum dihapus. Rekap dan sinkronisasi memakai kalkulator yang sama.
+- GET rekap sebelumnya memanggil sinkronisasi denda; GET disposisi mengubah status dibaca, termasuk saat arsip dibuka. Kedua penulisan otomatis dihapus. Pembaruan tagihan dilakukan melalui tombol **Perbarui tagihan denda**; status disposisi melalui aksi **Tandai dibaca** yang sudah tersedia. Mutasi tetap melewati guard arsip dan izin.
+- Tes awal membuktikan pembayaran kas yang diedit/dihapus meninggalkan saldo tagihan lama. Update/delete kini mengunci tagihan dan menghitung ulang pembayaran dari ledger dalam transaksi, untuk kas maupun denda. Kenaikan pembayaran melebihi tagihan ditolak dan di-rollback; pengurangan/penghapusan tetap dapat memperbaiki kelebihan bayar lama.
+- Mutasi transaksi, nominal kas, pembayaran dan sinkronisasi kini memeriksa policy keuangan. Akses lab saja tidak cukup. Policy nominal kas semula memanggil method `hasPosition` yang tidak tersedia; kini memakai layanan izin struktur yang ada. Update nominal hanya memakai data tervalidasi.
+- Daftar sertifikat dan opsi filternya kini dibatasi ke pemilik untuk praktikan dan lab untuk staf; unduhan staf lintas lab ditolak. File sertifikat baru disimpan di disk private. File lama tetap dapat diunduh melalui controller berizin dari disk public, sementara konfigurasi Apache/Nginx memblokir URL langsung `/storage/sertifikat/`. Proteksi file lama pada deployment lain memerlukan aturan server setara; runtime webserver tersebut belum diuji di lingkungan ini.
+- Regresi terarah sebelum pengujian penyimpanan privat: **11 tes, 85 assertion lulus** (`.audit/extended-integrity-verified.log`), termasuk dua hari piket per minggu, tanggal mendatang, histori jadwal, idempotensi, koreksi pembayaran, disposisi arsip/penerima dan scope sertifikat.
+- Browser terarah: **21 tes lulus** (`.audit/playwright-extended-audit.json`), mencakup enam login, transaksi/laporan keuangan, 38 index, tombol denda dan CRUD/export surat. Setelah tombol denda dipisahkan ke Partials, pengujian tombol kembali lulus (`.audit/playwright-fine-partials-final.json`) dan build lulus (`.audit/build-extended-final.log`).
+- Suite backend lanjutan lengkap: **112 tes / 1.152 assertion lulus** (`.audit/phpunit-audit-continuation.xml`). Termasuk akses Bendahara berdasarkan struktur aktif dan pembuatan DOCX sungguhan di penyimpanan privat. Setelah tautan sertifikat peserta kegiatan diarahkan melalui controller berizin, regresi sertifikat kembali lulus: **3 tes / 43 assertion** (`.audit/certificate-link-final.xml`).
+- Probe HTTP lanjutan: **49 permintaan, nol error server**, untuk sertifikat, keuangan dan rekap absensi (`.audit/http-extended.json`).
+- Build setelah perbaikan tautan unduhan sertifikat peserta kegiatan lulus dalam **18,07 detik** (`.audit/build-certificate-link-final.log`). Link kini mengikuti endpoint unduhan berizin, sesuai penyimpanan sertifikat privat.
 
 - **Putaran browser lengkap terbaru: 87/87 lulus, tanpa skip atau tes tidak dijalankan**, selama 7,3 menit (`.audit/playwright-complete-final.json`). Termasuk enam login role, arsip, inventaris/pengadaan, kegiatan/proker/LPJ, keuangan, kuesioner, navigasi, enam kontrol tabel, PDF desktop/mobile, check-in piket, praktikum sampai upload PDF, serta CRUD/upload/edit tanggal/hapus/export surat.
 
@@ -132,93 +145,28 @@ Cakupan di luar skenario pada tabel masih memerlukan pengujian lanjutan. Integra
 
 Daftar berikut adalah snapshot perubahan workspace, termasuk perubahan yang sudah ada sebelum audit. Tidak semua baris merupakan perubahan baru pada sesi ini. Direktori baru dirinci dalam repositori; artefak mentah `.audit/` sengaja tidak dilacak.
 
-- `.dockerignore`
-- `.env.example`
-- `.gitignore`
-- `app/Http/Controllers/DetailInventarisController.php`
-- `app/Http/Controllers/KategoriAsetController.php`
-- `app/Http/Controllers/KomponenRubrikController.php`
-- `app/Http/Controllers/LaboratoriumController.php`
-- `app/Http/Controllers/LpjKepengurusanController.php`
-- `app/Http/Controllers/PeminjamanAsetController.php`
-- `app/Http/Controllers/PengumpulanTugasController.php`
-- `app/Http/Controllers/PermohonanAsetController.php`
-- `app/Http/Controllers/ProfileController.php`
-- `app/Http/Controllers/RekapKeuanganController.php`
+- `app/Http/Controllers/AbsensiController.php`
+- `app/Http/Controllers/DendaPiketController.php`
+- `app/Http/Controllers/DisposisiSuratController.php`
+- `app/Http/Controllers/KegiatanController.php`
 - `app/Http/Controllers/RiwayatKeuanganController.php`
-- `app/Http/Controllers/TahunKepengurusanController.php`
-- `app/Http/Middleware/CheckAslabAccess.php`
-- `app/Http/Middleware/CheckLabAccess.php`
-- `app/Http/Middleware/EnsureInventoryAccess.php`
-- `app/Http/Middleware/EnsureKepengurusanWritable.php`
-- `app/Http/Middleware/PreserveNavigationContext.php`
-- `app/Models/NilaiTambahan.php`
-- `app/Models/PengumpulanTugas.php`
-- `app/Providers/AppServiceProvider.php`
-- `app/Services/KepengurusanAccess.php`
-- `composer.json`
-- `composer.lock`
-- `database/factories/AsetFactory.php`
-- `database/migrations/2025_01_15_000000_remove_struktur_id_from_users_table.php`
-- `database/migrations/2025_08_25_092001_add_kelas_to_praktikan_table.php`
-- `database/migrations/2026_02_08_145223_create_aslab_praktikum_table.php`
-- `database/migrations/2026_02_15_195500_refactor_schema_cleanup.php`
-- `database/migrations/2026_10_10_000001_link_nilai_tambahan_to_submissions.php`
-- `database/seeders/AdminAccountsSeeder.php`
-- `database/seeders/AsetSeeder.php`
-- `database/seeders/AslabPraktikumSeeder.php`
-- `database/seeders/DatabaseSeeder.php`
-- `database/seeders/InventarisWorkflowPermissionSeeder.php`
-- `database/seeders/KepengurusanUserSeeder.php`
-- `database/seeders/PraktikanSeeder.php`
-- `database/seeders/ProkerPermissionSeeder.php`
-- `database/seeders/StrukturPermissionSeeder.php`
-- `docker/supervisord.conf`
+- `app/Http/Controllers/SertifikatController.php`
+- `app/Http/Controllers/SuratMasukController.php`
+- `app/Http/Controllers/TagihanKasController.php`
+- `app/Policies/RiwayatKeuanganPolicy.php`
+- `app/Services/CertificateService.php`
+- `app/Services/PaymentBalance.php`
+- `app/Services/PiketAttendanceSummary.php`
+- `docker/nginx/app.conf`
 - `docs/full-application-audit-map.json`
 - `docs/full-application-audit.md`
-- `package-lock.json`
-- `package.json`
-- `phpunit.audit.xml`
-- `phpunit.xml`
-- `playwright.audit.config.js`
+- `public/.htaccess`
 - `public/build/manifest.json`
-- `resources/js/Components/ExportButton.jsx`
-- `resources/js/Components/ModernPdfViewer.jsx`
-- `resources/js/Pages/DataMaster/MataKuliah/Index.jsx`
-- `resources/js/Pages/Inventaris/Index.jsx`
-- `resources/js/Pages/Inventaris/Permohonan/Index.jsx`
-- `resources/js/Pages/LpjKepengurusan/PreviewPage.jsx`
-- `resources/js/Pages/Proker/Index.jsx`
-- `resources/js/Pages/PublicModulViewer.jsx`
-- `resources/js/Pages/SuratMenyurat/SuratKeluar.jsx`
-- `resources/js/Pages/SuratMenyurat/SuratMasuk.jsx`
-- `resources/js/Pages/TugasViewer.jsx`
-- `resources/js/Support/`
-- `routes/web.php`
-- `tests/Feature/AdditionalGradeTest.php`
-- `tests/Feature/Auth/AuthenticationTest.php`
-- `tests/Feature/ConcurrentAssetLoanTest.php`
-- `tests/Feature/DatabaseSeedTest.php`
-- `tests/Feature/ExampleTest.php`
-- `tests/Feature/InertiaPageImplementationTest.php`
-- `tests/Feature/InventoryAccessTest.php`
-- `tests/Feature/KepengurusanArchiveAccessTest.php`
-- `tests/Feature/MasterDataCrudTest.php`
-- `tests/Feature/ProfileTest.php`
-- `tests/Feature/ReportAndContextTest.php`
-- `tests/Feature/RouteImplementationTest.php`
-- `tests/Feature/StrukturPermissionSeedTest.php`
-- `tests/Support/`
-- `tests/e2e/auth/authentication.spec.js`
-- `tests/e2e/global-setup.js`
-- `tests/e2e/inventaris/inventaris.spec.js`
-- `tests/e2e/kegiatan-proker/kegiatan-proker.spec.js`
-- `tests/e2e/keuangan/keuangan.spec.js`
-- `tests/e2e/kuesioner/kuesioner.spec.js`
-- `tests/e2e/navigation/back-button.spec.js`
-- `tests/e2e/navigation/navigation.spec.js`
-- `tests/e2e/navigation/table-controls.spec.js`
-- `tests/e2e/pdf/`
-- `tests/e2e/piket/piket.spec.js`
-- `tests/e2e/praktikum/praktikum.spec.js`
-- `tests/e2e/surat/surat.spec.js`
+- `resources/js/Pages/Kegiatan/PesertaManager.jsx`
+- `resources/js/Pages/RekapAbsen.jsx`
+- `resources/js/Pages/RekapAbsen/`
+- `tests/Feature/CertificateScopeTest.php`
+- `tests/Feature/DispositionIntegrityTest.php`
+- `tests/Feature/FinanceIntegrityTest.php`
+- `tests/Feature/PiketFineCalculationTest.php`
+- `tests/e2e/piket/rekap-denda.spec.js`

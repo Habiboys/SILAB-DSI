@@ -4,6 +4,7 @@
     </IfModule>
 
     RewriteEngine On
+    RewriteRule ^storage/sertifikat(?:/|$) - [F,L,NC]
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
