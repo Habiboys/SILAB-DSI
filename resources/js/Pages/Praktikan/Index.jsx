@@ -10,10 +10,9 @@ import { usePermission } from "@/Components/PermissionContext";
 import RowActions, { IconAction } from "@/Components/RowActions";
 import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
-import { Head, router, useForm } from "@inertiajs/react";
-import { GitBranch, Plus, Trash2, TriangleAlert, UserMinus } from "lucide-react";
+import { Head, useForm } from "@inertiajs/react";
+import { GitBranch, Plus, TriangleAlert, UserMinus } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const PraktikanIndex = ({
     praktikum,
@@ -126,32 +125,30 @@ const PraktikanIndex = ({
         setPindahMassalModal(true);
     };
 
-    const errorToast = (errors, fallback) => toast.error(Object.values(errors).find(Boolean) || fallback);
-
     const handleCreate = (event) => {
         event.preventDefault();
-        createForm.post(route("praktikum.praktikan.store", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil ditambahkan"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal menambahkan praktikan") });
+        createForm.post(route("praktikum.praktikan.store", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => {  closeAll(); } });
     };
     const handleAddExisting = (event) => {
         event.preventDefault();
-        addExistingForm.post(route("praktikum.praktikan.add-existing", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil ditambahkan"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal menambahkan praktikan") });
+        addExistingForm.post(route("praktikum.praktikan.add-existing", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => {  closeAll(); } });
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.post(route("praktikum.praktikan.update", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil diperbarui"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal memperbarui praktikan") });
+        editForm.post(route("praktikum.praktikan.update", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => {  closeAll(); } });
     };
     const handleImport = (event) => {
         event.preventDefault();
-        importForm.post(route("praktikum.praktikan.import", { praktikum: praktikum.id }), { forceFormData: true, preserveScroll: true, onSuccess: () => { toast.success("Data praktikan berhasil diimport"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal mengimport data praktikan") });
+        importForm.post(route("praktikum.praktikan.import", { praktikum: praktikum.id }), { forceFormData: true, preserveScroll: true, onSuccess: () => {  closeAll(); } });
     };
-    const confirmRemoveFromKelas = () => deleteForm.put(route("praktikum.praktikan.remove-kelas", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dikeluarkan dari kelas"); closeAll(); }, onError: (errors) => errorToast(errors, "Gagal mengeluarkan praktikan dari kelas") });
+    const confirmRemoveFromKelas = () => deleteForm.put(route("praktikum.praktikan.remove-kelas", { praktikum: praktikum.id, praktikan: selectedPraktikan.id }), { preserveScroll: true, onSuccess: () => {  closeAll(); } });
     const handleDistribusi = (event) => {
         event.preventDefault();
-        distribusiForm.post(route("kelas.pindah-praktikan", { kelas: activeParentId }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dipindahkan"); setDistribusiModal(false); setDistribusiSearch(""); }, onError: (errors) => errorToast(errors, "Gagal memindahkan praktikan") });
+        distribusiForm.post(route("kelas.pindah-praktikan", { kelas: activeParentId }), { preserveScroll: true, onSuccess: () => {  setDistribusiModal(false); setDistribusiSearch(""); } });
     };
     const handlePindahMassal = (event) => {
         event.preventDefault();
-        pindahMassalForm.post(route("praktikum.praktikan.pindah-kelas-massal", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => { toast.success("Praktikan berhasil dipindahkan"); setPindahMassalModal(false); setPindahMassalSearch(""); }, onError: (errors) => errorToast(errors, "Gagal memindahkan praktikan") });
+        pindahMassalForm.post(route("praktikum.praktikan.pindah-kelas-massal", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => {  setPindahMassalModal(false); setPindahMassalSearch(""); } });
     };
 
     const getParentTabCount = (parent) => parent.hasSubKelas ? parent.subKelas.reduce((sum, sub) => sum + (praktikanByKelas?.[sub.id]?.length || 0), 0) : praktikanByKelas?.[parent.id]?.length || 0;

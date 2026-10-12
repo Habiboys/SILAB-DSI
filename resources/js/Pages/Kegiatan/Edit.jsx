@@ -1,6 +1,6 @@
 import CancelButton from '@/Components/CancelButton';
 import { Head, useForm } from "@inertiajs/react";
-import { toast } from "sonner";
+
 import Button from "../../Components/Button";
 import FormField from "../../Components/FormField";
 import PageHeader from "../../Components/PageHeader";
@@ -25,13 +25,7 @@ export default function KegiatanEdit({ kegiatan, proker }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route("kegiatan.update", kegiatan.id), {
-            onSuccess: () => toast.success("Kegiatan berhasil diperbarui"),
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal memperbarui kegiatan");
-            },
-        });
+        put(route("kegiatan.update", kegiatan.id), {  });
     };
 
     return (

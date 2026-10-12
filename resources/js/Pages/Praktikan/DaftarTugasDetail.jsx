@@ -17,7 +17,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         catatan: "",
     });
 
-
     const getCsrfToken = () => {
         return document
             .querySelector('meta[name="csrf-token"]')
@@ -131,21 +130,12 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         formData.append("catatan", uploadForm.catatan);
         formData.append("tugas_praktikum_id", tugas.id);
 
-        router.post(`/praktikum/tugas/${tugas.id}/pengumpulan`, formData, {
-            onSuccess: () => {
-                toast.success("Tugas berhasil dikumpulkan!");
+        router.post(`/praktikum/tugas/${tugas.id}/pengumpulan`, formData, { onSuccess: () => {
+
                 setUploadForm({ files: [], links: [], catatan: "" });
-            },
-            onError: (errors) => {
-                toast.error(
-                    "Gagal mengumpulkan tugas: " +
-                        (errors.message || "Terjadi kesalahan"),
-                );
-            },
-            onFinish: () => {
+            }, onFinish: () => {
                 setIsSubmitting(false);
-            },
-        });
+            } });
     };
 
     const handleConfirmCancel = async () => {
@@ -179,7 +169,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
             toast.error("Terjadi kesalahan saat membatalkan pengumpulan tugas");
         }
     };
-
 
     let submittedFiles = [];
     let submittedLinks = [];
@@ -270,7 +259,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         <DashboardLayout backFallback={route("praktikan.daftar-tugas")}>
             <Head title="Detail Tugas" />
 
-
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
                 <div className="p-6 flex items-center justify-between border-b">
                     <div className="flex items-center space-x-4">
@@ -323,7 +311,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                         )}
                     </div>
 
-
                     <div>
                         <p className="text-sm font-medium text-base-content mb-2">
                             Deskripsi Tugas
@@ -338,7 +325,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                             </p>
                         )}
                     </div>
-
 
                     {tugas.file_tugas && (
                         <div className="pt-4 border-t border-base-300">
@@ -365,7 +351,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                     )}
                 </div>
             </div>
-
 
             {canMutate && !pengumpulan && (
                 <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
@@ -575,7 +560,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                 </div>
             )}
 
-
             {pengumpulan && (
                 <>
                     <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden mb-6">
@@ -778,7 +762,6 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
                     </div>
                 </>
             )}
-
 
             <ConfirmModal
                 show={isConfirmModalOpen}

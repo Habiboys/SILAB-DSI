@@ -14,7 +14,6 @@ import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Download, Eye, GitBranch, Plus } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
-import { toast } from "sonner";
 
 const formatDate = (dateString) => {
     try {
@@ -204,25 +203,13 @@ const TugasPraktikumIndex = ({
 
     const handleCreate = (event) => {
         event.preventDefault();
-        createForm.post(route("praktikum.tugas.store", { praktikum: praktikum.id }), {
-            preserveScroll: true,
-            onSuccess: () => { toast.success("Tugas praktikum berhasil ditambahkan"); closeCreateModal(); },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menambahkan tugas praktikum"),
-        });
+        createForm.post(route("praktikum.tugas.store", { praktikum: praktikum.id }), { preserveScroll: true, onSuccess: () => {  closeCreateModal(); } });
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.post(route("praktikum.tugas.update", { tugas: selectedTugas.id }), {
-            preserveScroll: true,
-            onSuccess: () => { toast.success("Tugas praktikum berhasil diperbarui"); closeEditModal(); },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui tugas praktikum"),
-        });
+        editForm.post(route("praktikum.tugas.update", { tugas: selectedTugas.id }), { preserveScroll: true, onSuccess: () => {  closeEditModal(); } });
     };
-    const confirmDelete = () => deleteForm.delete(route("praktikum.tugas.destroy", { tugas: selectedTugas.id }), {
-        preserveScroll: true,
-        onSuccess: () => { toast.success("Tugas praktikum berhasil dihapus"); setIsDeleteModalOpen(false); setSelectedTugas(null); },
-        onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus tugas praktikum"),
-    });
+    const confirmDelete = () => deleteForm.delete(route("praktikum.tugas.destroy", { tugas: selectedTugas.id }), { preserveScroll: true, onSuccess: () => {  setIsDeleteModalOpen(false); setSelectedTugas(null); } });
 
     const viewSubmissions = (item) => {
         const params = {};

@@ -11,7 +11,6 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { Check, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
 
 const STATUS_META = {
     draft: { label: "Draft", tone: "neutral" },
@@ -65,13 +64,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         router.post(
             route("inventaris.permohonan.submit", permohonan.id),
             {},
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     setIsSubmitConfirmOpen(false);
-                    toast.success("Permohonan berhasil diajukan ke Kalab");
-                },
-                onError: () => toast.error("Gagal mengajukan permohonan"),
-            },
+
+                } },
         );
     };
 
@@ -123,13 +119,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         }));
         reviewForm.post(
             route("inventaris.permohonan.review-kalab", permohonan.id),
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     setIsReviewConfirm(false);
-                    toast.success("Review Kalab berhasil disimpan");
-                },
-                onError: () => toast.error("Gagal menyimpan review"),
-            },
+
+                } },
         );
     };
 
@@ -150,13 +143,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         }));
         kadepForm.post(
             route("inventaris.permohonan.approve-kadep", permohonan.id),
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     setIsKadepConfirm(false);
-                    toast.success("Keputusan Kadep berhasil disimpan");
-                },
-                onError: () => toast.error("Gagal menyimpan keputusan Kadep"),
-            },
+
+                } },
         );
     };
 
@@ -199,16 +189,10 @@ export default function PermohonanAsetShow({ permohonan, kategoriAset }) {
         });
         convertForm.post(
             route("inventaris.wishlist.convert-to-aset", convertItem.id),
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     setIsConvertOpen(false);
-                    toast.success("Aset berhasil ditambahkan");
-                },
-                onError: () =>
-                    toast.error(
-                        "Gagal menambahkan aset, periksa kembali inputan",
-                    ),
-            },
+
+                } },
         );
     };
 

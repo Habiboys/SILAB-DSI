@@ -7,8 +7,8 @@ import StatusBadge from "@/Components/StatusBadge";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { CheckCircle, Clock, Download, Eye, Plus, Send, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
+
 import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
 const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate, canUpdate }) => {
@@ -20,28 +20,16 @@ const Disposisi = ({ surat, disposisi, anggotaLab, currentUser, flash, canCreate
 
     const handleAdd = (event) => {
         event.preventDefault();
-        form.post(route("surat-menyurat.disposisi.store", surat.id), {
-            onSuccess: () => {
+        form.post(route("surat-menyurat.disposisi.store", surat.id), { onSuccess: () => {
                 setIsAddModalOpen(false);
                 form.reset();
-                toast.success("Disposisi berhasil ditambahkan");
-            },
-            onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal menambahkan disposisi"),
-        });
+
+            } });
     };
 
     const handleUpdateStatus = (disposisiId, status) => {
-        router.patch(route("surat-menyurat.disposisi.update-status", disposisiId), { status }, {
-            onSuccess: () => toast.success("Status disposisi diperbarui"),
-            onError: () => toast.error("Gagal memperbarui status"),
-            preserveScroll: true,
-        });
+        router.patch(route("surat-menyurat.disposisi.update-status", disposisiId), { status }, { preserveScroll: true });
     };
-
-    useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
 
     const formatDate = (value) => (value ? new Date(value).toLocaleString("id-ID", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" }) : "-");
     const formatDateShort = (value) => (value ? new Date(value).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-");

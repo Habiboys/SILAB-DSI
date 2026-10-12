@@ -1,7 +1,7 @@
 import { Head, router } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
 import { CheckCircle2, Circle, LayoutGrid } from "lucide-react";
-import { toast } from "sonner";
+
 import { DataTable } from "@/Components/DataTable";
 import { useLab } from "../Components/LabContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
@@ -20,7 +20,6 @@ const CatatanKas = ({
 }) => {
     const { selectedLab } = useLab();
 
-    
     const allMonths =
         bulanData &&
         typeof bulanData === "object" &&
@@ -28,23 +27,6 @@ const CatatanKas = ({
             ? bulanData
             : {};
 
-    
-
-    if (debug) {
-    } else {
-    }
-
-    
-    useEffect(() => {
-        if (flash && flash.message) {
-            toast.success(flash.message);
-        }
-        if (flash && flash.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
-
-    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -61,11 +43,9 @@ const CatatanKas = ({
         }
     }, [selectedLab]);
 
-    
     const hasDatePassed = (bulanStr, minggu) => {
         const currentDate = new Date();
 
-        
         const monthMap = {
             Januari: 0,
             Februari: 1,
@@ -84,45 +64,36 @@ const CatatanKas = ({
         const month = monthMap[bulanStr];
         if (month === undefined) return false;
 
-        
         const currentYear = currentDate.getFullYear();
         const currentMonth = currentDate.getMonth();
         const currentDay = currentDate.getDate();
 
-        
         const year = currentYear;
 
-        
         if (year < currentYear) {
             return true;
         } else if (year > currentYear) {
             return false;
         }
 
-        
         if (month < currentMonth) {
-            return true; 
+            return true;
         } else if (month > currentMonth) {
-            return false; 
+            return false;
         }
 
-        
-        
         const currentWeek = Math.ceil(currentDay / 7);
         return minggu <= currentWeek;
     };
 
-    
     const processedData = useMemo(() => {
-        
+
         const userPayments = {};
 
-        
         const activeNominalKas =
             nominalKas?.find((nk) => nk.is_active) || nominalKas?.[0];
         const isWeekly = activeNominalKas?.periode === "mingguan";
 
-        
         const generatePeriods = () => {
             const periods = [];
 
@@ -131,12 +102,12 @@ const CatatanKas = ({
                 activeNominalKas.periode_mulai &&
                 activeNominalKas.periode_berakhir
             ) {
-                
+
                 const startDate = new Date(activeNominalKas.periode_mulai);
                 const endDate = new Date(activeNominalKas.periode_berakhir);
 
                 if (isWeekly) {
-                    
+
                     let currentWeek = new Date(startDate);
                     let weekNumber = 1;
 
@@ -155,7 +126,7 @@ const CatatanKas = ({
                         weekNumber++;
                     }
                 } else {
-                    
+
                     let currentMonth = new Date(startDate);
                     const monthNames = [
                         "Januari",
@@ -195,14 +166,13 @@ const CatatanKas = ({
                     }
                 }
             } else {
-                
-                
+
                 const tahunKep = kepengurusanlab?.tahun_kepengurusan;
                 const rangeStart = tahunKep?.mulai ? new Date(tahunKep.mulai) : null;
                 const rangeEnd = tahunKep?.selesai ? new Date(tahunKep.selesai) : null;
 
                 if (isWeekly && rangeStart && rangeEnd) {
-                    
+
                     let currentWeek = new Date(rangeStart);
                     let weekNumber = 1;
                     while (currentWeek <= rangeEnd) {
@@ -218,7 +188,7 @@ const CatatanKas = ({
                         weekNumber++;
                     }
                 } else {
-                    
+
                     const monthKeys = Object.keys(allMonths);
                     if (monthKeys.length > 0) {
                         const monthNameToIndex = {
@@ -254,7 +224,6 @@ const CatatanKas = ({
 
         const periods = generatePeriods();
 
-        
         anggota.forEach((user) => {
             userPayments[user.id] = {
                 name: user.name,
@@ -264,13 +233,11 @@ const CatatanKas = ({
                 periodsPaid: 0,
             };
 
-            
             periods.forEach((period) => {
                 userPayments[user.id].payments[period.key] = false;
             });
         });
 
-        
         catatanKas.forEach((payment) => {
             if (userPayments[payment.user_id]) {
                 userPayments[payment.user_id].totalAmount += parseFloat(
@@ -279,7 +246,6 @@ const CatatanKas = ({
             }
         });
 
-        
         Object.keys(userPayments).forEach((userId) => {
             const userPayment = userPayments[userId];
             const userPaymentsList = catatanKas.filter(
@@ -287,11 +253,10 @@ const CatatanKas = ({
             );
 
             if (activeNominalKas && activeNominalKas.nominal > 0) {
-                
+
                 let totalNormalPayment = 0;
                 let totalLebihPayment = 0;
 
-                
                 userPaymentsList.forEach((payment) => {
                     const paymentAmount = parseFloat(payment.nominal);
                     const jenisPembayaran =
@@ -304,16 +269,10 @@ const CatatanKas = ({
                     }
                 });
 
-                
                 const normalPeriodsPaid = Math.floor(
                     totalNormalPayment / activeNominalKas.nominal,
                 );
 
-                
-
-                
-                
-                
                 userPaymentsList.forEach((payment) => {
                     const jenisPembayaran =
                         payment.jenis_pembayaran_kas || "normal";
@@ -321,7 +280,6 @@ const CatatanKas = ({
                     if (jenisPembayaran === "lebih") {
                         const paymentDate = new Date(payment.tanggal);
 
-                        
                         periods.forEach((period) => {
                             if (
                                 paymentDate >= period.start &&
@@ -333,16 +291,12 @@ const CatatanKas = ({
                     }
                 });
 
-                
-                
-                
                 const periodKeys = periods.map((p) => p.key);
                 const paidNormalPeriods = Math.min(
                     normalPeriodsPaid,
                     periodKeys.length,
                 );
 
-                
                 let periodsMarked = 0;
                 for (
                     let i = 0;
@@ -365,8 +319,7 @@ const CatatanKas = ({
         return { userPayments, periods };
     }, [anggota, catatanKas, kepengurusanlab, nominalKas, allMonths]);
 
-    
-    const [displayLimit, setDisplayLimit] = useState("12"); 
+    const [displayLimit, setDisplayLimit] = useState("12");
     const periods = processedData.periods || [];
     const totalPeriods = periods.length;
     const visiblePeriods =
@@ -382,7 +335,6 @@ const CatatanKas = ({
         { value: "all", label: "Semua periode" },
     ];
 
-    
     const renderPeriodStatusCell = (userId, periodKey) => {
         const hasPaid =
             processedData.userPayments?.[userId]?.payments[periodKey] || false;
@@ -422,11 +374,10 @@ const CatatanKas = ({
                         Catatan Uang Kas
                     </h2>
                     <div className="flex gap-4 items-center w-full lg:w-auto">
-                        
+
                     </div>
                 </div>
 
-                
                 {kepengurusanlab && (
                     <div className="alert alert-info mx-5 mt-5 rounded-box">
                         <div>
@@ -492,7 +443,6 @@ const CatatanKas = ({
                     </div>
                 )}
 
-                
                 {!kepengurusanlab && (
                     <div className="p-8 text-center text-base-content/60">
                         Silakan pilih laboratorium dan periode kepengurusan di
@@ -507,10 +457,9 @@ const CatatanKas = ({
                     </div>
                 )}
 
-                
                 {kepengurusanlab && anggota.length > 0 && (
                     <>
-                        
+
                         {totalPeriods > 0 && (
                             <div className="flex flex-wrap items-center gap-3 border-b border-base-300 bg-base-200/50 px-5 py-3">
                                 <div className="flex items-center gap-2">

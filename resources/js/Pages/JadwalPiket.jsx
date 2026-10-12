@@ -22,7 +22,7 @@ const JadwalPiket = ({
     auth,
 }) => {
     const { selectedLab, setSelectedLab } = useLab();
-    
+
     const { selected_kepengurusan } = usePage().props;
     const currentTahun = selected_kepengurusan?.id;
 
@@ -33,25 +33,18 @@ const JadwalPiket = ({
     const [selectedItem, setSelectedItem] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    
-    const [pendingToast, setPendingToast] = useState(null);
-
     const { can } = usePermission();
 
-    
     const canManage = can("piket.manage-jadwal");
 
-    
     const createForm = useForm({
         user_ids: [],
         hari: "",
         kepengurusan_lab_id: kepengurusanLab?.id || "",
     });
 
-    
     const [checkboxSearch, setCheckboxSearch] = useState("");
 
-    
     const editForm = useForm({
         user_id: "",
         hari: "",
@@ -59,20 +52,14 @@ const JadwalPiket = ({
         _method: "PUT",
     });
 
-    
     const deleteForm = useForm({
         _method: "DELETE",
     });
 
-    
-    
-    
-
-    
     useEffect(() => {
         const kepId = selected_kepengurusan?.id;
         if (!kepId || !selectedLab) return;
-        
+
         if (kepengurusanLab?.id && kepengurusanLab.id !== kepId) {
             router.get(
                 route("piket.jadwal.index"),
@@ -84,14 +71,6 @@ const JadwalPiket = ({
         }
     }, [selected_kepengurusan?.id, selectedLab?.id]);
 
-    
-    useEffect(() => {
-        if (selectedLab) {
-            
-        }
-    }, [selectedLab]);
-
-    
     const openCreateModal = (day) => {
         createForm.reset();
         createForm.setData({
@@ -104,7 +83,6 @@ const JadwalPiket = ({
         setIsCreateModalOpen(true);
     };
 
-    
     const openEditModal = (item, day) => {
         setSelectedItem(item);
         setSelectedDay(day);
@@ -118,14 +96,12 @@ const JadwalPiket = ({
         setIsEditModalOpen(true);
     };
 
-    
     const openDeleteModal = (item, day) => {
         setSelectedItem(item);
         setSelectedDay(day);
         setIsDeleteModalOpen(true);
     };
 
-    
     const storeCurrentSelections = () => {
         if (selectedLab) {
             localStorage.setItem("selectedLabId", selectedLab.id);
@@ -135,13 +111,6 @@ const JadwalPiket = ({
         }
     };
 
-    
-    const storePendingToast = (message, type) => {
-        const toastInfo = { message, type, timestamp: Date.now() };
-        localStorage.setItem("pendingToast", JSON.stringify(toastInfo));
-    };
-
-    
     const refreshWithCurrentSelections = () => {
         const params = {};
         const kepId = currentTahun || selected_kepengurusan?.id;
@@ -153,11 +122,9 @@ const JadwalPiket = ({
         });
     };
 
-    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        
         storeCurrentSelections();
 
         setIsLoading(true);
@@ -172,26 +139,20 @@ const JadwalPiket = ({
             },
             onError: (errors) => {
                 setIsLoading(false);
-                if (errors.user_ids) toast.error(errors.user_ids);
-                else if (errors.hari) toast.error(errors.hari);
-                else toast.error("Gagal menambahkan jadwal piket");
+
             },
             preserveScroll: false,
         });
     };
 
-    
     const filterAvailableUsers = (day) => {
         if (!jadwalPiket || !jadwalPiket[day]) return users;
 
-        
         const assignedUserIds = jadwalPiket[day].map((user) => user.id);
 
-        
         return users.filter((user) => !assignedUserIds.includes(user.id));
     };
 
-    
     const refreshData = () => {
         const kepId = currentTahun || selected_kepengurusan?.id;
         const q = new URLSearchParams();
@@ -202,57 +163,26 @@ const JadwalPiket = ({
             (q.toString() ? `?${q.toString()}` : "");
     };
 
-    
     const handleEdit = (e) => {
         e.preventDefault();
 
-        
         storeCurrentSelections();
-
-        
-        storePendingToast("Jadwal piket berhasil diperbarui", "success");
 
         setIsLoading(true);
 
-        
         const routePath = route("piket.jadwal.update", {
             id: selectedItem.jadwalId,
         });
 
-        
-        const csrfToken = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content");
-        const formData = new FormData();
-        formData.append("_method", "PUT");
-        formData.append("user_id", editForm.data.user_id);
-        formData.append("hari", editForm.data.hari);
-
-        axios
-            .post(`/piket/jadwal/${selectedItem.jadwalId}`, formData, {
-                headers: {
-                    "X-CSRF-TOKEN": csrfToken,
-                    "Content-Type": "multipart/form-data",
-                },
-            })
-            .then((response) => {
-                setIsEditModalOpen(false);
-                
-                refreshWithCurrentSelections();
-            })
-            .catch((error) => {
-                console.error("Axios edit error:", error);
-                toast.error(
-                    error.response?.data?.message ||
-                        "Gagal memperbarui jadwal piket",
-                );
-                setIsLoading(false);
-            });
+        editForm.put(routePath, {
+            preserveScroll: true,
+            onSuccess: () => setIsEditModalOpen(false),
+            onFinish: () => setIsLoading(false),
+        });
     };
 
-    
     const handleDelete = () => {
-        
+
         storeCurrentSelections();
 
         setIsLoading(true);
@@ -263,74 +193,19 @@ const JadwalPiket = ({
                 setIsLoading(false);
             },
             onError: (errors) => {
-                toast.error(errors.message || "Gagal menghapus jadwal piket");
+
                 setIsLoading(false);
             },
         });
     };
 
-    
     useEffect(() => {
-        try {
-            const storedToast = localStorage.getItem("pendingToast");
-            if (storedToast) {
-                const toastInfo = JSON.parse(storedToast);
 
-                
-                const isRecent = Date.now() - toastInfo.timestamp < 2000;
-
-                if (isRecent) {
-                    setPendingToast(toastInfo);
-                }
-
-                
-                localStorage.removeItem("pendingToast");
-            }
-        } catch (err) {
-            console.error("Error processing stored toast:", err);
-            localStorage.removeItem("pendingToast");
-        }
-    }, []);
-
-    
-    useEffect(() => {
-        if (pendingToast) {
-            
-            const timer = setTimeout(() => {
-                
-                if (pendingToast.type === "success") {
-                    toast.success(pendingToast.message);
-                } else if (pendingToast.type === "error") {
-                    toast.error(pendingToast.message);
-                } else if (pendingToast.type === "info") {
-                    toast.info(pendingToast.message);
-                }
-
-                
-                setPendingToast(null);
-            }, 300);
-
-            return () => clearTimeout(timer);
-        }
-    }, [pendingToast]);
-
-    
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
         if (message) {
             toast.info(message);
         }
     }, [flash, message]);
 
-    
-    
-
-    
     const dayNames = {
         senin: "Senin",
         selasa: "Selasa",
@@ -339,13 +214,11 @@ const JadwalPiket = ({
         jumat: "Jumat",
     };
 
-    
     const selectedLabInfo = selectedLab ? selectedLab.nama : null;
     const selectedTahunInfo =
         tahunKepengurusan?.find((t) => t.id == currentTahun)?.tahun || null;
     const filterActive = Boolean(selectedLabInfo && selectedTahunInfo);
 
-    
     const kepengurusanMatch =
         !selected_kepengurusan ||
         !kepengurusanLab ||
@@ -362,7 +235,6 @@ const JadwalPiket = ({
 
             <PageSection bodyClassName="p-0 sm:p-0">
 
-                
                 {filterActive && (
                     <div className="mx-6 mt-4 mb-2 flex items-center p-4 border rounded-lg bg-primary/10 border-primary/30">
                         <svg
@@ -563,7 +435,7 @@ const JadwalPiket = ({
                                 </p>
                             ) : (
                                 <>
-                                    
+
                                     <input
                                         type="text"
                                         placeholder="Cari nama..."
@@ -577,7 +449,6 @@ const JadwalPiket = ({
                                         }
                                     />
 
-                                    
                                     {(() => {
                                         const available =
                                             filterAvailableUsers(selectedDay);
@@ -655,7 +526,6 @@ const JadwalPiket = ({
                                         );
                                     })()}
 
-                                    
                                     <div className="max-h-52 overflow-y-auto space-y-1 border border-base-300 rounded-md p-2">
                                         {filterAvailableUsers(selectedDay)
                                             .filter((u) =>
@@ -781,7 +651,6 @@ const JadwalPiket = ({
                 </div>
             </Modal>
 
-            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 onClose={() => setIsEditModalOpen(false)}
@@ -813,7 +682,7 @@ const JadwalPiket = ({
                                 disabled={editForm.processing || isLoading}
                             >
                                 <option value="">Pilih Anggota</option>
-                                
+
                                 {[
                                     ...filterAvailableUsers(selectedDay),
                                     ...(selectedItem?.id &&
@@ -884,7 +753,6 @@ const JadwalPiket = ({
                 </div>
             </Modal>
 
-            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={() => setIsDeleteModalOpen(false)}

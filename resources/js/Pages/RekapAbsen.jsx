@@ -7,8 +7,8 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { DataTable } from "@/Components/DataTable";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import React, { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Check, Hourglass, X, Wallet } from "lucide-react";
+
+import { Wallet } from "lucide-react";
 
 const RekapAbsen = ({
     rekapAbsensi,
@@ -23,26 +23,22 @@ const RekapAbsen = ({
     pengaturanPiket,
     canSyncDenda = false,
 }) => {
-    
+
     const { auth } = usePage().props;
     const { can } = usePermission();
 
-    
     const { selectedLab } = useLab();
 
-    
     const canAccess = can("absensi.view_rekap");
 
-    
     const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || "");
-    
+
     const { selected_kepengurusan } = usePage().props;
     const selectedTahun = selected_kepengurusan
         ? String(selected_kepengurusan.id)
         : "";
     const [activeTab, setActiveTab] = useState("jadwal");
 
-    
     const [isBayarModalOpen, setIsBayarModalOpen] = useState(false);
     const [selectedBayarItem, setSelectedBayarItem] = useState(null);
     const bayarForm = useForm({
@@ -76,52 +72,32 @@ const RekapAbsen = ({
         bayarForm.post(route("piket.denda-piket.bayar"), {
             onSuccess: () => {
                 closeBayarModal();
-                toast.success("Pembayaran denda piket berhasil");
+
             },
             onError: (errors) => {
                 const msg = Object.values(errors).find(Boolean);
-                toast.error(msg || "Gagal membayar denda");
+
             },
             preserveState: true,
         });
-    }; 
+    };
 
-    
-    
-    
-
-    
-    
-
-    
-    useEffect(() => {
-        
-        if (canAccess && selectedLab) {
-            
-        }
-    }, [canAccess, selectedLab]);
-
-    
     const handlePeriodeChange = (e) => {
         const periodeId = e.target.value;
         setSelectedPeriode(periodeId);
 
-        
         const params = {
             periode_id: periodeId,
         };
 
-        
         if (selectedLab) {
             params.lab_id = selectedLab.id;
         }
 
-        
         if (selectedTahun) {
             params.kepengurusan_lab_id = selectedTahun;
         }
 
-        
         router.get(route("piket.rekap-absen"), params, {
             preserveState: true,
             preserveScroll: true,
@@ -129,7 +105,6 @@ const RekapAbsen = ({
         });
     };
 
-    
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("id-ID", {
             style: "currency",
@@ -139,7 +114,6 @@ const RekapAbsen = ({
         }).format(amount);
     };
 
-    
     const getStatusColor = (status) => {
         switch (status) {
             case "hadir":
@@ -152,7 +126,6 @@ const RekapAbsen = ({
         }
     };
 
-    
     const getDayName = (day) => {
         const dayNames = {
             senin: "Senin",
@@ -164,20 +137,6 @@ const RekapAbsen = ({
         return dayNames[day] || day;
     };
 
-    
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-        if (flash?.message) {
-            toast.info(flash.message);
-        }
-    }, [flash]);
-
-    
     const maxPetugas = React.useMemo(() => {
         if (!jadwalByDay || Object.keys(jadwalByDay).length === 0) return 5;
         const counts = Object.keys(jadwalByDay).map(
@@ -202,9 +161,7 @@ const RekapAbsen = ({
                             {canSyncDenda && periode && (
                                 <FineSyncButton periodId={periode.id} />
                             )}
-                            
 
-                            
                             <div className="w-full sm:w-auto">
                                 <select
                                     id="periode"
@@ -233,7 +190,6 @@ const RekapAbsen = ({
                         </div>
                     </div>
 
-               
                 </div>
 
                 {!selectedLab && canAccess ? (
@@ -290,7 +246,7 @@ const RekapAbsen = ({
                     </div>
                 ) : (
                     <div className="p-4">
-                        
+
                         <div className="flex border-b mb-4">
                             <button type="button"
                                 onClick={() => setActiveTab("jadwal")}
@@ -314,7 +270,6 @@ const RekapAbsen = ({
                             </button>
                         </div>
 
-                        
                         {activeTab === "jadwal" && (
                             <DataTable>
                                     <thead>
@@ -476,7 +431,6 @@ const RekapAbsen = ({
                                 </DataTable>
                         )}
 
-                        
                         {activeTab === "rekap" && (
                             <DataTable>
                                     <thead>
@@ -547,7 +501,7 @@ const RekapAbsen = ({
                                                                               .user
                                                                               .name}
                                                                 </div>
-                                                       
+
                                                             </div>
                                                         </div>
                                                     </td>
@@ -655,7 +609,6 @@ const RekapAbsen = ({
                 )}
             </div>
 
-            
             <Modal
                 show={isBayarModalOpen}
                 onClose={closeBayarModal}

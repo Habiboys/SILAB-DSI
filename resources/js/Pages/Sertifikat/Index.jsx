@@ -7,8 +7,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Download } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useState } from "react";
 
 const JENIS_LABELS = {
     praktikan: "Praktikan",
@@ -69,11 +68,6 @@ export default function SertifikatIndex({ sertifikats, laboratories, praktikums,
     };
 
     const hasActiveFilters = ["search", "jenis_sertifikat", "laboratory_id", "praktikum_id", "tanggal_awal", "tanggal_akhir"].some((key) => filters[key]);
-
-    useEffect(() => {
-        if (flash?.message) toast.success(flash.message);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
 
     const formatDate = (date) => (date ? new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "-");
 

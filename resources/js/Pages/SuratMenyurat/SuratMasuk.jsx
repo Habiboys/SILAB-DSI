@@ -11,7 +11,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Download, MessageSquare, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 
@@ -70,21 +70,19 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
 
     const handleCreate = (event) => {
         event.preventDefault();
-        createForm.post(route("surat-menyurat.surat-masuk.store"), { forceFormData: true, onSuccess: () => { close(); createForm.reset(); toast.success("Surat masuk berhasil ditambahkan"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal menambahkan surat masuk") });
+        createForm.post(route("surat-menyurat.surat-masuk.store"), { forceFormData: true, onSuccess: () => { close(); createForm.reset();  } });
     };
     const handleEdit = (event) => {
         event.preventDefault();
         editForm.transform((data) => ({ ...data, _method: "PUT" }));
-        editForm.post(route("surat-menyurat.surat-masuk.update", selectedSurat.id), { forceFormData: true, onSuccess: () => { close(); editForm.reset(); toast.success("Surat masuk berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal memperbarui surat masuk") });
+        editForm.post(route("surat-menyurat.surat-masuk.update", selectedSurat.id), { forceFormData: true, onSuccess: () => { close(); editForm.reset();  } });
     };
-    const handleDelete = () => router.delete(route("surat-menyurat.surat-masuk.destroy", selectedSurat.id), { onSuccess: () => { close(); toast.success("Surat masuk berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus surat masuk") });
+    const handleDelete = () => router.delete(route("surat-menyurat.surat-masuk.destroy", selectedSurat.id), { onSuccess: () => { close();  } });
     const handleDisposisi = (event) => {
         event.preventDefault();
-        disposisiForm.post(route("surat-menyurat.disposisi.store", selectedSurat.id), { onSuccess: () => { close(); disposisiForm.reset(); toast.success("Disposisi berhasil ditambahkan"); }, onError: (errors) => toast.error(Object.values(errors)[0] || "Gagal menambahkan disposisi") });
+        disposisiForm.post(route("surat-menyurat.disposisi.store", selectedSurat.id), { onSuccess: () => { close(); disposisiForm.reset();  } });
     };
     const handleExport = () => { if (kepengurusanLab) window.location.href = route("surat-menyurat.surat-masuk.export", { kepengurusan_lab_id: kepengurusanLab.id }); };
-
-    useEffect(() => { if (flash?.success) toast.success(flash.success); if (flash?.error) toast.error(flash.error); }, [flash]);
 
     const formatDate = (date) => (date ? new Date(date).toLocaleDateString("id-ID", { day: "2-digit", month: "long", year: "numeric" }) : "-");
     const columns = [

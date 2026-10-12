@@ -284,8 +284,7 @@ const AmbilAbsen = ({
     };
 
     useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
+
         if (message) toast.info(message);
         if (!periode) toast.warning("Tidak ada periode piket aktif. Silakan hubungi admin.");
     }, [flash, message, periode]);
@@ -343,7 +342,6 @@ const AmbilAbsen = ({
             checkinForm.transform((data) => ({ ...data, ...checkinFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null }));
             checkinForm.post(route("piket.absensi.store"), {
                 onSuccess: () => setActivityOpen(false),
-                onError: (errors) => toast.error(errors.face || errors.location || "Gagal check-in."),
             });
         } catch (error) {
             toast.error(error.message);
@@ -378,7 +376,6 @@ const AmbilAbsen = ({
             checkoutForm.transform((data) => ({ ...data, ...checkoutFaceProof, latitude: position?.latitude ?? null, longitude: position?.longitude ?? null, location_samples_inside: locationSamples.inside, location_samples_outside: locationSamples.outside }));
             checkoutForm.post(route("piket.absensi.checkout"), {
                 onSuccess: () => setActivityOpen(false),
-                onError: (errors) => toast.error(errors.face || errors.location || errors.foto_checkout || "Gagal checkout."),
             });
         } catch (error) {
             toast.error(error.message);

@@ -8,8 +8,7 @@ import StatusBadge from '@/Components/StatusBadge';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, router, useForm, usePage } from '@inertiajs/react';
 import { PlusCircle } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
+import { useRef, useState } from "react";
 
 export default function Index({ kuesioner, can, filters = {} }) {
     const { flash } = usePage().props;
@@ -20,11 +19,6 @@ export default function Index({ kuesioner, can, filters = {} }) {
     const [selected, setSelected] = useState(null);
     const timer = useRef(null);
     const deleteForm = useForm({});
-
-    useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
 
     const apply = (changes = {}) => router.get(route('kuesioner.index'), {
         search, tipe, status, per_page: perPage, ...changes,
@@ -38,11 +32,7 @@ export default function Index({ kuesioner, can, filters = {} }) {
     const changeTipe = (value) => { setTipe(value); apply({ tipe: value }); };
     const changeStatus = (value) => { setStatus(value); apply({ status: value }); };
     const changePerPage = (event) => { const value = Number(event.target.value); setPerPage(value); apply({ per_page: value }); };
-    const remove = () => deleteForm.delete(route('kuesioner.destroy', selected.id), {
-        preserveScroll: true,
-        onSuccess: () => setSelected(null),
-        onError: () => toast.error('Gagal menghapus kuesioner.'),
-    });
+    const remove = () => deleteForm.delete(route('kuesioner.destroy', selected.id), { preserveScroll: true, onSuccess: () => setSelected(null) });
     const fmtDate = (date) => date ? new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
     const columns = [
         { header: 'No', render: (_, index) => index + 1 },

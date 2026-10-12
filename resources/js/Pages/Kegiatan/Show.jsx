@@ -11,7 +11,7 @@ import {
     Video,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+
 import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
 import PageHeader from "../../Components/PageHeader";
@@ -54,7 +54,7 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
     const [showLpjForm, setShowLpjForm] = useState(false);
     const [deletingLpj, setDeletingLpj] = useState(null);
     const [approving, setApproving] = useState(false);
-    const [approvalTarget, setApprovalTarget] = useState(null); 
+    const [approvalTarget, setApprovalTarget] = useState(null);
     const [showDokForm, setShowDokForm] = useState(false);
     const [deletingDok, setDeletingDok] = useState(null);
 
@@ -90,51 +90,29 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
         router.post(
             route("kegiatan.approve", kegiatan.id),
             { status },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success(`Kegiatan berhasil ${status === "disetujui" ? "disetujui" : "ditolak"}`);
+            { preserveScroll: true, onSuccess: () => {
+
                     setApprovalTarget(null);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memproses persetujuan");
-                },
-                onFinish: () => setApproving(false),
-            },
+                }, onFinish: () => setApproving(false) },
         );
     };
 
     const submitLpj = (e) => {
         e.preventDefault();
-        postLpj(route("laporan-kegiatan.store", kegiatan.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Laporan berhasil diunggah");
+        postLpj(route("laporan-kegiatan.store", kegiatan.id), { forceFormData: true, onSuccess: () => {
+
                 resetLpj();
                 setShowLpjForm(false);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal mengunggah laporan");
-            },
-        });
+            } });
     };
 
     const submitDok = (e) => {
         e.preventDefault();
-        postDok(route("dokumentasi-kegiatan.store", kegiatan.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Dokumentasi berhasil diunggah");
+        postDok(route("dokumentasi-kegiatan.store", kegiatan.id), { forceFormData: true, onSuccess: () => {
+
                 resetDok();
                 setShowDokForm(false);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal mengunggah dokumentasi");
-            },
-        });
+            } });
     };
 
     const formatDate = (d, withTime = false) =>
@@ -308,7 +286,6 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                         </div>
                     </PageSection>
                 )}
-
 
                 <PageSection bodyClassName="flex flex-wrap items-center justify-between gap-4 p-6">
                     <div>
@@ -501,7 +478,6 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                         )}
                     </div>
                 </div>
-
 
                 <div className="card overflow-hidden border border-base-300 bg-base-100 shadow-none">
                     <div className="p-6 border-b flex justify-between items-center">
@@ -748,16 +724,10 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                 onConfirm={() => {
                     router.delete(
                         route("laporan-kegiatan.destroy", deletingLpj?.id),
-                        {
-                            onSuccess: () => {
-                                toast.success("Laporan berhasil dihapus");
+                        { onSuccess: () => {
+
                                 setDeletingLpj(null);
-                            },
-                            onError: (errors) => {
-                                const firstError = Object.values(errors).find(Boolean);
-                                toast.error(firstError || "Gagal menghapus laporan");
-                            },
-                        },
+                            } },
                     );
                 }}
                 title="Hapus Laporan"
@@ -773,16 +743,10 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                 onConfirm={() => {
                     router.delete(
                         route("dokumentasi-kegiatan.destroy", deletingDok?.id),
-                        {
-                            onSuccess: () => {
-                                toast.success("Dokumentasi berhasil dihapus");
+                        { onSuccess: () => {
+
                                 setDeletingDok(null);
-                            },
-                            onError: (errors) => {
-                                const firstError = Object.values(errors).find(Boolean);
-                                toast.error(firstError || "Gagal menghapus dokumentasi");
-                            },
-                        },
+                            } },
                     );
                 }}
                 title="Hapus Dokumentasi"

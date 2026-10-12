@@ -1,11 +1,12 @@
 import "../css/app.css";
 import "./bootstrap";
 
-import { createInertiaApp } from "@inertiajs/react";
+import { createInertiaApp, router } from "@inertiajs/react";
 import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { AlertTriangle, CheckCircle2, Info, XCircle } from "lucide-react";
 import { createRoot } from "react-dom/client";
-import { Toaster } from "sonner";
+import { Toaster, toast } from "sonner";
+import { installNotifications } from "./Utils/notifications";
 import { LabProvider } from "./Components/LabContext";
 import { installNavigation } from "./Utils/navigationRuntime";
 
@@ -22,6 +23,7 @@ createInertiaApp({
         ),
     setup({ el, App, props }) {
         installNavigation(props.initialPage);
+        installNotifications(router, toast, props.initialPage);
         const root = createRoot(el);
 
         root.render(

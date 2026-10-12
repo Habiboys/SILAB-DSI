@@ -1,22 +1,7 @@
-import { Head, Link, router, useForm } from "@inertiajs/react";
-import {
-    Award,
-    BookOpen,
-    CalendarDays,
-    ChevronRight,
-    ClipboardList,
-    Clock,
-    MapPin,
-    Edit,
-    Plus,
-    Scissors,
-    Trash2,
-    UserCheck,
-    Users,
-    GitBranch,
-} from "lucide-react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { Award, BookOpen, CalendarDays, ClipboardList, Clock, MapPin, Edit, Plus, Scissors, Trash2, UserCheck, Users, GitBranch } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+
 import ActionDropdown from "../../Components/ActionDropdown";
 import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
@@ -124,7 +109,7 @@ export default function PraktikumShowPage({
             subKelasForm,
             {
                 onSuccess: () => {
-                    toast.success("Sub-kelas berhasil ditambahkan");
+
                     setAddSubKelasModal({ open: false, parentKelas: null });
                 },
             },
@@ -154,7 +139,7 @@ export default function PraktikumShowPage({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Kelas berhasil diperbarui");
+
                     setEditKelasModal({ open: false, kelas: null });
                 },
             },
@@ -168,7 +153,7 @@ export default function PraktikumShowPage({
             }),
             {
                 onSuccess: () => {
-                    toast.success("Sub-kelas berhasil dihapus");
+
                     setDeleteSubKelasModal({ open: false, subKelas: null });
                 },
             },
@@ -184,7 +169,7 @@ export default function PraktikumShowPage({
             }),
             {
                 onSuccess: () => {
-                    toast.success("Kelas berhasil dihapus");
+
                     setDeleteKelasModal({ open: false, kelas: null });
                 },
             },
@@ -192,12 +177,7 @@ export default function PraktikumShowPage({
     };
 
     const handleDeletePraktikum = () => {
-        router.delete(route("praktikum.destroy", { praktikum: praktikum.id }), {
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus praktikum");
-            },
-        });
+        router.delete(route("praktikum.destroy", { praktikum: praktikum.id }), {  });
     };
 
     const openEditPraktikumModal = () => {
@@ -215,7 +195,7 @@ export default function PraktikumShowPage({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Info praktikum berhasil diperbarui");
+
                     setIsEditPraktikumModalOpen(false);
                 },
             },
@@ -229,7 +209,7 @@ export default function PraktikumShowPage({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Kelas berhasil ditambahkan");
+
                     addKelasForm.reset();
                     setIsAddKelasModalOpen(false);
                 },

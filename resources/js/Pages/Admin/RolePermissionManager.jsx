@@ -11,7 +11,6 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
 import { Check, Plus, Trash2, X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const LOCKED_ROLES = ["superadmin", "kadep", "admin", "asisten", "praktikan"];
 
@@ -52,33 +51,24 @@ export default function RolePermissionManager({ roles, permissions, allPermissio
 
     const savePermissions = () => {
         const selectedPermissions = Object.keys(editingPermissions).filter((permission) => editingPermissions[permission]);
-        router.post(route("admin.roles.permissions.update", selectedRole.id), { permissions: selectedPermissions }, {
-            onSuccess: () => toast.success("Izin berhasil diperbarui"),
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui izin"),
-        });
+        router.post(route("admin.roles.permissions.update", selectedRole.id), { permissions: selectedPermissions }, {  });
     };
 
     const handleCreateRole = (event) => {
         event.preventDefault();
-        router.post(route("admin.roles.create"), { name: newRoleName, permissions: [] }, {
-            onSuccess: () => {
-                toast.success(`Role '${newRoleName}' berhasil dibuat`);
+        router.post(route("admin.roles.create"), { name: newRoleName, permissions: [] }, { onSuccess: () => {
+
                 setNewRoleName("");
                 setIsCreateModalOpen(false);
-            },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal membuat role"),
-        });
+            } });
     };
 
     const handleDeleteRole = (role, confirmed = false) => {
         if (!confirmed) return;
-        router.delete(route("admin.roles.delete", role.id), {
-            onSuccess: () => {
-                toast.success(`Role '${role.name}' berhasil dihapus`);
+        router.delete(route("admin.roles.delete", role.id), { onSuccess: () => {
+
                 if (selectedRole?.id === role.id) setSelectedRole(roles[0] || null);
-            },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus role"),
-        });
+            } });
     };
 
     const filteredPermissions = searchQuery

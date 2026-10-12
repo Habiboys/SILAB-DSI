@@ -3,7 +3,7 @@ import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import { useLab } from "@/Components/LabContext";
 import Modal from "@/Components/Modal";
 import { confirmDialog } from "@/Components/confirmDialog";
-import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
+import { DataTable, DataTableHead } from "@/Components/DataTable";
 import PageSection from "@/Components/PageSection";
 import { usePermission } from "@/Components/PermissionContext";
 import DashboardLayout from "@/Layouts/DashboardLayout";
@@ -28,7 +28,7 @@ const RiwayatAbsen = ({
     manualUsers,
     currentKepengurusanLabId,
 }) => {
-    
+
     const { auth } = usePage().props;
     const { can } = usePermission();
     const { canMutate } = useKepengurusanAccess();
@@ -36,15 +36,12 @@ const RiwayatAbsen = ({
     canDeleteManualAbsensi = canDeleteManualAbsensi && canMutate;
     canVerifyAbsensi = canVerifyAbsensi && canMutate;
 
-    
     const { selectedLab } = useLab();
 
-    
     const canAccess = can("absensi.view_riwayat");
 
-    
     const [selectedPeriode, setSelectedPeriode] = useState(periode?.id || "");
-    
+
     const { selected_kepengurusan } = usePage().props;
     const selectedTahun = selected_kepengurusan
         ? String(selected_kepengurusan.id)
@@ -67,11 +64,10 @@ const RiwayatAbsen = ({
         kegiatan: "",
     });
 
-    
     const handlePeriodeChange = (e) => {
         const periodeId = e.target.value;
         setSelectedPeriode(periodeId);
-        
+
         const params = { periode_id: periodeId };
         if (selectedLab) {
             params.lab_id = selectedLab.id;
@@ -86,10 +82,6 @@ const RiwayatAbsen = ({
         });
     };
 
-    
-    
-
-    
     const formatDate = (dateString) => {
         if (!dateString) return "-";
         return new Date(dateString).toLocaleDateString("id-ID", {
@@ -100,7 +92,6 @@ const RiwayatAbsen = ({
         });
     };
 
-    
     const viewDetails = (item) => {
         setSelectedItem(item);
         setViewModalOpen(true);
@@ -161,14 +152,8 @@ const RiwayatAbsen = ({
             manualForm.post(route("piket.absensi.manual.store"), {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Absensi manual berhasil ditambahkan.");
+
                     closeManualModal();
-                },
-                onError: (errors) => {
-                    const firstError =
-                        Object.values(errors)[0] ||
-                        "Gagal menyimpan absensi manual.";
-                    toast.error(firstError);
                 },
             });
             return;
@@ -177,14 +162,8 @@ const RiwayatAbsen = ({
         manualForm.put(route("piket.absensi.manual.update", selectedItem?.id), {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success("Absensi manual berhasil diperbarui.");
+
                 closeManualModal();
-            },
-            onError: (errors) => {
-                const firstError =
-                    Object.values(errors)[0] ||
-                    "Gagal memperbarui absensi manual.";
-                toast.error(firstError);
             },
         });
     };
@@ -204,13 +183,6 @@ const RiwayatAbsen = ({
 
         router.delete(route("piket.absensi.manual.destroy", item.id), {
             preserveScroll: true,
-            onSuccess: () => toast.success("Absensi manual berhasil dihapus."),
-            onError: (errors) => {
-                const firstError =
-                    Object.values(errors || {})[0] ||
-                    "Gagal menghapus absensi manual.";
-                toast.error(firstError);
-            },
         });
     };
 
@@ -242,14 +214,8 @@ const RiwayatAbsen = ({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Absensi ditolak.");
+
                     closeRejectModal();
-                },
-                onError: (errors) => {
-                    const firstError =
-                        Object.values(errors || {})[0] ||
-                        "Gagal memverifikasi absensi.";
-                    toast.error(firstError);
                 },
             }
         );
@@ -269,13 +235,6 @@ const RiwayatAbsen = ({
             },
             {
                 preserveScroll: true,
-                onSuccess: () => toast.success("Absensi di-ACC."),
-                onError: (errors) => {
-                    const firstError =
-                        Object.values(errors || {})[0] ||
-                        "Gagal memverifikasi absensi.";
-                    toast.error(firstError);
-                },
             },
         );
     };
@@ -287,17 +246,6 @@ const RiwayatAbsen = ({
         return "badge-success";
     };
 
-    
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
-
-    
     useEffect(() => {
         setSelectedPeriode("");
     }, [selectedLab, selectedTahun]);
@@ -309,14 +257,6 @@ const RiwayatAbsen = ({
         );
     }, [currentKepengurusanLabId, selectedTahun]);
 
-    
-    useEffect(() => {
-        if (canAccess && selectedLab) {
-            
-        }
-    }, [canAccess, selectedLab]);
-
-    
     const renderUserName = (user) => {
         if (!user) return "-";
         return user.id === auth.user.id ? `${user.name} (Anda)` : user.name;
@@ -405,7 +345,7 @@ const RiwayatAbsen = ({
             <Head title="Riwayat Absensi" />
 
             <PageSection bodyClassName="p-0 sm:p-0">
-                
+
                 <div className="p-6 border-b">
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
                         <h2 className="text-xl font-semibold text-base-content">
@@ -416,10 +356,7 @@ const RiwayatAbsen = ({
                         </h2>
 
                         <div className="flex flex-wrap items-center gap-4">
-                            
-                            
 
-                            
                             <div>
                                 <select
                                     id="periode"
@@ -458,10 +395,8 @@ const RiwayatAbsen = ({
                         </div>
                     </div>
 
-            
                 </div>
 
-                
                 {!selectedLab && canAccess ? (
                     <div className="p-12 text-center">
                         <div className="mb-4 text-warning">
@@ -561,7 +496,6 @@ const RiwayatAbsen = ({
                 )}
             </PageSection>
 
-            
             <Modal
                 show={viewModalOpen && !!selectedItem}
                 onClose={() => {
@@ -651,10 +585,9 @@ const RiwayatAbsen = ({
                                 </div>
                             )}
 
-                        
                         {selectedItem?.foto_checkin ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                
+
                                 <div>
                                     <p className="text-sm font-medium text-base-content mb-2 flex items-center gap-1">
                                         <span className="inline-block w-2 h-2 rounded-full bg-success"></span>
@@ -677,7 +610,6 @@ const RiwayatAbsen = ({
                                     </div>
                                 </div>
 
-                                
                                 <div>
                                     <p className="text-sm font-medium text-base-content mb-2 flex items-center gap-1">
                                         <span className="inline-block w-2 h-2 rounded-full bg-error"></span>
@@ -713,7 +645,7 @@ const RiwayatAbsen = ({
                             </div>
                         ) : (selectedItem?.foto_checkout ??
                           selectedItem?.foto) ? (
-                            
+
                             <div>
                                 <p className="text-sm font-medium text-base-content mb-2">
                                     Foto Absensi
@@ -903,7 +835,7 @@ const RiwayatAbsen = ({
                     <p className="text-sm text-base-content/70 mb-4">
                         Masukkan alasan penolakan absensi ini. Alasan akan dapat dilihat oleh asisten terkait.
                     </p>
-                    
+
                     <div className="mb-4">
                         <label className="block text-sm text-base-content mb-1">
                             Alasan Penolakan <span className="text-error">*</span>

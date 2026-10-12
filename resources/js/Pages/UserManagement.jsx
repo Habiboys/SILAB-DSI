@@ -11,8 +11,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Check, Eye, EyeOff, Plus, X } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useState } from "react";
 
 const ROLE_LABELS = {
     superadmin: "Superadmin",
@@ -145,11 +144,7 @@ export default function UserManagement({
             onSuccess: () => {
                 setShowCreateModal(false);
                 createForm.reset();
-                toast.success("User berhasil ditambahkan.");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menambahkan user. Periksa form.");
+
             },
         });
     };
@@ -195,11 +190,7 @@ export default function UserManagement({
             onSuccess: () => {
                 setShowEditModal(false);
                 editForm.reset();
-                toast.success("User berhasil diperbarui.");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal memperbarui user. Periksa form.");
+
             },
         });
     };
@@ -209,11 +200,11 @@ export default function UserManagement({
         router.delete(route("user-management.destroy", deleteTarget.id), {
             onSuccess: () => {
                 setDeleteTarget(null);
-                toast.success("User berhasil dihapus.");
+
             },
             onError: (errors) => {
                 setDeleteTarget(null);
-                toast.error(errors.delete || "Gagal menghapus user.");
+
             },
         });
     };
@@ -232,11 +223,6 @@ export default function UserManagement({
 
     const needsLab = (selectedRoles) => selectedRoles.includes("admin");
 
-    useEffect(() => {
-        if (flash?.message) toast.success(flash.message);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
-
     const openApproveModal = (user) => {
         setApproveTarget(user);
         approveForm.setData("role", "praktikan");
@@ -252,11 +238,7 @@ export default function UserManagement({
                 setShowApproveModal(false);
                 setApproveTarget(null);
                 approveForm.reset();
-                toast.success("User berhasil disetujui.");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menyetujui user.");
+
             },
         });
     };

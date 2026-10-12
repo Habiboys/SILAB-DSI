@@ -12,7 +12,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import { Archive, Check, FileText, Plus, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+
 import { useMutationPermissions } from '@/Hooks/useKepengurusanAccess';
 
 function SummaryCard({ label, value, color = "blue" }) {
@@ -149,26 +149,17 @@ const Proker = ({
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        const options = {
-            forceFormData: true,
-            preserveScroll: true,
-            onSuccess: () => {
+        const options = { forceFormData: true, preserveScroll: true, onSuccess: () => {
                 closeModal();
-                toast.success(editingProker ? "Program kerja berhasil diperbarui" : "Program kerja berhasil ditambahkan");
-            },
-            onError: (formErrors) => toast.error(Object.values(formErrors).find(Boolean) || "Gagal menyimpan program kerja"),
-        };
+
+            } };
         editingProker ? post(route("proker.update", editingProker.id), options) : post(route("proker.store"), options);
     };
 
-    const handleDelete = () => destroy(route("proker.destroy", deletingProker.id), {
-        preserveScroll: true,
-        onSuccess: () => {
+    const handleDelete = () => destroy(route("proker.destroy", deletingProker.id), { preserveScroll: true, onSuccess: () => {
             setDeletingProker(null);
-            toast.success("Program kerja berhasil dihapus");
-        },
-        onError: (formErrors) => toast.error(Object.values(formErrors).find(Boolean) || "Gagal menghapus program kerja"),
-    });
+
+        } });
 
     const openApprove = (item, action) => {
         setApprovingItem(item);
@@ -178,15 +169,10 @@ const Proker = ({
 
     const handleApprove = () => {
         setApproving(true);
-        router.post(route("proker.approve", approvingItem.id), { action: approveAction, catatan: approveCatatan }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success(approveAction === "approve" ? "Proker disetujui" : "Proker ditolak");
+        router.post(route("proker.approve", approvingItem.id), { action: approveAction, catatan: approveCatatan }, { preserveScroll: true, onSuccess: () => {
+
                 setApprovingItem(null);
-            },
-            onError: (formErrors) => toast.error(Object.values(formErrors).find(Boolean) || "Gagal memproses persetujuan"),
-            onFinish: () => setApproving(false),
-        });
+            }, onFinish: () => setApproving(false) });
     };
 
     const columns = [

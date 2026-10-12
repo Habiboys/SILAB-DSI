@@ -11,8 +11,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { FileDown, ImageOff, Printer, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
 const KEADAAN_TONE = { baik: "success", rusak: "error", hilang: "neutral" };
 const KEADAAN_LABEL = { baik: "Baik", rusak: "Rusak", hilang: "Hilang" };
@@ -43,11 +42,6 @@ export default function InventarisIndex({
     const [isAsetDrawerOpen, setIsAsetDrawerOpen] = useState(false);
     const [selectedItem, setSelectedItem] = useState(null);
 
-    useEffect(() => {
-        if (flash?.message) toast.success(flash.message);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
-
     const applyFilters = debounce((search, category, pageLimit) => {
         router.get(
             route("inventaris.index"),
@@ -77,7 +71,7 @@ export default function InventarisIndex({
             onSuccess: () => {
                 setSelectedIds([]);
                 setIsBulkDeleteModalOpen(false);
-                toast.success("Aset terpilih berhasil dihapus");
+
             },
             preserveScroll: true,
         });
@@ -130,14 +124,11 @@ export default function InventarisIndex({
 
     const handleCreateSubmit = (event) => {
         event.preventDefault();
-        createForm.post(route("detail-inventaris.store"), {
-            onSuccess: () => {
+        createForm.post(route("detail-inventaris.store"), { onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-                toast.success("Aset berhasil ditambahkan");
-            },
-            onError: (formErrors) => toast.error(Object.values(formErrors).find(Boolean) || "Gagal menambahkan aset"),
-        });
+
+            } });
     };
 
     const columns = [

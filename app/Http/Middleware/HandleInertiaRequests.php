@@ -40,6 +40,7 @@ class HandleInertiaRequests extends Middleware
             if ($user->roles()->count() === 0) {
                 return array_merge(parent::share($request), [
                     'flash' => [
+                        'id' => fn () => (string) \Illuminate\Support\Str::uuid(),
                         'success' => fn () => $request->session()->get('success'),
                         'message' => fn () => $request->session()->get('message'),
                         'error'   => fn () => $request->session()->get('error'),
@@ -155,6 +156,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             'navigation_context' => fn () => \App\Services\NavigationContext::forRequest($request),
             'flash' => [
+                'id' => fn () => (string) \Illuminate\Support\Str::uuid(),
                 'success' => fn () => $request->session()->get('success'),
                 'message' => fn () => $request->session()->get('message'),
                 'error'   => fn () => $request->session()->get('error'),

@@ -42,17 +42,10 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
     const handleTemplateUpload = (e) => {
         e.preventDefault();
         tmplData.kategori = activeTab;
-        postTmpl(route("praktikum.sertifikat.template", praktikum.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Template berhasil diunggah");
+        postTmpl(route("praktikum.sertifikat.template", praktikum.id), { forceFormData: true, onSuccess: () => {
+
                 resetTmpl();
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal upload template");
-            },
-        });
+            } });
     };
 
     const handleGenerateConfirm = () => {
@@ -75,13 +68,12 @@ export default function PraktikumSertifikat({ praktikum, templates }) {
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Sertifikat berhasil digenerate");
+
                     setSelectedUsers([]);
                     setGenProcessing(false);
                 },
                 onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal generate sertifikat");
+
                     setGenProcessing(false);
                 },
             },

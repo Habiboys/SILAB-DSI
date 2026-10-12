@@ -15,7 +15,6 @@ import { ServerDataTable } from "../Components/DataTable";
 import { usePermission } from "../Components/PermissionContext";
 import DashboardLayout from "../Layouts/DashboardLayout";
 
-
 const RiwayatKeuangan = ({
     riwayatKeuangan,
     kepengurusanlab,
@@ -31,17 +30,14 @@ const RiwayatKeuangan = ({
     const { selectedLab } = useLab();
     const { can } = usePermission();
 
-    
     const [search, setSearch] = useState(filters?.search || "");
     const [perPage, setPerPage] = useState(filters?.perPage || 10);
     const [columnFilters, setColumnFilters] = useState(filters?.columns || {});
 
-    
     const canCreate = can("keuangan.create-transaksi");
     const canUpdate = can("keuangan.update-transaksi");
     const canDelete = can("keuangan.delete-transaksi");
 
-    
     const handleSearch = useCallback(
         debounce((query) => {
             router.get(
@@ -79,7 +75,6 @@ const RiwayatKeuangan = ({
         );
     };
 
-    
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -90,13 +85,12 @@ const RiwayatKeuangan = ({
     const [selectedAnggota, setSelectedAnggota] = useState("");
     const [previewImage, setPreviewImage] = useState(null);
 
-    
     const createForm = useForm({
-        tanggal: new Date().toISOString().split("T")[0], 
+        tanggal: new Date().toISOString().split("T")[0],
         nominal: "",
         jenis: "masuk",
         deskripsi: "",
-        lab_id: selectedLab ? selectedLab.id : null, 
+        lab_id: selectedLab ? selectedLab.id : null,
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
         nominal_kas_id: "",
         is_uang_kas: false,
@@ -105,22 +99,19 @@ const RiwayatKeuangan = ({
         catatan_pembayaran: "",
     });
 
-    
     const editForm = useForm({
         tanggal: "",
         nominal: "",
         jenis: "",
         deskripsi: "",
-        lab_id: selectedLab ? selectedLab.id : null, 
+        lab_id: selectedLab ? selectedLab.id : null,
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : null,
         jenis_pembayaran_kas: "normal",
         catatan_pembayaran: "",
     });
 
-    
     const deleteForm = useForm({});
 
-    
     const nominalKasForm = useForm({
         kepengurusan_lab_id: kepengurusanlab?.id || "",
         nominal: "",
@@ -131,13 +122,11 @@ const RiwayatKeuangan = ({
         is_active: true,
     });
 
-    
     const currentNominalKas =
         nominalKas?.length > 0
             ? nominalKas.find((nk) => nk.is_active) || nominalKas[0]
             : null;
 
-    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
             toast.error(
@@ -147,12 +136,12 @@ const RiwayatKeuangan = ({
         }
         createForm.reset();
         createForm.setData({
-            tanggal: new Date().toISOString().split("T")[0], 
+            tanggal: new Date().toISOString().split("T")[0],
             nominal: "",
             jenis: "masuk",
             deskripsi: "",
             bukti: "",
-            lab_id: selectedLab.id, 
+            lab_id: selectedLab.id,
             kepengurusan_lab_id: kepengurusanlab.id,
             nominal_kas_id: "",
             is_uang_kas: false,
@@ -165,29 +154,26 @@ const RiwayatKeuangan = ({
         setIsCreateModalOpen(true);
     };
 
-    
     const openEditModal = (item) => {
         setSelectedItem(item);
         editForm.setData({
-            tanggal: item.tanggal.split("T")[0], 
+            tanggal: item.tanggal.split("T")[0],
             nominal: item.nominal,
             jenis: item.jenis,
             deskripsi: item.deskripsi,
             bukti: item.bukti,
-            lab_id: selectedLab.id, 
+            lab_id: selectedLab.id,
             kepengurusan_lab_id: kepengurusanlab.id,
             _method: "PUT",
         });
         setIsEditModalOpen(true);
     };
 
-    
     const openDeleteModal = (item) => {
         setSelectedItem(item);
         setIsDeleteModalOpen(true);
     };
 
-    
     const handleUangKasChange = (e) => {
         const isChecked = e.target.checked;
 
@@ -203,10 +189,8 @@ const RiwayatKeuangan = ({
 
         setIsUangKas(isChecked);
 
-        
         createForm.setData("is_uang_kas", isChecked ? 1 : 0);
 
-        
         if (!isChecked) {
             setSelectedAnggota("");
             createForm.setData("user_id", "");
@@ -216,7 +200,6 @@ const RiwayatKeuangan = ({
             const defaultNominalKasId = currentNominalKas?.id || "";
             createForm.setData("nominal_kas_id", defaultNominalKasId);
 
-            
             const selectedAnggotaData = asisten.find(
                 (anggota) =>
                     anggota.id.toString() === selectedAnggota.toString(),
@@ -237,13 +220,11 @@ const RiwayatKeuangan = ({
 
     };
 
-    
     const handleAnggotaChange = (e) => {
         const anggotaId = e.target.value;
         setSelectedAnggota(anggotaId);
         createForm.setData("user_id", anggotaId);
 
-        
         if (isUangKas) {
             const selectedAnggotaData = asisten.find(
                 (anggota) => anggota.id.toString() === anggotaId.toString(),
@@ -257,12 +238,10 @@ const RiwayatKeuangan = ({
         }
     };
 
-    
     const handleJenisChange = (e) => {
         const jenis = e.target.value;
         createForm.setData("jenis", jenis);
 
-        
         if (jenis !== "masuk") {
             setIsUangKas(false);
             setSelectedAnggota("");
@@ -272,20 +251,13 @@ const RiwayatKeuangan = ({
         }
     };
 
-    
-    
-    
-    
-
     const showImage = (imagePath) => {
         window.open(`/storage/${imagePath}`, "_blank");
     };
 
-    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        
         if (isUangKas && selectedAnggota) {
             const selectedAnggotaData = asisten.find(
                 (anggota) =>
@@ -316,25 +288,20 @@ const RiwayatKeuangan = ({
         createForm.post(route("riwayat-keuangan.store"), {
             onSuccess: () => {
                 setIsCreateModalOpen(false);
-                toast.success("Data keuangan berhasil ditambahkan");
+
             },
             onError: (errors) => {
                 console.error("Create errors:", errors);
 
-                
                 if (errors.is_uang_kas) {
-                    toast.error(errors.is_uang_kas);
+
                 } else if (errors.bukti) {
-                    toast.error(errors.bukti);
+
                 } else if (errors.message) {
-                    toast.error(errors.message);
+
                 } else {
                     const errorMessages = Object.values(errors).flat();
-                    if (errorMessages.length > 0) {
-                        toast.error(errorMessages[0]); 
-                    } else {
-                        toast.error("Gagal menambahkan data");
-                    }
+
                 }
             },
         });
@@ -343,18 +310,14 @@ const RiwayatKeuangan = ({
     const handleEdit = (e) => {
         e.preventDefault();
 
-        
-
         editForm.put(route("riwayat-keuangan.update", selectedItem.id), {
             onSuccess: () => {
                 setIsEditModalOpen(false);
-                toast.success("Data keuangan berhasil diperbarui");
+
             },
                 onError: (errors) => {
                     console.error("Update errors:", errors);
-                    const firstError = Object.values(errors).find(Boolean);
-                    if (firstError) toast.error(firstError);
-                    else toast.error("Gagal memperbarui data");
+
                 },
         });
     };
@@ -366,11 +329,7 @@ const RiwayatKeuangan = ({
             onSuccess: () => {
                 setIsNominalKasModalOpen(false);
                 nominalKasForm.reset();
-                toast.success("Nominal kas berhasil disimpan");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menyimpan nominal kas");
+
             },
         });
     };
@@ -379,12 +338,11 @@ const RiwayatKeuangan = ({
         deleteForm.delete(route("riwayat-keuangan.destroy", selectedItem.id), {
             onSuccess: () => {
                 setIsDeleteModalOpen(false);
-                toast.success("Data keuangan berhasil dihapus");
+
             },
             onError: (errors) => {
                 console.error("Delete error:", errors);
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus data");
+
             },
         });
     };
@@ -396,13 +354,10 @@ const RiwayatKeuangan = ({
             return;
         }
 
-        
         const lab_id = selectedLab.id;
-        
+
         const tahun_id = kepengurusanlab.tahun_kepengurusan_id;
 
-
-        
         axios
             .get(route("riwayat-keuangan.check-data"), {
                 params: {
@@ -412,7 +367,7 @@ const RiwayatKeuangan = ({
             })
             .then((response) => {
                 if (response.data.hasData) {
-                    
+
                     window.open(
                         `${route(
                             "riwayat-keuangan.export",
@@ -420,7 +375,7 @@ const RiwayatKeuangan = ({
                         "_blank",
                     );
                 } else {
-                    
+
                     toast.error(
                         "Tidak ada riwayat keuangan untuk tahun yang dipilih",
                     );
@@ -432,26 +387,14 @@ const RiwayatKeuangan = ({
             });
     };
 
-    
-    useEffect(() => {
-        if (flash && flash.message) {
-            toast.success(flash.message);
-        }
-        if (flash && flash.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
-
-    
     useEffect(() => {
         if (selectedLab) {
-            
+
             createForm.setData("lab_id", selectedLab.id);
             editForm.setData("lab_id", selectedLab.id);
         }
     }, [selectedLab]);
 
-    
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat("id-ID", {
             style: "currency",
@@ -661,7 +604,6 @@ const RiwayatKeuangan = ({
                 />
             </PageSection>
 
-            
             <Modal
                 show={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -812,7 +754,6 @@ const RiwayatKeuangan = ({
                             </FormField>
                         </div>
 
-                        
                         {createForm.data.jenis === "masuk" && (
                             <label className="flex min-h-11 cursor-pointer items-center gap-3">
                                 <input
@@ -827,7 +768,6 @@ const RiwayatKeuangan = ({
                             </label>
                         )}
 
-                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <FormField label="Pilih Anggota" error={createForm.errors.user_id} required>
                                 <select
@@ -851,7 +791,6 @@ const RiwayatKeuangan = ({
                             </FormField>
                         )}
 
-                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <FormField label="Nominal Kas Acuan (Otomatis)" error={createForm.errors.nominal_kas_id}>
                                 <div className="w-full rounded-md border border-base-300 bg-base-200 px-3 py-2 text-sm text-base-content/80">
@@ -867,7 +806,6 @@ const RiwayatKeuangan = ({
                             </FormField>
                         )}
 
-                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <FormField label="Jenis Pembayaran" hint={'Pilih "Normal" jika pembayaran untuk periode selanjutnya, atau "Lebih" jika hanya bonus/tambahan'} error={createForm.errors.jenis_pembayaran_kas} required>
                                 <select
@@ -895,7 +833,6 @@ const RiwayatKeuangan = ({
                             </FormField>
                         )}
 
-                        
                         {createForm.data.jenis === "masuk" && isUangKas && (
                             <FormField label="Catatan Pembayaran (Opsional)" error={createForm.errors.catatan_pembayaran}>
                                 <textarea
@@ -932,7 +869,6 @@ const RiwayatKeuangan = ({
                             />
                         </FormField>
 
-                        
                         {!isUangKas || createForm.data.jenis !== "masuk" ? (
                             <FormField label="Deskripsi" error={createForm.errors.deskripsi} required>
                                 <textarea
@@ -950,7 +886,7 @@ const RiwayatKeuangan = ({
                                 ></textarea>
                             </FormField>
                         ) : (
-                            
+
                             <input
                                 type="hidden"
                                 name="deskripsi"

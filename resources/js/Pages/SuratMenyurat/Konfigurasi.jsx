@@ -8,8 +8,6 @@ import DashboardLayout from '@/Layouts/DashboardLayout';
 import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import { Head, useForm } from '@inertiajs/react';
 
-import { toast } from 'sonner';
-
 const VARIABLES = [
     { token: '{nomor}', desc: 'Nomor urut (misal: 1, 2, 3)' }, { token: '{inisial_lab}', desc: 'Inisial laboratorium' }, { token: '{bulan_romawi}', desc: 'Bulan dalam angka romawi' }, { token: '{tahun}', desc: 'Tahun 4 digit' }, { token: '{bulan}', desc: 'Bulan 2 digit' },
 ];
@@ -18,7 +16,7 @@ export default function Konfigurasi({ kepengurusanLab, konfigurasi }) {
     const { canMutate } = useKepengurusanAccess();
     const form = useForm({ kepengurusan_lab_id: konfigurasi?.kepengurusan_lab_id || kepengurusanLab?.id || '', inisial_lab: konfigurasi?.inisial_lab || 'LAB', format_nomor: konfigurasi?.format_nomor || '{nomor}/LAB.{inisial_lab}/{bulan_romawi}/{tahun}', reset_tiap_tahun: konfigurasi?.reset_tiap_tahun ?? true });
     const preview = () => { const now = new Date(); const roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII']; return form.data.format_nomor.replace('{nomor}', '1').replace('{inisial_lab}', form.data.inisial_lab).replace('{bulan_romawi}', roman[now.getMonth()]).replace('{tahun}', String(now.getFullYear())).replace('{bulan}', String(now.getMonth() + 1).padStart(2, '0')); };
-    const submit = (event) => { event.preventDefault(); if (!canMutate) return; form.post(route('surat-menyurat.konfigurasi.upsert'), { onSuccess: () => toast.success('Konfigurasi berhasil disimpan'), onError: (errors) => toast.error(Object.values(errors)[0] || 'Gagal menyimpan konfigurasi') }); };
+    const submit = (event) => { event.preventDefault(); if (!canMutate) return; form.post(route('surat-menyurat.konfigurasi.upsert'), {  }); };
     return (
         <DashboardLayout backFallback={null}>
             <Head title="Konfigurasi Surat" />

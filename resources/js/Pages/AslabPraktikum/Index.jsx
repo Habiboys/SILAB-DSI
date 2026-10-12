@@ -1,7 +1,7 @@
-import { Head, Link, router, useForm } from "@inertiajs/react";
-import { AlertTriangle, Trash2, UserPlus, Users, X } from "lucide-react";
+import { Head, router, useForm } from "@inertiajs/react";
+import { Trash2, UserPlus, Users } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
+
 import ConfirmModal from "../../Components/ConfirmModal";
 import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
@@ -40,19 +40,10 @@ export default function AslabPraktikumIndex({
 
     const handleCreate = (e) => {
         e.preventDefault();
-        createForm.post(route("praktikum.aslab.store", praktikum.id), {
-            onSuccess: () => {
+        createForm.post(route("praktikum.aslab.store", praktikum.id), { onSuccess: () => {
                 closeCreateModal();
-                toast.success("Aslab berhasil ditugaskan");
-            },
-            onError: (errors) => {
-                if (errors.user_id) {
-                    toast.error(errors.user_id);
-                } else {
-                    toast.error("Gagal menugaskan aslab");
-                }
-            },
-        });
+
+            } });
     };
 
     const openDeleteModal = (aslab) => {
@@ -71,24 +62,16 @@ export default function AslabPraktikumIndex({
                 praktikum: praktikum.id,
                 aslab: selectedAslab.id,
             }),
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     closeDeleteModal();
-                    toast.success("Aslab berhasil dihapus dari praktikum");
-                },
-                onError: () => {
-                    toast.error("Gagal menghapus aslab");
-                },
-            },
+
+                } },
         );
     };
 
     return (
         <DashboardLayout>
             <Head title="Kelola Aslab Praktikum" />
-
-
-
 
             <div className="bg-base-100 rounded-lg shadow-sm overflow-hidden">
                 <div className="p-4 md:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center border-b space-y-4 sm:space-y-0">
@@ -115,7 +98,6 @@ export default function AslabPraktikumIndex({
                         </button>
                     )}
                 </div>
-
 
                 <div className="p-4 md:p-6">
                     {currentAslab && currentAslab.length > 0 ? (
@@ -178,7 +160,6 @@ export default function AslabPraktikumIndex({
                     )}
                 </div>
             </div>
-
 
             <Modal
                 show={isCreateModalOpen}
@@ -271,7 +252,6 @@ export default function AslabPraktikumIndex({
                         </form>
                 </div>
             </Modal>
-
 
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedAslab}

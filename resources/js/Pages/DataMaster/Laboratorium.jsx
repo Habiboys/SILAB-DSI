@@ -9,8 +9,7 @@ import StatusBadge from '@/Components/StatusBadge';
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, router, useForm } from '@inertiajs/react';
 import { Power, Plus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { useState } from "react";
 
 const Laboratorium = ({ laboratorium, flash }) => {
     const [modal, setModal] = useState(null);
@@ -18,22 +17,14 @@ const Laboratorium = ({ laboratorium, flash }) => {
     const createForm = useForm({ nama: '', logo: null });
     const editForm = useForm({ nama: '', logo: null });
 
-    useEffect(() => { if (flash?.message) toast.success(flash.message); }, [flash]);
     const close = () => { setModal(null); setSelectedItem(null); };
     const openEdit = (item) => { setSelectedItem(item); editForm.setData({ nama: item.nama, logo: null }); editForm.clearErrors(); setModal('edit'); };
     const submit = (event, editing = false) => {
         event.preventDefault();
         const form = editing ? editForm : createForm;
-        form.post(editing ? route('laboratorium.update', selectedItem.id) : route('laboratorium.store'), {
-            forceFormData: true,
-            onSuccess: () => { close(); form.reset(); toast.success(`Laboratorium berhasil ${editing ? 'diperbarui' : 'ditambahkan'}`); },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menyimpan laboratorium'),
-        });
+        form.post(editing ? route('laboratorium.update', selectedItem.id) : route('laboratorium.store'), { forceFormData: true, onSuccess: () => { close(); form.reset();  } });
     };
-    const toggle = (item) => router.post(route('laboratorium.toggle', item.id), {}, {
-        onSuccess: () => toast.success(`Laboratorium berhasil ${item.is_active ? 'dinonaktifkan' : 'diaktifkan'}`),
-        onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal memperbarui status'),
-    });
+    const toggle = (item) => router.post(route('laboratorium.toggle', item.id), {}, {  });
 
     const columns = [
         { header: 'No', key: 'id', searchable: false, render: (_, index) => index + 1 },

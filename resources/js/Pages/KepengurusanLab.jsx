@@ -1,7 +1,7 @@
 import { Head, router, useForm } from '@inertiajs/react';
 import { ToggleLeft, ToggleRight } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useMemo, useState } from "react";
+
 import { confirmDialog } from '../Components/confirmDialog';
 import Button from '../Components/Button';
 import { DataGrid } from '../Components/DataTable';
@@ -29,9 +29,8 @@ export default function KepengurusanLab({ kepengurusanLab, tahunKepengurusan, fl
     const createForm = useForm({ tahun_kepengurusan_id: '', laboratorium_id: selectedLab?.id || null, sk: null });
     const editForm = useForm({ sk: null, _method: 'PUT' });
 
-    useEffect(() => { if (flash?.message) toast.success(flash.message); if (flash?.error) toast.error(flash.error); }, [flash]);
     const close = () => { setModal(null); setSelected(null); createForm.reset(); editForm.reset(); };
-    const submit = (form, url, message) => (event) => { event.preventDefault(); form.post(url, { forceFormData: true, onSuccess: () => { close(); toast.success(message); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menyimpan data') }); };
+    const submit = (form, url, message) => (event) => { event.preventDefault(); form.post(url, { forceFormData: true, onSuccess: () => { close();  } }); };
     const availableYears = tahunKepengurusan.filter((year) => !kepengurusanLab.some((item) => item.tahun_kepengurusan_id === year.id));
 
     const columns = useMemo(() => [

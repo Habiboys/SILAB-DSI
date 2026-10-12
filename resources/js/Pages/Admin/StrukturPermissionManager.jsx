@@ -7,7 +7,6 @@ import { usePermission } from "@/Hooks/usePermission";
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router } from "@inertiajs/react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 export default function StrukturPermissionManager({ jabatans, permissions, jabatanPermissions }) {
     const { isSuperAdmin } = usePermission();
@@ -44,10 +43,7 @@ export default function StrukturPermissionManager({ jabatans, permissions, jabat
 
     const savePermissions = () => {
         const selectedPermissions = Object.keys(editingPermissions).filter((permission) => editingPermissions[permission]);
-        router.put(route("struktur-permissions.update", selectedJabatan), { permissions: selectedPermissions }, {
-            onSuccess: () => toast.success("Izin berhasil diperbarui"),
-            onError: () => toast.error("Gagal memperbarui izin"),
-        });
+        router.put(route("struktur-permissions.update", selectedJabatan), { permissions: selectedPermissions }, {  });
     };
 
     const currentJabatanData = jabatans.find((item) => item.jabatan === selectedJabatan);

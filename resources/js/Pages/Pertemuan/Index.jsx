@@ -1,8 +1,8 @@
 import Button from '@/Components/Button';
 import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
-import { Calendar, ChevronDown, ChevronRight, ClipboardList, Download, Edit, GitBranch, Trash2, Users, Eye } from "lucide-react";
+import { Calendar, ChevronDown, ClipboardList, Download, Edit, GitBranch, Trash2, Users } from "lucide-react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
+
 import ConfirmModal from "../../Components/ConfirmModal";
 import Modal from "../../Components/Modal";
 import { usePermission } from "../../Components/PermissionContext";
@@ -25,7 +25,6 @@ export default function PertemuanIndex({
     const canManage =
         canMutate && (can("pertemuan.create") || isAdmin || isKadep || isAssignedAslab());
 
-
     const allKelas = praktikum.kelas || [];
 
     const parentKelasList = allKelas
@@ -39,8 +38,6 @@ export default function PertemuanIndex({
                 (sub) => sub.parent_kelas_id === parent.id,
             ),
         }));
-
-
 
     const enrollmentKelas = allKelas.filter((k) => {
         if (k.parent_kelas_id) return true;
@@ -61,7 +58,6 @@ export default function PertemuanIndex({
         : firstParent?.id || null;
     const initSubFromFilter = initKelas?.parent_kelas_id ? initKelas.id : null;
 
-
     const [activeParentId, setActiveParentId] = useState(initParentId);
     const [activeSubId, setActiveSubId] = useState(
         initSubFromFilter ?? initialSubId,
@@ -71,7 +67,6 @@ export default function PertemuanIndex({
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [meetingToDelete, setMeetingToDelete] = useState(null);
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
-
 
     const activeParent = parentKelasList.find((p) => p.id === activeParentId);
     const showSubTabs = activeParent?.hasSubKelas;
@@ -93,8 +88,6 @@ export default function PertemuanIndex({
         tanggal: "",
         kelas_id: "",
     });
-
-
 
     const resolveScopeKelasIds = (kelasId) => {
         if (!kelasId || kelasId === "all") return [];
@@ -140,7 +133,6 @@ export default function PertemuanIndex({
         setActiveSubId(null);
     }, [contextKelasId, allKelas]);
 
-
     const handleParentTab = (parent) => {
         setActiveParentId(parent.id);
         if (parent.hasSubKelas) {
@@ -150,7 +142,6 @@ export default function PertemuanIndex({
         }
         setShowForm(false);
     };
-
 
     const handleEdit = (p) => {
         setEditingPertemuan(p);
@@ -181,29 +172,17 @@ export default function PertemuanIndex({
             setData("kelas_id", contextKelasId);
         }
         if (editingPertemuan) {
-            put(route("praktikum.pertemuan.update", editingPertemuan.id), {
-                onSuccess: () => {
-                    toast.success("Pertemuan berhasil diperbarui");
+            put(route("praktikum.pertemuan.update", editingPertemuan.id), { onSuccess: () => {
+
                     setShowForm(false);
                     reset();
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memperbarui pertemuan");
-                },
-            });
+                } });
         } else {
-            post(route("praktikum.pertemuan.store", praktikum.id), {
-                onSuccess: () => {
-                    toast.success("Pertemuan berhasil ditambahkan");
+            post(route("praktikum.pertemuan.store", praktikum.id), { onSuccess: () => {
+
                     setShowForm(false);
                     reset();
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menambahkan pertemuan");
-                },
-            });
+                } });
         }
     };
 
@@ -214,26 +193,18 @@ export default function PertemuanIndex({
 
     const handleDelete = () => {
         if (meetingToDelete) {
-            destroy(route("praktikum.pertemuan.destroy", meetingToDelete.id), {
-                onSuccess: () => {
-                    toast.success("Pertemuan berhasil dihapus");
+            destroy(route("praktikum.pertemuan.destroy", meetingToDelete.id), { onSuccess: () => {
+
                     setShowDeleteModal(false);
                     setMeetingToDelete(null);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menghapus pertemuan");
-                },
-            });
+                } });
         }
     };
-
 
     const [distribusiModal, setDistribusiModal] = useState({ open: false });
     const [distribusiTargetKelasId, setDistribusiTargetKelasId] = useState("");
     const [distribusiSelected, setDistribusiSelected] = useState([]);
     const [distribusiProcessing, setDistribusiProcessing] = useState(false);
-
 
     const orphanedPertemuan =
         activeParentId && showSubTabs
@@ -266,19 +237,17 @@ export default function PertemuanIndex({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Pertemuan berhasil dipindahkan");
+
                     setDistribusiModal({ open: false });
                     setDistribusiProcessing(false);
                 },
                 onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memindahkan pertemuan");
+
                     setDistribusiProcessing(false);
                 },
             },
         );
     };
-
 
     const getKelasLabel = (kelasItem) => {
         if (!kelasItem.parent_kelas_id) return kelasItem.nama_kelas;
@@ -303,9 +272,6 @@ export default function PertemuanIndex({
         <DashboardLayout>
             <Head title={`${pageTitle} - ${praktikum.mata_kuliah}`} />
 
-
-
-
             <div className="bg-base-100 rounded-lg shadow-sm border border-base-300 overflow-hidden">
                 <div className="p-6 border-b border-base-300 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                     <div className="flex items-center space-x-4">
@@ -320,7 +286,6 @@ export default function PertemuanIndex({
                     </div>
 
                     <div className="flex gap-2 flex-wrap">
-
 
                         <div className="dropdown">
                             <Button
@@ -386,7 +351,6 @@ export default function PertemuanIndex({
                     </div>
                 </div>
 
-
                 {!hasClassContext && (
                     <div className="px-6 border-b border-base-300 flex overflow-x-auto">
                         {parentKelasList.map((parent) => (
@@ -411,7 +375,6 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-
                 {!hasClassContext && showSubTabs && (
                     <div className="flex items-center gap-1.5 px-6 py-2.5 bg-base-200 border-b border-base-300 overflow-x-auto">
                         <span className="text-xs text-base-content/50 font-medium shrink-0 flex items-center gap-1 mr-1">
@@ -434,7 +397,6 @@ export default function PertemuanIndex({
                     </div>
                 )}
 
-
                 {!hasClassContext && showSubTabs && (
                     <div className="px-6 py-2 bg-warning/10 border-b border-warning/20 text-xs text-warning flex items-center gap-2">
                         <GitBranch className="w-3.5 h-3.5 shrink-0" />
@@ -451,7 +413,6 @@ export default function PertemuanIndex({
                         </span>
                     </div>
                 )}
-
 
                 {!hasClassContext &&
                     showSubTabs &&
@@ -487,7 +448,6 @@ export default function PertemuanIndex({
                             </button>
                         </div>
                     )}
-
 
                 <div className="p-6 bg-base-200/50 min-h-[400px]">
                     {filteredPertemuan.length === 0 ? (
@@ -612,7 +572,6 @@ export default function PertemuanIndex({
                     )}
                 </div>
             </div>
-
 
             <Modal show={showForm} onClose={() => setShowForm(false)}>
                 <div className="p-6">
@@ -746,7 +705,6 @@ export default function PertemuanIndex({
                 cancelText="Batal"
                 type="danger"
             />
-
 
             <Modal
                 show={distribusiModal.open}

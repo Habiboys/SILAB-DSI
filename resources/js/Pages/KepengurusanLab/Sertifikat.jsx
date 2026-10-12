@@ -35,18 +35,10 @@ export default function KepengurusanSertifikat({
             return;
         }
 
-        post(route("kepengurusan-lab.sertifikat.template", kepengurusanLab.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Template berhasil diunggah");
+        post(route("kepengurusan-lab.sertifikat.template", kepengurusanLab.id), { forceFormData: true, onSuccess: () => {
+
                 reset();
-            },
-            onError: (errors) =>
-                toast.error(
-                    Object.values(errors).find(Boolean) ||
-                        "Gagal upload template",
-                ),
-        });
+            } });
     };
 
     const toggleUser = (id) =>
@@ -74,18 +66,10 @@ export default function KepengurusanSertifikat({
         router.post(
             route("kepengurusan-lab.sertifikat.generate", kepengurusanLab.id),
             { user_ids: selectedUsers },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Sertifikat berhasil digenerate");
+            { preserveScroll: true, onSuccess: () => {
+
                     setSelectedUsers([]);
-                },
-                onError: (errors) =>
-                    toast.error(
-                        Object.values(errors).find(Boolean) ||
-                            "Gagal generate sertifikat",
-                    ),
-            },
+                } },
         );
     };
 

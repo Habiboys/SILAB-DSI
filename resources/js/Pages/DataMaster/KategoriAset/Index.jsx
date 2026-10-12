@@ -10,8 +10,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Plus, Trash2, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 const KategoriAset = ({ inventaris, filters, flash }) => {
     const [modal, setModal] = useState(null);
@@ -25,8 +24,6 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
     const allSelected = inventaris.data.length > 0 && selectedIds.length === inventaris.data.length;
     const toggleSelectAll = () => setSelectedIds(allSelected ? [] : inventaris.data.map((item) => item.id));
     const toggleSelect = (id) => setSelectedIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
-
-    useEffect(() => { if (flash?.message) toast.success(flash.message); if (flash?.error) toast.error(flash.error); }, [flash]);
 
     const visit = useCallback(
         (extra) =>
@@ -60,14 +57,14 @@ const KategoriAset = ({ inventaris, filters, flash }) => {
 
     const handleCreate = (event) => {
         event.preventDefault();
-        createForm.post(route("data-master.kategori-aset.store"), { preserveScroll: true, onSuccess: () => { close(); createForm.reset(); toast.success("Kategori berhasil ditambahkan"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menambahkan kategori") });
+        createForm.post(route("data-master.kategori-aset.store"), { preserveScroll: true, onSuccess: () => { close(); createForm.reset();  } });
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.put(route("data-master.kategori-aset.update", editForm.data.id), { preserveScroll: true, onSuccess: () => { close(); toast.success("Kategori berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui kategori") });
+        editForm.put(route("data-master.kategori-aset.update", editForm.data.id), { preserveScroll: true, onSuccess: () => { close();  } });
     };
-    const handleDelete = () => deleteForm.delete(route("data-master.kategori-aset.destroy", selectedItem.id), { preserveScroll: true, onSuccess: () => { close(); toast.success("Kategori berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus kategori") });
-    const executeBulkDelete = () => router.post(route("data-master.kategori-aset.bulk-delete"), { ids: selectedIds }, { preserveScroll: true, onSuccess: () => { setSelectedIds([]); setModal(null); toast.success("Kategori terpilih berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus kategori terpilih") });
+    const handleDelete = () => deleteForm.delete(route("data-master.kategori-aset.destroy", selectedItem.id), { preserveScroll: true, onSuccess: () => { close();  } });
+    const executeBulkDelete = () => router.post(route("data-master.kategori-aset.bulk-delete"), { ids: selectedIds }, { preserveScroll: true, onSuccess: () => { setSelectedIds([]); setModal(null);  } });
 
     const columns = [
         { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },

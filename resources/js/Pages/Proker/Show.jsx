@@ -16,7 +16,6 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { Lock, Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const SP_TEXT = {
     draft: "Draft",
@@ -121,17 +120,10 @@ export default function ProkerShow({
         router.post(
             route("proker.ajukan", proker.id),
             {},
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("Program kerja berhasil diajukan");
+            { preserveScroll: true, onSuccess: () => {
+
                     setAjukanModal(false);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal mengajukan program kerja");
-                },
-            },
+                } },
         );
     };
 
@@ -140,22 +132,10 @@ export default function ProkerShow({
         router.post(
             route("proker.approve", proker.id),
             { action: approveAction, catatan: approveCatatan },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success(
-                        approveAction === "approve"
-                            ? "Proker disetujui"
-                            : "Proker ditolak",
-                    );
+            { preserveScroll: true, onSuccess: () => {
+
                     setApproveModal(false);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal memproses persetujuan");
-                },
-                onFinish: () => setApproving(false),
-            },
+                }, onFinish: () => setApproving(false) },
         );
     };
 
@@ -175,22 +155,11 @@ export default function ProkerShow({
 
     const handleParamSubmit = (e) => {
         e.preventDefault();
-        const opts = {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success(
-                    editingParam
-                        ? "Parameter diperbarui"
-                        : "Parameter ditambahkan",
-                );
+        const opts = { preserveScroll: true, onSuccess: () => {
+
                 setShowParamForm(false);
                 if (!editingParam) resetParam();
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menyimpan parameter");
-            },
-        };
+            } };
         if (editingParam) {
             putParam(route("proker-parameter.update", editingParam.id), opts);
         } else {
@@ -200,17 +169,10 @@ export default function ProkerShow({
 
     const confirmDeleteParam = () => {
         if (!deleteParamTarget) return;
-        router.delete(route("proker-parameter.destroy", deleteParamTarget.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Parameter dihapus");
+        router.delete(route("proker-parameter.destroy", deleteParamTarget.id), { preserveScroll: true, onSuccess: () => {
+
                 setDeleteParamTarget(null);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus parameter");
-            },
-        });
+            } });
     };
 
     const handleCapaianBlur = (param) => {
@@ -219,29 +181,15 @@ export default function ProkerShow({
         router.patch(
             route("proker-parameter.capaian", param.id),
             { capaian: val === "" ? null : Number(val) },
-            {
-                preserveScroll: true,
-                onSuccess: () => toast.success("Capaian disimpan"),
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menyimpan capaian");
-                },
-            },
+            { preserveScroll: true },
         );
     };
 
     const handleEvalSave = () => {
-        patchEval(route("proker.evaluasi", proker.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Evaluasi disimpan");
+        patchEval(route("proker.evaluasi", proker.id), { preserveScroll: true, onSuccess: () => {
+
                 setEditingEval(false);
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menyimpan evaluasi");
-            },
-        });
+            } });
     };
 
     const handleAddPj = () => {
@@ -250,19 +198,11 @@ export default function ProkerShow({
         router.post(
             route("proker-pj.store", proker.id),
             { user_id: selectedPjUser },
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("PJ ditambahkan");
+            { preserveScroll: true, onSuccess: () => {
+
                     setSelectedPjUser("");
                     setShowPjForm(false);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menambah PJ");
-                },
-                onFinish: () => setPjProcessing(false),
-            },
+                }, onFinish: () => setPjProcessing(false) },
         );
     };
 
@@ -270,17 +210,10 @@ export default function ProkerShow({
         if (!removePjTarget) return;
         router.delete(
             route("proker-pj.destroy", [proker.id, removePjTarget.user_id]),
-            {
-                preserveScroll: true,
-                onSuccess: () => {
-                    toast.success("PJ dihapus");
+            { preserveScroll: true, onSuccess: () => {
+
                     setRemovePjTarget(null);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menghapus PJ");
-                },
-            },
+                } },
         );
     };
 

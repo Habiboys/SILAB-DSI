@@ -30,7 +30,6 @@ const PeriodePiket = ({
     const { auth } = usePage().props;
     const { can } = usePermission();
 
-    
     const canManage = can("piket.manage-periode");
 
     const [search, setSearch] = useState(filters?.search || "");
@@ -43,7 +42,6 @@ const PeriodePiket = ({
         useState(false);
     const [isPengaturanModalOpen, setIsPengaturanModalOpen] = useState(false);
 
-    
     const createForm = useForm({
         nama: "",
         tanggal_mulai: "",
@@ -59,7 +57,6 @@ const PeriodePiket = ({
         lab_id: selectedLab ? selectedLab.id : "",
     });
 
-    
     const editForm = useForm({
         nama: "",
         tanggal_mulai: "",
@@ -74,7 +71,6 @@ const PeriodePiket = ({
         lab_id: selectedLab ? selectedLab.id : "",
     });
 
-    
     const autoGenerateForm = useForm({
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         tanggal_mulai: "",
@@ -84,14 +80,12 @@ const PeriodePiket = ({
         tahun_id: filters?.tahun_id || "",
     });
 
-    
     const pengaturanForm = useForm({
         kepengurusan_lab_id: kepengurusanlab ? kepengurusanlab.id : "",
         ada_denda: pengaturanPiket?.ada_denda ?? false,
         nominal_denda: pengaturanPiket?.nominal_denda ?? "",
     });
 
-    
     useEffect(() => {
         if (selectedLab) {
             createForm.setData("lab_id", selectedLab.id);
@@ -99,13 +93,11 @@ const PeriodePiket = ({
         }
     }, [selectedLab]);
 
-    
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const urlKepId = urlParams.get("kepengurusan_lab_id");
         const urlLabId = urlParams.get("lab_id");
 
-        
         // Jangan buang query lain (mis. page) saat menyelaraskan URL lab/kepengurusan,
         // agar posisi pagination tidak ikut ter-reset.
         const buildParams = (overrides, resetPage = false) => {
@@ -145,7 +137,6 @@ const PeriodePiket = ({
         }
     }, [selectedKepengurusanLabId, selectedLab?.id]);
 
-    
     const handleSearch = debounce((query) => {
         router.get(
             route(route().current()),
@@ -169,46 +160,38 @@ const PeriodePiket = ({
         );
     };
 
-    
     const calculateFriday = (mondayDate) => {
         if (!mondayDate) return "";
 
-        
         const date = new Date(mondayDate);
 
-        
         if (date.getDay() !== 1) {
-            return ""; 
+            return "";
         }
 
-        
         const friday = new Date(date);
         friday.setDate(date.getDate() + 4);
 
-        
         return friday.toISOString().split("T")[0];
     };
 
-    
     const isMonday = (dateStr) => {
         if (!dateStr) return false;
         const date = new Date(dateStr);
-        return date.getDay() === 1; 
+        return date.getDay() === 1;
     };
 
-    
     const handleStartDateChange = (e, formType = "create") => {
         const startDate = e.target.value;
 
         if (formType === "create") {
             createForm.setData("tanggal_mulai", startDate);
 
-            
             if (isMonday(startDate)) {
                 const fridayDate = calculateFriday(startDate);
                 createForm.setData("tanggal_selesai", fridayDate);
             } else if (startDate) {
-                
+
                 toast.warning(
                     "Tanggal mulai harus hari Senin. Silakan pilih tanggal yang lain.",
                 );
@@ -216,12 +199,11 @@ const PeriodePiket = ({
         } else {
             editForm.setData("tanggal_mulai", startDate);
 
-            
             if (isMonday(startDate)) {
                 const fridayDate = calculateFriday(startDate);
                 editForm.setData("tanggal_selesai", fridayDate);
             } else if (startDate) {
-                
+
                 toast.warning(
                     "Tanggal mulai harus hari Senin. Silakan pilih tanggal yang lain.",
                 );
@@ -229,7 +211,6 @@ const PeriodePiket = ({
         }
     };
 
-    
     const openCreateModal = () => {
         if (!kepengurusanlab) {
             toast.error(
@@ -264,11 +245,9 @@ const PeriodePiket = ({
     const openEditModal = (periode) => {
         setSelectedPeriode(periode);
 
-        
         const formatDateForInput = (dateString) => {
             if (!dateString) return "";
 
-            
             if (
                 typeof dateString === "string" &&
                 /^\d{4}-\d{2}-\d{2}$/.test(dateString)
@@ -276,11 +255,9 @@ const PeriodePiket = ({
                 return dateString;
             }
 
-            
             const date = new Date(dateString);
             if (isNaN(date.getTime())) return "";
 
-            
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, "0");
             const day = String(date.getDate()).padStart(2, "0");
@@ -324,15 +301,12 @@ const PeriodePiket = ({
         setSelectedPeriode(null);
     };
 
-    
     const handleCreate = (e) => {
         e.preventDefault();
 
-        
         const startDate = new Date(createForm.data.tanggal_mulai);
         const endDate = new Date(createForm.data.tanggal_selesai);
 
-        
         if (startDate.getDay() !== 1) {
             toast.error("Tanggal mulai harus hari Senin");
             return;
@@ -343,7 +317,6 @@ const PeriodePiket = ({
             return;
         }
 
-        
         const expectedFriday = new Date(startDate);
         expectedFriday.setDate(startDate.getDate() + 4);
 
@@ -357,12 +330,11 @@ const PeriodePiket = ({
         createForm.post(route("piket.periode-piket.store"), {
             onSuccess: () => {
                 closeCreateModal();
-                toast.success("Periode piket berhasil ditambahkan");
+
             },
             onError: (errors) => {
                 console.error("Create errors:", errors);
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menambahkan periode piket");
+
             },
             preserveState: true,
         });
@@ -371,18 +343,14 @@ const PeriodePiket = ({
     const handleEdit = (e) => {
         e.preventDefault();
 
-        
-
-        
         editForm.put(route("piket.periode-piket.update", selectedPeriode.id), {
             onSuccess: () => {
                 closeEditModal();
-                toast.success("Periode piket berhasil diperbarui");
+
             },
             onError: (errors) => {
                 console.error("Edit errors:", errors);
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal memperbarui periode piket");
+
             },
             preserveState: true,
         });
@@ -394,12 +362,11 @@ const PeriodePiket = ({
             {
                 onSuccess: () => {
                     closeDeleteModal();
-                    toast.success("Periode piket berhasil dihapus");
+
                 },
                 onError: (errors) => {
                     console.error("Delete error:", errors);
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menghapus periode piket");
+
                     closeDeleteModal();
                 },
                 preserveState: true,
@@ -441,11 +408,11 @@ const PeriodePiket = ({
         autoGenerateForm.post(route("piket.periode-piket.generate"), {
             onSuccess: () => {
                 closeAutoGenerateModal();
-                toast.success("Periode piket berhasil di-generate");
+
             },
             onError: (errors) => {
                 const msg = Object.values(errors)[0];
-                toast.error(msg || "Gagal generate periode piket");
+
             },
             preserveState: false,
         });
@@ -474,17 +441,16 @@ const PeriodePiket = ({
         pengaturanForm.post(route("piket.pengaturan-piket.upsert"), {
             onSuccess: () => {
                 closePengaturanModal();
-                toast.success("Pengaturan piket berhasil disimpan");
+
             },
             onError: (errors) => {
                 const msg = Object.values(errors)[0];
-                toast.error(msg || "Gagal menyimpan pengaturan");
+
             },
             preserveState: true,
         });
     };
 
-    
     const formatLamaPiket = (minutes) => {
         if (!minutes) return "-";
         const hours = Math.floor(minutes / 60);
@@ -501,24 +467,15 @@ const PeriodePiket = ({
         };
 
         router.put(route("piket.periode-piket.update", periode.id), data, {
-            onSuccess: () => {
-                toast.success(
-                    periode.isactive
-                        ? "Periode piket berhasil dinonaktifkan"
-                        : "Periode piket berhasil diaktifkan",
-                );
-            },
             onError: (errors) => {
                 console.error("Toggle active error:", errors);
-                const firstError = Object.values(errors).find(Boolean);
-                if (firstError) toast.error(firstError);
+
             },
             preserveState: true,
             preserveScroll: true,
         });
     };
 
-    
     const formatDate = (dateString) => {
         if (!dateString) return "-";
 
@@ -530,29 +487,12 @@ const PeriodePiket = ({
         });
     };
 
-    
     const getDayName = (dateString) => {
         if (!dateString) return "";
 
         const date = new Date(dateString);
         return date.toLocaleDateString("id-ID", { weekday: "long" });
     };
-
-    
-    useEffect(() => {
-        if (flash?.success) {
-            toast.success(flash.success);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-
-        if (errors && Object.keys(errors).length > 0) {
-            Object.values(errors).forEach((error) => {
-                toast.error(error);
-            });
-        }
-    }, [flash, errors]);
 
     const columns = [
         {
@@ -756,7 +696,7 @@ const PeriodePiket = ({
                                 required
                                 readOnly={isMonday(
                                     createForm.data.tanggal_mulai,
-                                )} 
+                                )}
                             />
                         </FormField>
 
@@ -814,7 +754,6 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            
             <Modal
                 show={isEditModalOpen && !!selectedPeriode}
                 onClose={closeEditModal}
@@ -876,7 +815,7 @@ const PeriodePiket = ({
                                     )
                                 }
                                 required
-                                readOnly={isMonday(editForm.data.tanggal_mulai)} 
+                                readOnly={isMonday(editForm.data.tanggal_mulai)}
                             />
                         </FormField>
 
@@ -934,7 +873,6 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedPeriode}
                 onClose={closeDeleteModal}
@@ -946,7 +884,6 @@ const PeriodePiket = ({
                 type="danger"
             />
 
-            
             <Modal
                 show={isAutoGenerateModalOpen}
                 onClose={closeAutoGenerateModal}
@@ -1058,7 +995,6 @@ const PeriodePiket = ({
                 </div>
             </Modal>
 
-            
             <Modal
                 show={isPengaturanModalOpen}
                 onClose={closePengaturanModal}

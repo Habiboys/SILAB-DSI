@@ -33,15 +33,11 @@ export default function PesertaManager({
 
     const submitAdd = (e) => {
         e.preventDefault();
-        post(route("kegiatan.peserta.store", kegiatan.id), {
-            onSuccess: () => {
-                toast.success("Peserta berhasil ditambahkan");
+        post(route("kegiatan.peserta.store", kegiatan.id), { onSuccess: () => {
+
                 reset();
                 setShowAddForm(false);
-            },
-            onError: (errs) =>
-                toast.error(errs.user_id ?? "Gagal menambahkan peserta"),
-        });
+            } });
     };
 
     const confirmDelete = () => {
@@ -50,13 +46,10 @@ export default function PesertaManager({
                 kegiatan: kegiatan.id,
                 pesertaId: deletingPeserta.id,
             }),
-            {
-                onSuccess: () => {
-                    toast.success("Peserta dihapus");
+            { onSuccess: () => {
+
                     setDeletingPeserta(null);
-                },
-                onError: () => toast.error("Gagal menghapus peserta"),
-            },
+                } },
         );
     };
 
@@ -69,14 +62,10 @@ export default function PesertaManager({
     } = useForm({ template: null });
     const submitTemplate = (e) => {
         e.preventDefault();
-        postTmpl(route("kegiatan.template.upload", kegiatan.id), {
-            forceFormData: true,
-            onSuccess: () => {
-                toast.success("Template berhasil diunggah");
+        postTmpl(route("kegiatan.template.upload", kegiatan.id), { forceFormData: true, onSuccess: () => {
+
                 resetTmpl();
-            },
-            onError: () => toast.error("Gagal upload template"),
-        });
+            } });
     };
 
     const pesertaList = kegiatan.peserta ?? [];
@@ -102,12 +91,12 @@ export default function PesertaManager({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success("Sertifikat berhasil digenerate");
+
                     setSelectedUsers([]);
                     setGenProcessing(false);
                 },
                 onError: () => {
-                    toast.error("Gagal generate sertifikat");
+
                     setGenProcessing(false);
                 },
             },

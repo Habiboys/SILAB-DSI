@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { firstMessage } from "@/Utils/notifications";
 import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
 import { DataGrid } from "../../Components/DataTable";
@@ -179,7 +180,6 @@ export default function TugasSubmissions({
         return kelas.nama_kelas || "N/A";
     })();
 
-
     const getCsrfToken = () => {
         return (
             props.csrf_token ||
@@ -189,7 +189,6 @@ export default function TugasSubmissions({
         );
     };
 
-
     const handleDownloadTemplate = () => {
         if (!praktikumId) {
             toast.error("ID praktikum tidak ditemukan");
@@ -198,7 +197,6 @@ export default function TugasSubmissions({
         const url = `/praktikum/${praktikumId}/tugas/${tugas.id}/download-nilai-template`;
         window.open(url, "_blank");
     };
-
 
     const handleFileSelect = (event) => {
         const file = event.target.files[0];
@@ -214,7 +212,6 @@ export default function TugasSubmissions({
                 return;
             }
 
-
             if (file.size > 10 * 1024 * 1024) {
                 toast.error("Ukuran file maksimal 10MB");
                 return;
@@ -223,7 +220,6 @@ export default function TugasSubmissions({
             setImportFile(file);
         }
     };
-
 
     const handleImportNilai = async () => {
         if (!importFile) {
@@ -264,12 +260,7 @@ export default function TugasSubmissions({
 
                 window.location.reload();
             } else {
-                toast.error(result.message);
-                if (result.errors) {
-                    result.errors.forEach((error) => {
-                        toast.error(error);
-                    });
-                }
+                toast.error(firstMessage(result.errors) || result.message || "Gagal mengimpor nilai.");
             }
         } catch (error) {
             console.error("Error importing nilai:", error);
@@ -280,7 +271,6 @@ export default function TugasSubmissions({
             setIsImporting(false);
         }
     };
-
 
     React.useEffect(() => {
         const filtered = normalizedSubmissions.filter((submission) => {
@@ -328,7 +318,6 @@ export default function TugasSubmissions({
         normalizedNonSubmittedPraktikans,
     ]);
 
-
     React.useEffect(() => {
         if (normalizedSubmissions && normalizedSubmissions.length > 0) {
             // debug log dihapus
@@ -341,11 +330,9 @@ export default function TugasSubmissions({
         }
     }, [normalizedSubmissions, normalizedNonSubmittedPraktikans]);
 
-
     React.useEffect(() => {
         if (tugas.komponen_rubriks && tugas.komponen_rubriks.length > 0) {
             const initialData = {};
-
 
             normalizedSubmissions.forEach((submission) => {
                 if (!submission.praktikan_id) return;
@@ -359,7 +346,6 @@ export default function TugasSubmissions({
                     };
                 });
             });
-
 
             normalizedNonSubmittedPraktikans.forEach((student) => {
                 if (!student.praktikan_id) return;
@@ -440,7 +426,6 @@ export default function TugasSubmissions({
             toast.error("ID praktikan tidak valid");
             return;
         }
-
 
         const dummySubmission = {
             id: null,
@@ -527,7 +512,6 @@ export default function TugasSubmissions({
             },
         }));
 
-
         const key = `${praktikanId}-${komponenId}`;
         setModifiedData((prev) => new Set([...prev, key]));
     };
@@ -571,8 +555,6 @@ export default function TugasSubmissions({
 
         try {
 
-
-
             const modifiedPraktikans = new Set();
             modifiedData.forEach((key) => {
                 const separatorIndex = key.lastIndexOf("-");
@@ -583,8 +565,6 @@ export default function TugasSubmissions({
                     modifiedPraktikans.add(normalizedPraktikanId);
                 }
             });
-
-
 
             if (modifiedPraktikans.size === 0) {
                 const allPraktikans = new Set();
@@ -604,7 +584,6 @@ export default function TugasSubmissions({
                 modifiedPraktikans.clear();
                 allPraktikans.forEach((id) => modifiedPraktikans.add(id));
             }
-
 
             if (modifiedPraktikans.size === 0) {
                 [
@@ -635,7 +614,6 @@ export default function TugasSubmissions({
                                     String(normalizedPraktikanId),
                             );
 
-
                         if (!normalizedPraktikanId) {
                             console.error("Invalid praktikan_id:", praktikanId);
                             return null;
@@ -663,7 +641,6 @@ export default function TugasSubmissions({
                                 ),
                                 catatan: "",
                             }));
-
 
                         if (nilaiRubrik.length === 0) {
                             console.warn(
@@ -699,7 +676,6 @@ export default function TugasSubmissions({
             }
             requestData.tugas_id = normalizedTugasId;
 
-
             if (
                 !requestData.matrix_data ||
                 requestData.matrix_data.length === 0
@@ -731,22 +707,11 @@ export default function TugasSubmissions({
                 const mainMessage =
                     errorData.message ||
                     "Terjadi kesalahan saat menyimpan nilai";
-                toast.error(mainMessage);
-
-
-                if (Array.isArray(errorData.results)) {
-                    errorData.results
-                        .filter((r) => !r.success && r.error)
-                        .forEach((r) =>
-                            toast.error(
-                                `Praktikan ${r.praktikan_id || "tidak diketahui"}: ${r.error}`,
-                            ),
-                        );
-                } else if (errorData.errors) {
-                    Object.values(errorData.errors)
-                        .flat()
-                        .forEach((e) => toast.error(e));
-                }
+                toast.error(mainMessage, {
+                    description: firstMessage(errorData.errors) || firstMessage(
+                        errorData.results?.filter((r) => !r.success).map((r) => r.error),
+                    ),
+                });
             }
         } catch (error) {
             console.error("Error saving inline nilai:", error);
@@ -768,7 +733,6 @@ export default function TugasSubmissions({
                 (ns) =>
                     String(ns.praktikan_id) === String(normalizedPraktikanId),
             );
-
 
             if (!normalizedPraktikanId) {
                 console.error("Invalid praktikan_id:", normalizedPraktikanId);
@@ -794,7 +758,6 @@ export default function TugasSubmissions({
                     catatan: "",
                 }));
 
-
             if (nilaiRubrik.length === 0) {
                 console.warn(
                     `No nilai rubrik for praktikan ${normalizedPraktikanId}`,
@@ -803,14 +766,12 @@ export default function TugasSubmissions({
                 return;
             }
 
-
             const normalizedTugasId = normalizeIdValue(tugas.id);
             if (!normalizedTugasId) {
                 console.error("Invalid tugas_id:", tugas.id);
                 toast.error("ID tugas tidak valid");
                 return;
             }
-
 
             const feedbackValue = submission?.id
                 ? feedbackData[submission.id] !== undefined
@@ -837,7 +798,6 @@ export default function TugasSubmissions({
                 ],
             };
 
-
             const response = await fetch("/praktikum/submission/matrix-grade", {
                 method: "POST",
                 headers: {
@@ -853,11 +813,9 @@ export default function TugasSubmissions({
                 toast.success("Nilai berhasil disimpan");
                 setEditingRow(null);
 
-
                 router.reload({
                     only: ["submissions", "nonSubmittedPraktikans"],
                 });
-
 
                 const newModifiedData = new Set(modifiedData);
                 tugas.komponen_rubriks.forEach((komponen) => {
@@ -873,18 +831,11 @@ export default function TugasSubmissions({
                 const mainMessage =
                     errorData.message ||
                     "Terjadi kesalahan saat menyimpan nilai";
-                toast.error(mainMessage);
-
-
-                if (Array.isArray(errorData.results)) {
-                    errorData.results
-                        .filter((r) => !r.success && r.error)
-                        .forEach((r) => toast.error(r.error));
-                } else if (errorData.errors) {
-                    Object.values(errorData.errors)
-                        .flat()
-                        .forEach((e) => toast.error(e));
-                }
+                toast.error(mainMessage, {
+                    description: firstMessage(errorData.errors) || firstMessage(
+                        errorData.results?.filter((r) => !r.success).map((r) => r.error),
+                    ),
+                });
             }
         } catch (error) {
             console.error("Error saving individual nilai:", error);
@@ -893,7 +844,6 @@ export default function TugasSubmissions({
             setSavingPraktikan(null);
         }
     };
-
 
     const totalSubmissions = filteredSubmissions?.length || 0;
     const totalNonSubmitted = filteredNonSubmitted?.length || 0;
@@ -907,17 +857,12 @@ export default function TugasSubmissions({
     const visibleSubmissions = filteredSubmissions || [];
     const visibleNonSubmitted = filteredNonSubmitted || [];
 
-
     return (
         <DashboardLayout>
             <Head title={`Pengumpulan Tugas - ${tugas.judul_tugas}`} />
 
-
-
-
             <div className="bg-base-100 shadow">
                 <div className="px-4 py-5 sm:p-6">
-
 
                     {(!tugas.komponen_rubriks ||
                         tugas.komponen_rubriks.length === 0) && (
@@ -1043,7 +988,6 @@ export default function TugasSubmissions({
                 </div>
             </div>
 
-
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 mt-6">
                 <div className="bg-base-100 p-4 rounded-lg shadow">
                     <div className="text-base-content/70 text-sm font-medium">
@@ -1087,7 +1031,6 @@ export default function TugasSubmissions({
                 </div>
             </div>
 
-
             {isEditMode && (
                 <div className="bg-success/10 border border-success/30 rounded-lg p-4 mb-6">
                     <div className="flex items-center">
@@ -1100,7 +1043,6 @@ export default function TugasSubmissions({
                     </div>
                 </div>
             )}
-
 
             <div className="bg-base-100 p-4 rounded-lg shadow mb-6">
                 <div className="flex flex-wrap items-center gap-3">
@@ -1123,7 +1065,6 @@ export default function TugasSubmissions({
                         )}
                     </div>
 
-
                     <select
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
@@ -1136,11 +1077,9 @@ export default function TugasSubmissions({
                         <option value="belum_kumpul">Belum Kumpul</option>
                     </select>
 
-
                     <div className="text-sm text-base-content/70 whitespace-nowrap">
                         Menampilkan {totalItems} data
                     </div>
-
 
                     <button type="button"
                         onClick={() =>
@@ -1241,7 +1180,6 @@ export default function TugasSubmissions({
                 )}
             </div>
 
-
             <div className="border-b border-base-300 mb-6">
                 <nav className="-mb-px flex space-x-8">
                     <button type="button"
@@ -1279,7 +1217,6 @@ export default function TugasSubmissions({
                     </button>
                 </nav>
             </div>
-
 
             <div className="bg-base-100 shadow rounded-lg">
 
@@ -1446,7 +1383,6 @@ export default function TugasSubmissions({
                                                                     JSON.parse(
                                                                         submission.file_pengumpulan,
                                                                     );
-
 
                                                                 if (
                                                                     Array.isArray(
@@ -1754,7 +1690,6 @@ export default function TugasSubmissions({
                                                                                     komponen.nilai_maksimal,
                                                                                 );
 
-
                                                                             if (
                                                                                 parseFloat(
                                                                                     value,
@@ -2001,7 +1936,6 @@ export default function TugasSubmissions({
                                         </tr>
                                     ))}
 
-
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
                                     visibleNonSubmitted?.length > 0 &&
@@ -2117,7 +2051,6 @@ export default function TugasSubmissions({
                                                                                 parseFloat(
                                                                                     komponen.nilai_maksimal,
                                                                                 );
-
 
                                                                             if (
                                                                                 parseFloat(
@@ -2331,7 +2264,6 @@ export default function TugasSubmissions({
                                         </tr>
                                     ))}
 
-
                                 {((activeTab === "submitted" &&
                                     filteredSubmissions?.length === 0) ||
                                     (activeTab === "not-submitted" &&
@@ -2368,7 +2300,6 @@ export default function TugasSubmissions({
                             </tbody>
                         </DataTable>
                 </div>
-
 
                 <div className="lg:hidden">
                     <DataTable>
@@ -2774,7 +2705,6 @@ export default function TugasSubmissions({
                                                                                     komponen.nilai_maksimal,
                                                                                 );
 
-
                                                                             if (
                                                                                 parseFloat(
                                                                                     value,
@@ -2918,7 +2848,6 @@ export default function TugasSubmissions({
                                         </tr>
                                     ))}
 
-
                                 {(activeTab === "not-submitted" ||
                                     activeTab === "all") &&
                                     visibleNonSubmitted?.length > 0 &&
@@ -3027,7 +2956,6 @@ export default function TugasSubmissions({
                                                                                 parseFloat(
                                                                                     komponen.nilai_maksimal,
                                                                                 );
-
 
                                                                             if (
                                                                                 parseFloat(
@@ -3168,7 +3096,6 @@ export default function TugasSubmissions({
                                         </tr>
                                     ))}
 
-
                                 {((activeTab === "submitted" &&
                                     filteredSubmissions?.length === 0) ||
                                     (activeTab === "not-submitted" &&
@@ -3214,7 +3141,6 @@ export default function TugasSubmissions({
                 </div>
             </div>
 
-
             {totalItems > 0 && (
                 <div className="border-t border-base-300 bg-base-100 px-4 py-3 sm:px-6 rounded-lg shadow mt-4 text-sm text-base-content/60">
                     Menampilkan semua {totalItems} data hasil filter.
@@ -3246,7 +3172,6 @@ export default function TugasSubmissions({
                     </div>
                 )}
 
-
             <RubrikGradingModal
                 isOpen={isRubrikGradingOpen}
                 onClose={closeRubrikGrading}
@@ -3270,7 +3195,6 @@ export default function TugasSubmissions({
                 tugas={tugas}
                 onSave={handleNilaiTambahanSaved}
             />
-
 
             <Modal
                 show={isImportModalOpen}
@@ -3352,7 +3276,6 @@ export default function TugasSubmissions({
                     </div>
                 </div>
             </Modal>
-
 
             <ModernPdfViewer
                 show={isPdfViewerOpen}

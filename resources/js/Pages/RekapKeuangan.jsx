@@ -1,6 +1,5 @@
 import { Head, usePage } from "@inertiajs/react";
-import { useEffect } from "react";
-import { toast } from "sonner";
+
 import { DataTable, DataTableEmpty, DataTableHead } from "@/Components/DataTable";
 import PageHeader from "@/Components/PageHeader";
 import PageSection from "@/Components/PageSection";
@@ -41,11 +40,6 @@ const RekapKeuangan = ({ rekapKeuangan, kepengurusanlab, flash, keuanganSummary 
     const totalPemasukan = keuanganSummary?.totalPemasukan || 0;
     const totalPengeluaran = keuanganSummary?.totalPengeluaran || 0;
     const totalSaldo = keuanganSummary?.saldoAkhir || 0;
-
-    useEffect(() => {
-        if (flash?.message) toast.success(flash.message);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
 
     return (
         <DashboardLayout>

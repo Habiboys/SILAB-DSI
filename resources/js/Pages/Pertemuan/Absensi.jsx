@@ -1,6 +1,6 @@
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Head, useForm } from "@inertiajs/react";
 import { useMemo, useState } from "react";
-import { toast } from "sonner";
+
 import Button from "../../Components/Button";
 import { DataGrid } from "../../Components/DataTable";
 import PageHeader from "../../Components/PageHeader";
@@ -59,11 +59,7 @@ export default function PertemuanAbsensi({
 
     const submitPraktikan = (e) => {
         e.preventDefault();
-        postP(route("praktikum.absensi.praktikan.store", pertemuan.id), {
-            onSuccess: () =>
-                toast.success("Absensi praktikan berhasil disimpan"),
-            onError: () => toast.error("Gagal menyimpan absensi"),
-        });
+        postP(route("praktikum.absensi.praktikan.store", pertemuan.id), {  });
     };
 
     const {
@@ -87,10 +83,7 @@ export default function PertemuanAbsensi({
 
     const submitAslab = (e) => {
         e.preventDefault();
-        postA(route("praktikum.absensi.aslab.store", pertemuan.id), {
-            onSuccess: () => toast.success("Absensi aslab berhasil disimpan"),
-            onError: () => toast.error("Gagal menyimpan absensi"),
-        });
+        postA(route("praktikum.absensi.aslab.store", pertemuan.id), {  });
     };
 
     const praktikanRows = useMemo(
@@ -290,8 +283,6 @@ export default function PertemuanAbsensi({
     return (
         <DashboardLayout>
             <Head title={`Absensi - ${pertemuan?.judul || "Pertemuan"}`} />
-
-
 
             <PageHeader
                 title="Absensi Pertemuan"

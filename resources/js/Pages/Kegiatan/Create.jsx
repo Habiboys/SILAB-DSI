@@ -1,6 +1,6 @@
 import CancelButton from '@/Components/CancelButton';
 import { Head, useForm } from "@inertiajs/react";
-import { toast } from "sonner";
+
 import Button from "../../Components/Button";
 import FormField from "../../Components/FormField";
 import PageHeader from "../../Components/PageHeader";
@@ -21,13 +21,7 @@ export default function KegiatanCreate({ proker }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route("kegiatan.store"), {
-            onSuccess: () => toast.success("Kegiatan berhasil diajukan"),
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal mengajukan kegiatan");
-            },
-        });
+        post(route("kegiatan.store"), {  });
     };
 
     return (

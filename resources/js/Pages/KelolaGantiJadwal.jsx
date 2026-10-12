@@ -1,13 +1,13 @@
 import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { useState } from "react";
-import { toast } from 'sonner';
+
 import Modal from "../Components/Modal";
 
 const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
     const [selectedPermintaan, setSelectedPermintaan] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [action, setAction] = useState(""); 
+    const [action, setAction] = useState("");
 
     const { data, setData, post, processing, errors, reset } = useForm({
         catatan_admin: "",
@@ -74,14 +74,14 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                toast.success(`Permintaan berhasil ${actionText}!`);
+
                 closeModal();
             },
             onError: (err) => {
                 const msg =
                     err?.message ||
                     "Anda tidak memiliki akses untuk memproses permintaan ini.";
-                toast.error(msg);
+
             },
         });
     };
@@ -96,7 +96,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
         });
     };
 
-    
     const pendingRequests = permintaan.filter((p) => p.status === "pending");
     const processedRequests = permintaan.filter((p) => p.status !== "pending");
 
@@ -104,9 +103,8 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
         <DashboardLayout>
             <Head title="Kelola Ganti Jadwal Piket" />
 
-
             <div className="space-y-6">
-                
+
                 <div className="bg-base-100 rounded-lg shadow-sm">
                     <div className="p-6 border-b">
                         <h2 className="text-xl font-semibold text-base-content">
@@ -118,7 +116,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 </div>
 
-                
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="bg-base-100 rounded-lg shadow-sm p-6">
                         <div className="flex items-center">
@@ -213,7 +210,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 </div>
 
-                
                 {pendingRequests.length > 0 && (
                     <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -306,7 +302,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 )}
 
-                
                 {processedRequests.length > 0 && (
                     <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -396,7 +391,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                     </div>
                 )}
 
-                
                 {permintaan.length === 0 && (
                     <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-12 text-center">
@@ -428,7 +422,6 @@ const KelolaGantiJadwal = ({ permintaan, periodeAktif, labInfo, flash }) => {
                 )}
             </div>
 
-            
             <Modal
                 show={isModalOpen && !!selectedPermintaan}
                 onClose={closeModal}

@@ -1,6 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
-import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useMemo, useState } from "react";
+
 import Button from '../Components/Button';
 import ConfirmModal from '../Components/ConfirmModal';
 import { DataGrid } from '../Components/DataTable';
@@ -40,10 +40,9 @@ export default function TahunKepengurusan({ tahunKepengurusan, flash }) {
     const editForm = useForm({ tahun: '', mulai: '', selesai: '', isactive: false });
     const { delete: destroy } = useForm();
 
-    useEffect(() => { if (flash?.message) toast.success(flash.message); }, [flash]);
     const close = () => { setModal(null); setSelected(null); createForm.reset(); editForm.reset(); };
     const openEdit = (item) => { setSelected(item); editForm.setData({ tahun: item.tahun, mulai: monthInput(item.mulai), selesai: monthInput(item.selesai), isactive: !!item.isactive }); setModal('edit'); };
-    const submit = (form, method, url, message) => (event) => { event.preventDefault(); form[method](url, { onSuccess: () => { close(); toast.success(message); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menyimpan data') }); };
+    const submit = (form, method, url, message) => (event) => { event.preventDefault(); form[method](url, { onSuccess: () => { close();  } }); };
 
     const columns = useMemo(() => [
         { header: 'No', sortable: false, searchable: false, render: (_, index) => index + 1 },
@@ -60,6 +59,6 @@ export default function TahunKepengurusan({ tahunKepengurusan, flash }) {
         <PageSection><DataGrid rows={tahunKepengurusan} columns={columns} searchPlaceholder="Cari tahun kepengurusan..." emptyMessage="Belum ada tahun kepengurusan." filters={[{ key: 'isactive', label: 'Status', options: [{ value: 'true', label: 'Aktif' }, { value: 'false', label: 'Tidak Aktif' }] }]} /></PageSection>
         <Modal show={modal === 'create'} onClose={close} maxWidth="md"><TahunForm title="Tambah Tahun Kepengurusan" form={createForm} onClose={close} onSubmit={submit(createForm, 'post', route('tahun-kepengurusan.store'), 'Tahun kepengurusan berhasil ditambahkan')} /></Modal>
         <Modal show={modal === 'edit' && !!selected} onClose={close} maxWidth="md">{selected && <TahunForm title="Edit Tahun Kepengurusan" form={editForm} onClose={close} onSubmit={submit(editForm, 'put', route('tahun-kepengurusan.update', selected.id), 'Tahun kepengurusan berhasil diperbarui')} />}</Modal>
-        <ConfirmModal show={modal === 'delete' && !!selected} onClose={close} onConfirm={() => destroy(route('tahun-kepengurusan.destroy', selected.id), { onSuccess: () => { close(); toast.success('Tahun kepengurusan berhasil dihapus'); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menghapus data') })} title="Konfirmasi Hapus" message="Apakah Anda yakin ingin menghapus tahun kepengurusan ini? Tindakan ini tidak dapat dibatalkan." confirmText="Hapus" cancelText="Batal" type="danger" />
+        <ConfirmModal show={modal === 'delete' && !!selected} onClose={close} onConfirm={() => destroy(route('tahun-kepengurusan.destroy', selected.id), { onSuccess: () => { close();  } })} title="Konfirmasi Hapus" message="Apakah Anda yakin ingin menghapus tahun kepengurusan ini? Tindakan ini tidak dapat dibatalkan." confirmText="Hapus" cancelText="Batal" type="danger" />
     </DashboardLayout>;
 }

@@ -125,17 +125,11 @@ const Praktikum = ({
             route("praktikum.kelas.sub-kelas.update", {
                 subKelas: editSubKelasTarget.subKelas.id,
             }),
-            {
-                onSuccess: () => {
-                    toast.success("Sub-kelas berhasil diperbarui");
+            { onSuccess: () => {
+
                     setEditSubKelasTarget(null);
                     editSubKelasForm.reset();
-                },
-                onError: (errors) => {
-                    Object.values(errors).forEach((msg) => toast.error(msg));
-                },
-                preserveScroll: true,
-            },
+                }, preserveScroll: true },
         );
     };
 
@@ -160,17 +154,11 @@ const Praktikum = ({
                 selectedParentKelas.praktikum_id,
                 selectedParentKelas.id,
             ]),
-            {
-                onSuccess: () => {
+            { onSuccess: () => {
                     setIsSubKelasModalOpen(false);
                     subKelasForm.reset();
-                    toast.success("Sub-kelas berhasil ditambahkan");
-                },
-                onError: (errors) => {
-                    Object.values(errors).forEach((msg) => toast.error(msg));
-                },
-                preserveScroll: true,
-            },
+
+                }, preserveScroll: true },
         );
     };
 
@@ -188,13 +176,9 @@ const Praktikum = ({
             {
                 preserveScroll: true,
                 onSuccess: () => {
-                    toast.success(
-                        `Sub-kelas ${deleteSubKelasTarget.nama_kelas} berhasil dihapus`,
-                    );
+
                     setDeleteSubKelasTarget(null);
                 },
-                onError: (errors) =>
-                    toast.error(errors.message || "Gagal menghapus sub-kelas"),
             },
         );
     };
@@ -205,15 +189,6 @@ const Praktikum = ({
             editForm.setData("lab_id", selectedLab.id);
         }
     }, [selectedLab]);
-
-    useEffect(() => {
-        if (flash?.message) {
-            toast.success(flash.message);
-        }
-        if (flash?.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
 
     const formatJam = (jamMulai, jamSelesai) => {
         const formatSingleTime = (timeString) => {
@@ -272,10 +247,6 @@ const Praktikum = ({
             onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                if (firstError) toast.error(firstError);
             },
             preserveScroll: true,
         });
@@ -431,7 +402,7 @@ const Praktikum = ({
         editForm.put(route("praktikum.update", editForm.data.id), {
             onSuccess: () => {
                 closeEditModal();
-                toast.success("Praktikum berhasil diperbarui");
+
             },
             onError: (errors) => {
                 Object.keys(errors).forEach((key) => {
@@ -439,12 +410,10 @@ const Praktikum = ({
                         const parts = key.split(".");
                         if (parts.length === 3) {
                             const index = parseInt(parts[1]);
-                            toast.error(
-                                `Jadwal ke-${index + 1}: ${errors[key]}`,
-                            );
+
                         }
                     } else {
-                        toast.error(errors[key]);
+
                     }
                 });
             },
@@ -469,8 +438,7 @@ const Praktikum = ({
             },
             onError: (errors) => {
                 console.error("Delete error:", errors);
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus data");
+
                 setIsDeleteModalOpen(false);
             },
         });

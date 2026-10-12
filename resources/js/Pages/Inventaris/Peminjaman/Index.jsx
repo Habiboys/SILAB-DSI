@@ -63,11 +63,6 @@ export default function PeminjamanIndex({
     const [deleteTarget, setDeleteTarget] = useState(null);
 
     useEffect(() => {
-        if (flash?.message) toast.success(flash.message);
-        if (flash?.error) toast.error(flash.error);
-    }, [flash]);
-
-    useEffect(() => {
         if (!selectedLab) return;
         router.get(
             route("inventaris.peminjaman.index"),
@@ -161,15 +156,10 @@ export default function PeminjamanIndex({
             toast.error("Pilih minimal 1 aset.");
             return;
         }
-        createForm.post(route("inventaris.peminjaman.store"), {
-            forceFormData: true,
-            onSuccess: () => {
+        createForm.post(route("inventaris.peminjaman.store"), { forceFormData: true, onSuccess: () => {
                 setIsCreateModalOpen(false);
                 createForm.reset();
-            },
-            onError: () => toast.error("Gagal mencatat peminjaman"),
-            preserveScroll: true,
-        });
+            }, preserveScroll: true });
     };
 
     const openKembalikanTransaksi = (item) => {
@@ -204,30 +194,18 @@ export default function PeminjamanIndex({
             kembalikanMode === "item"
                 ? route("inventaris.peminjaman.kembalikan-item", selectedItem.id)
                 : route("inventaris.peminjaman.kembalikan", selectedPeminjaman.id);
-        kembalikanForm.post(url, {
-            onSuccess: () => {
+        kembalikanForm.post(url, { onSuccess: () => {
                 setIsKembalikanModalOpen(false);
                 setSelectedPeminjaman(null);
                 setSelectedItem(null);
-            },
-            onError: () => toast.error("Gagal mencatat pengembalian"),
-            preserveScroll: true,
-        });
+            }, preserveScroll: true });
     };
 
     const confirmDelete = () => {
-        router.delete(route("inventaris.peminjaman.destroy", deleteTarget.id), {
-            preserveScroll: true,
-            onSuccess: () => {
-                toast.success("Catatan peminjaman berhasil dihapus");
+        router.delete(route("inventaris.peminjaman.destroy", deleteTarget.id), { preserveScroll: true, onSuccess: () => {
+
                 setDeleteTarget(null);
-            },
-            onError: (errors) =>
-                toast.error(
-                    Object.values(errors).find(Boolean) ||
-                        "Gagal menghapus catatan peminjaman",
-                ),
-        });
+            } });
     };
 
     const fmtDate = (d) =>

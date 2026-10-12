@@ -129,10 +129,9 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
         router.post(route("detail-inventaris.update", item.id), { ...editForm.data, _method: "PUT", foto: editForm.data.foto }, {
             forceFormData: true,
             onSuccess: () => {
-                toast.success("Aset berhasil diperbarui");
+
                 requestClose();
             },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui aset"),
         });
     };
 
@@ -151,11 +150,10 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
         e.preventDefault();
         kondisiForm.post(route("detail-inventaris.update-kondisi", item.id), {
             onSuccess: () => {
-                toast.success("Kondisi berhasil diperbarui");
+
                 kondisiForm.reset();
                 loadRiwayat();
             },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui kondisi"),
         });
     };
 
@@ -185,7 +183,6 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
                 pinjamForm.reset();
                 requestClose();
             },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal mencatat peminjaman"),
         });
     };
 
@@ -214,17 +211,15 @@ export default function AsetDrawer({ item, onClose, canUpdate, canDelete }) {
         // Pengembalian per-item: activePeminjamanId di sini = id item
         kembaliForm.post(route("inventaris.peminjaman.kembalikan-item", activePeminjamanId), {
             onSuccess: () => requestClose(),
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal mencatat pengembalian aset"),
         });
     };
 
     const handleDelete = () => {
         router.delete(route("detail-inventaris.destroy", item.id), {
             onSuccess: () => {
-                toast.success("Aset berhasil dihapus");
+
                 requestClose();
             },
-            onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus aset"),
         });
     };
 

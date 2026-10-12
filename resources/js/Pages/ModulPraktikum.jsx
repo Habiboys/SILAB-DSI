@@ -1,6 +1,6 @@
-import { Head, Link, router, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { Copy, Eye, GitBranch, Link2, Link2Off } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import Button from "../Components/Button";
 import ConfirmModal from "../Components/ConfirmModal";
@@ -198,13 +198,7 @@ const ModulPraktikum = ({
                 preserveScroll: true,
                 onSuccess: () => {
                     closeCreateModal();
-                    toast.success("Modul praktikum berhasil ditambahkan");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(
-                        firstError || "Gagal menambahkan modul praktikum",
-                    );
+
                 },
             },
         );
@@ -246,13 +240,7 @@ const ModulPraktikum = ({
                 preserveScroll: true,
                 onSuccess: () => {
                     closeEditModal();
-                    toast.success("Modul praktikum berhasil diperbarui");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(
-                        firstError || "Gagal memperbarui modul praktikum",
-                    );
+
                 },
             },
         );
@@ -274,11 +262,7 @@ const ModulPraktikum = ({
                 preserveScroll: true,
                 onSuccess: () => {
                     setIsDeleteModalOpen(false);
-                    toast.success("Modul praktikum berhasil dihapus");
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(firstError || "Gagal menghapus modul praktikum");
+
                 },
             },
         );
@@ -319,13 +303,7 @@ const ModulPraktikum = ({
                     const message = !modul.is_public
                         ? "Link berhasil dibuka"
                         : "Link berhasil ditutup";
-                    toast.success(message);
-                },
-                onError: (errors) => {
-                    const firstError = Object.values(errors).find(Boolean);
-                    toast.error(
-                        firstError || "Gagal mengubah status share link",
-                    );
+
                 },
             },
         );
@@ -352,15 +330,6 @@ const ModulPraktikum = ({
             toast.success("Link berhasil disalin ke clipboard!");
         }
     };
-
-    useEffect(() => {
-        if (flash && flash.message) {
-            toast.success(flash.message);
-        }
-        if (flash && flash.error) {
-            toast.error(flash.error);
-        }
-    }, [flash]);
 
     const pertemuanOptions = useMemo(
         () =>
@@ -505,8 +474,6 @@ const ModulPraktikum = ({
     return (
         <DashboardLayout>
             <Head title={pageTitle} />
-
-
 
             <PageHeader
                 title={pageTitle}

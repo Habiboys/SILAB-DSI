@@ -12,7 +12,6 @@ import { Head, router, useForm, usePage } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const STATUS_MAP = {
     draft: { label: "Draft", tone: "neutral" },
@@ -57,7 +56,7 @@ export default function PermohonanIndex({ permohonan, filters }) {
     const toggleSelectAll = () => setSelectedIds(selectedIds.length === permohonan.data.length ? [] : permohonan.data.map((item) => item.id));
 
     const executeBulkDelete = () => router.post(route("inventaris.permohonan.bulk-delete"), { ids: selectedIds }, {
-        onSuccess: () => { setSelectedIds([]); setIsBulkDeleteModalOpen(false); toast.success("Permohonan terpilih berhasil dihapus"); },
+        onSuccess: () => { setSelectedIds([]); setIsBulkDeleteModalOpen(false);  },
         preserveScroll: true,
     });
 
@@ -88,18 +87,12 @@ export default function PermohonanIndex({ permohonan, filters }) {
     };
     const handleEditSubmit = (event) => {
         event.preventDefault();
-        editForm.put(route("inventaris.permohonan.update", editPermohonan.id), {
-            onSuccess: () => { toast.success("Draft permohonan berhasil diperbarui"); setIsEditModalOpen(false); setEditPermohonan(null); },
-            onError: () => toast.error("Gagal memperbarui draft, periksa kembali inputan Anda."),
-        });
+        editForm.put(route("inventaris.permohonan.update", editPermohonan.id), { onSuccess: () => {  setIsEditModalOpen(false); setEditPermohonan(null); } });
     };
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        post(route("inventaris.permohonan.store"), {
-            onSuccess: () => { toast.success("Draft permohonan berhasil disimpan. Buka detail untuk mengajukan."); setIsCreateModalOpen(false); reset(); },
-            onError: () => toast.error("Gagal mengajukan permohonan, periksa kembali inputan Anda."),
-        });
+        post(route("inventaris.permohonan.store"), { onSuccess: () => {  setIsCreateModalOpen(false); reset(); } });
     };
 
     const columns = [

@@ -1,6 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+
 import Button from '../../Components/Button';
 import ConfirmModal from '../../Components/ConfirmModal';
 import { DataGrid } from '../../Components/DataTable';
@@ -19,7 +19,7 @@ export default function KegiatanIndex({ kegiatan, filters, can: permissions, kep
     const [activeStatus, setActiveStatus] = useState(filters.status || 'all');
     const [deleteTarget, setDeleteTarget] = useState(null);
     const { selectedKepengurusanLabId } = useLab();
-    
+
     useEffect(() => {
         if (!selectedKepengurusanLabId || String(selectedKepengurusanLabId) === String(filters.kepengurusan_lab_id)) return;
         router.get(route('kegiatan.index'), { kepengurusan_lab_id: selectedKepengurusanLabId, status: activeStatus !== 'all' ? activeStatus : undefined }, { preserveState: true });
@@ -40,11 +40,7 @@ export default function KegiatanIndex({ kegiatan, filters, can: permissions, kep
         { header: 'Aksi', sortable: false, searchable: false, headerClassName: 'text-right', render: (item) => <RowActions detailHref={route('kegiatan.show', item.id)} editHref={item.status_approval === 'diajukan' && can.create ? route('kegiatan.edit', item.id) : null} onDelete={can.approve ? () => setDeleteTarget(item) : null} /> },
     ], [can]);
 
-    const confirmDelete = () => router.delete(route('kegiatan.destroy', deleteTarget.id), {
-        preserveScroll: true,
-        onSuccess: () => { toast.success('Kegiatan berhasil dihapus'); setDeleteTarget(null); },
-        onError: (errors) => toast.error(Object.values(errors).find(Boolean) || 'Gagal menghapus kegiatan'),
-    });
+    const confirmDelete = () => router.delete(route('kegiatan.destroy', deleteTarget.id), { preserveScroll: true, onSuccess: () => {  setDeleteTarget(null); } });
 
     return <DashboardLayout>
             <Head title="Kegiatan" />

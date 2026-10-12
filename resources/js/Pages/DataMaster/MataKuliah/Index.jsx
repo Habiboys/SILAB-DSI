@@ -12,8 +12,7 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, router, useForm } from "@inertiajs/react";
 import { debounce } from "lodash";
 import { Plus, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
+import { useState } from "react";
 
 const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
     const { can } = usePermission();
@@ -29,8 +28,6 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
     const createForm = useForm({ kode_mata_kuliah: "", nama: "", sks: "", semester: "" });
     const editForm = useForm({ id: "", kode_mata_kuliah: "", nama: "", sks: "", semester: "", status: "aktif" });
     const deleteForm = useForm({});
-
-    useEffect(() => { if (flash?.message) toast.success(flash.message); if (flash?.error) toast.error(flash.error); }, [flash]);
 
     const navigate = (extra = {}) => router.visit("/data-master/mata-kuliah", { data: { search, perPage, ...extra }, preserveState: true, preserveScroll: true, replace: true });
     const debouncedSearch = debounce((value) => navigate({ search: value }), 300);
@@ -49,13 +46,13 @@ const MataKuliahIndex = ({ mataKuliah, filters, flash }) => {
 
     const handleCreate = (event) => {
         event.preventDefault();
-        createForm.post(route("data-master.mata-kuliah.store"), { preserveScroll: true, onSuccess: () => { close(); createForm.reset(); toast.success("Mata kuliah berhasil ditambahkan"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menambahkan mata kuliah") });
+        createForm.post(route("data-master.mata-kuliah.store"), { preserveScroll: true, onSuccess: () => { close(); createForm.reset();  } });
     };
     const handleEdit = (event) => {
         event.preventDefault();
-        editForm.put(route("data-master.mata-kuliah.update", editForm.data.id), { preserveScroll: true, onSuccess: () => { close(); toast.success("Mata kuliah berhasil diperbarui"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal memperbarui mata kuliah") });
+        editForm.put(route("data-master.mata-kuliah.update", editForm.data.id), { preserveScroll: true, onSuccess: () => { close();  } });
     };
-    const handleDelete = () => deleteForm.delete(route("data-master.mata-kuliah.destroy", selectedItem.id), { preserveScroll: true, onSuccess: () => { close(); toast.success("Mata kuliah berhasil dihapus"); }, onError: (errors) => toast.error(Object.values(errors).find(Boolean) || "Gagal menghapus mata kuliah") });
+    const handleDelete = () => deleteForm.delete(route("data-master.mata-kuliah.destroy", selectedItem.id), { preserveScroll: true, onSuccess: () => { close();  } });
 
     const columns = [
         { header: "No", sortable: false, searchable: false, render: (_, index) => index + 1 },

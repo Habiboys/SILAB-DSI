@@ -38,10 +38,8 @@ const GantiJadwalPiket = ({
     const [isFormOpen, setIsFormOpen] = useState(showForm);
     const [selectedJadwal, setSelectedJadwal] = useState(null);
 
-    
     useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
+
         if (message) toast.info(message);
     }, [flash, message]);
 
@@ -66,19 +64,12 @@ const GantiJadwalPiket = ({
             return;
         }
 
-        post(route("piket.ganti-jadwal.store"), {
-            onSuccess: () => {
-                toast.success("Permintaan ganti jadwal berhasil dikirim!");
+        post(route("piket.ganti-jadwal.store"), { onSuccess: () => {
+
                 reset();
                 setSelectedJadwal(null);
                 setIsFormOpen(false);
-            },
-            onError: (errors) => {
-                if (errors.alasan) toast.error(errors.alasan);
-                else if (errors.hari_baru) toast.error(errors.hari_baru);
-                else toast.error("Gagal mengirim permintaan ganti jadwal");
-            },
-        });
+            } });
     };
 
     const dayNames = {
@@ -153,7 +144,7 @@ const GantiJadwalPiket = ({
             <Head title="Ganti Jadwal Piket" />
 
             <div className="space-y-6">
-                
+
                 <div className="bg-base-100 rounded-lg shadow-sm">
                     <div className="p-6 border-b flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
                         <div>
@@ -173,7 +164,6 @@ const GantiJadwalPiket = ({
                     </div>
                 </div>
 
-                
                 {canMutate && isFormOpen && (
                     <div className="bg-base-100 rounded-lg shadow-sm">
                         <div className="p-6 border-b">
@@ -184,7 +174,7 @@ const GantiJadwalPiket = ({
 
                         <div className="p-6">
                             <form onSubmit={handleSubmit} className="space-y-6">
-                                
+
                                 <div>
                                     <label className="block text-sm font-medium text-base-content mb-2">
                                         Jadwal Piket yang Akan Diganti
@@ -217,7 +207,6 @@ const GantiJadwalPiket = ({
                                     )}
                                 </div>
 
-                                
                                 {selectedJadwal && (
                                     <div>
                                         <label className="block text-sm font-medium text-base-content mb-2">
@@ -285,7 +274,6 @@ const GantiJadwalPiket = ({
                                     </div>
                                 )}
 
-                                
                                 <div>
                                     <label className="block text-sm font-medium text-base-content mb-2">
                                         Alasan Ganti Jadwal
@@ -312,7 +300,6 @@ const GantiJadwalPiket = ({
                                     )}
                                 </div>
 
-                                
                                 <div className="flex justify-end space-x-3">
                                     <button
                                         type="button"
@@ -354,16 +341,15 @@ const GantiJadwalPiket = ({
                     </div>
                 )}
 
-                
                 <div className="bg-base-100 rounded-lg shadow-sm">
-                    
+
                     <div className="p-6 border-b flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <h3 className="text-lg font-medium text-base-content">
                             Status dan Riwayat Permintaan
                         </h3>
 
                         <div className="flex flex-wrap items-center gap-3">
-                            
+
                             {allPeriode.length > 0 && (
                                 <select
                                     value={filters.periode_piket_id ?? ""}
@@ -392,7 +378,6 @@ const GantiJadwalPiket = ({
                                 </select>
                             )}
 
-                            
                             <select
                                 value={filters.perPage ?? 10}
                                 onChange={(e) =>
@@ -530,7 +515,6 @@ const GantiJadwalPiket = ({
                             </div>
                         )}
 
-                        
                         {permintaan?.last_page > 1 && (
                             <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
                                 <p className="text-sm text-base-content/60">

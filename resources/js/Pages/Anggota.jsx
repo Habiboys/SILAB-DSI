@@ -50,13 +50,11 @@ const Anggota = ({
     const [sortBy, setSortBy] = useState(filters?.sort || "name");
     const [sortDir, setSortDir] = useState(filters?.dir || "asc");
 
-    
     const { selected_kepengurusan } = usePage().props;
     const isActiveYear =
         selected_kepengurusan?.is_active == 1 ||
         selected_kepengurusan?.is_active === true;
 
-    
     const applyServerQuery = debounce((state) => {
         setSearch(state.search);
         setPerPage(state.perPage);
@@ -147,7 +145,6 @@ const Anggota = ({
         [canAccess, canView, isActiveYear],
     );
 
-    
     useEffect(() => {
         if (selectedLab) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -243,7 +240,6 @@ const Anggota = ({
         setIsEditModalOpen(true);
     };
 
-    
     const fetchActiveMembersFromPrevious = async (kepengurusanLabId) => {
         try {
             const response = await fetch(
@@ -264,7 +260,6 @@ const Anggota = ({
         }
     };
 
-    
     const handleTransfer = async (e) => {
         e.preventDefault();
 
@@ -289,12 +284,8 @@ const Anggota = ({
                 setShowTransferModal(false);
                 transferForm.reset();
                 setAnggotaSebelumnya([]);
-                
+
                 router.reload();
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                if (firstError) toast.error(firstError);
             },
         });
     };
@@ -321,16 +312,8 @@ const Anggota = ({
         createForm.post(route("anggota.store"), {
             onSuccess: () => {
                 closeCreateModal();
-                toast.success("Anggota berhasil ditambahkan");
+
                 router.reload();
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                if (firstError) {
-                    toast.error(firstError);
-                } else {
-                    toast.error("Gagal menambahkan anggota baru");
-                }
             },
             forceFormData: true,
         });
@@ -341,15 +324,7 @@ const Anggota = ({
         editForm.post(route("anggota.update", selectedItem.id), {
             onSuccess: () => {
                 closeEditModal();
-                toast.success("Anggota berhasil diperbarui");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                if (firstError) {
-                    toast.error(firstError);
-                } else {
-                    toast.error("Gagal memperbarui data anggota");
-                }
+
             },
             forceFormData: true,
         });
@@ -363,11 +338,7 @@ const Anggota = ({
             },
             onSuccess: () => {
                 closeDeleteModal();
-                toast.success("Anggota berhasil dihapus dari kepengurusan ini");
-            },
-            onError: (errors) => {
-                const firstError = Object.values(errors).find(Boolean);
-                toast.error(firstError || "Gagal menghapus anggota");
+
             },
         });
     };
@@ -377,7 +348,7 @@ const Anggota = ({
         transferForm.setData("anggota_dipilih", []);
 
         if (kepengurusanId) {
-            
+
             fetchActiveMembersFromPrevious(kepengurusanId);
         } else {
             setAnggotaSebelumnya([]);
@@ -400,11 +371,6 @@ const Anggota = ({
             }
         }
     };
-
-    useEffect(() => {
-        if (flash && flash.message) toast.success(flash.message);
-        if (flash && flash.error) toast.error(flash.error);
-    }, [flash]);
 
     return (
         <DashboardLayout>
@@ -723,7 +689,6 @@ const Anggota = ({
                 </div>
             </Modal>
 
-            
             <Modal
                 show={isEditModalOpen && !!selectedItem}
                 maxWidth="2xl"
@@ -972,14 +937,14 @@ const Anggota = ({
                             </div>
                         </form>
                     </div>
-                    
+
                     <div className="flex justify-end gap-3 border-t border-base-300 bg-base-100 px-6 py-4">
                         <Button type="button" variant="ghost" onClick={closeEditModal}>Batal</Button>
                         <Button type="submit" form="form-edit-anggota" loading={editForm.processing}>Simpan</Button>
                     </div>
                 </div>
             </Modal>
-            
+
             <ConfirmModal
                 show={isDeleteModalOpen && !!selectedItem}
                 onClose={closeDeleteModal}
@@ -991,7 +956,6 @@ const Anggota = ({
                 type="danger"
             />
 
-            
             <Modal
                 show={showTransferModal}
                 maxWidth="2xl"

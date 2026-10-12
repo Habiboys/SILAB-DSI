@@ -11,7 +11,6 @@ import DashboardLayout from "@/Layouts/DashboardLayout";
 import { Head, useForm } from "@inertiajs/react";
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 
 const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
     const [formOpen, setFormOpen] = useState(false);
@@ -51,13 +50,10 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
 
     const handleSubmit = (event) => {
         event.preventDefault();
-        const options = {
-            onSuccess: () => {
+        const options = { onSuccess: () => {
                 closeModal();
-                toast.success(editingStruktur ? "Struktur berhasil diperbarui" : "Struktur berhasil ditambahkan");
-            },
-            onError: (formErrors) => toast.error(Object.values(formErrors).find(Boolean) || "Gagal menyimpan struktur"),
-        };
+
+            } };
         if (editingStruktur) put(route("data-master.struktur.update", editingStruktur.id), options);
         else post(route("data-master.struktur.store"), options);
     };
@@ -66,11 +62,11 @@ const DataMasterStruktur = ({ struktur, roles, parentOptions = [] }) => {
         destroy(route("data-master.struktur.destroy", deletingStruktur.id), {
             onSuccess: () => {
                 setDeletingStruktur(null);
-                toast.success("Struktur berhasil dihapus");
+
             },
             onError: (formErrors) => {
                 setDeletingStruktur(null);
-                toast.error(Object.values(formErrors).find(Boolean) || "Gagal menghapus struktur");
+
             },
         });
     };
