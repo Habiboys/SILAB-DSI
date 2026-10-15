@@ -132,14 +132,15 @@ export function restoreParent(value, page, history, origin) {
 export function backDestination(page, fallback, history, routes, origin, mode = 'back') {
     const current = internalUrl(page.url, origin);
     const context = navigationContext(page);
-    const candidates = history.filter((entry) => internalUrl(entry.url, origin)?.pathname !== current?.pathname && sameContext(entry.context, context));
+    const settledHistory = recordPage(history, page, origin);
+    const candidates = settledHistory.slice(0, -1).filter((entry) => internalUrl(entry.url, origin)?.pathname !== current?.pathname && sameContext(entry.context, context));
     const previous = [...candidates].reverse().find((entry) => {
         const target = internalUrl(entry.url, origin);
         return matchPage(entry.url, routes, origin) && !target.pathname.startsWith(`${current.pathname}/`)
             && !/\/(?:create|edit)$/.test(target.pathname);
     });
     if (mode === 'back' && previous) return previous.url;
-    const target = matchPage(fallback, routes, origin) ? fallback : '/dashboard';
+    const target = matchPage(fallback, routes, origin) && internalUrl(fallback, origin)?.pathname !== current?.pathname ? fallback : '/dashboard';
     return restoreParent(target, page, candidates, origin);
 }
 
@@ -193,7 +194,5 @@ export function buildBreadcrumbs(page, routes, makeRoute, history, origin) {
     const last = items.at(-1);
     if (!last || internalUrl(last.href, origin)?.pathname !== current.pathname) items.push({ label: labelFor(segments.at(-1) || matched?.name || 'Halaman'), href: null });
     else last.href = null;
-    const lab = (page.props?.laboratorium || []).find((item) => String(item.id) === context.lab_id);
-    if (lab && !current.pathname.startsWith('/laboratorium') && !current.pathname.startsWith('/praktikan/')) items.unshift({ label: lab.nama, href: null });
     return items;
 }

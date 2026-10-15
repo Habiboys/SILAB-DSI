@@ -23,9 +23,7 @@ export default function Konfigurasi({ kepengurusanLab, konfigurasi }) {
             <div className="max-w-3xl">
                 <PageHeader
                     title="Konfigurasi Nomor Surat"
-                    description={kepengurusanLab?.laboratorium
-                        ? `${kepengurusanLab.laboratorium.nama} ? ${kepengurusanLab.tahunKepengurusan?.tahun || ''}`
-                        : 'Atur format penomoran surat keluar.'}
+                    description="Atur format penomoran surat keluar."
                 />
                 <PageSection>
                     <form onSubmit={submit} className="space-y-4">

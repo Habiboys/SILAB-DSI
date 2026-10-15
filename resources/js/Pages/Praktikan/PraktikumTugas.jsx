@@ -3,6 +3,7 @@ import { Head, useForm } from "@inertiajs/react";
 import { AlertCircle, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from "lucide-react";
 import { useState } from 'react';
 import Modal from '../../Components/Modal';
+import PageHeader from '../../Components/PageHeader';
 
 export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPengumpulan }) {
     const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
@@ -12,10 +13,6 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     const praktikanData = praktikan?.praktikan ?? {};
     const praktikumData = praktikan?.praktikum ?? praktikan?.praktikumData ?? {};
     const kelasData = praktikan?.kelas ?? null;
-    const laboratorium = praktikumData?.kepengurusanLab?.laboratorium?.nama
-        ?? praktikumData?.kepengurusan_lab?.laboratorium?.nama
-        ?? 'Belum tersedia';
-
     const submitForm = useForm({
         file_pengumpulan: null,
         catatan: '',
@@ -80,27 +77,14 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPeng
     };
 
     return (
-        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}><Head title={`Tugas ${praktikumData.nama_praktikum}`} />
+        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}><Head title={`Tugas ${praktikumData.mata_kuliah || praktikumData.nama_praktikum || "Praktikum"}`} />
 
             <div className="min-h-screen bg-base-200">
 
-                <div className="bg-base-100 shadow-sm border-b">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex items-center py-4">
-
-                            <div>
-                                <h1 className="text-2xl font-bold text-base-content">
-                                    {praktikumData.nama_praktikum}
-                                </h1>
-                                <p className="text-base-content/70">
-                                    Laboratorium: {laboratorium} | 
-                                    Periode: {praktikumData.periode}
-                                    {kelasData && ` | Kelas: ${kelasData.nama_kelas}`}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <PageHeader
+                    title={`Tugas ${praktikumData.mata_kuliah || praktikumData.nama_praktikum || "Praktikum"}`}
+                    description={kelasData?.nama_kelas ? `Kelas ${kelasData.nama_kelas}` : undefined}
+                />
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 

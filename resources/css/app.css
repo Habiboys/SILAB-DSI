@@ -166,6 +166,22 @@ table.silab-table tbody td {
 
 .badge { border-radius: 9999px; }
 
+.badge:not(:empty) {
+  height: auto;
+  min-height: var(--size, 1.25rem);
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
+  padding-block: 0.2em;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.badge > svg { flex-shrink: 0; }
+.badge > span { min-width: 0; white-space: inherit; overflow-wrap: inherit; }
+
 /* Badge netral memakai permukaan berwarna, bukan hitam/abu (badge-neutral).
    badge-ghost bawaan transparan sehingga tetap aman. */
 .badge-neutral {

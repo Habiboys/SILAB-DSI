@@ -333,7 +333,7 @@ export default function PraktikumShowPage({
             <div className="space-y-4">
                 <PageHeader
                     title={praktikum.mata_kuliah}
-                    description={`${praktikum.kepengurusan_lab?.laboratorium?.nama ?? ""} • ${praktikum.kepengurusan_lab?.tahun_kepengurusan?.tahun ?? ""}`}
+                    description="Kelola kelas, jadwal, dan kegiatan praktikum."
                     actions={
                         <>
                             <Button

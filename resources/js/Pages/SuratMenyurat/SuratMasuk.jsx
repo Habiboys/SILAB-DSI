@@ -113,7 +113,7 @@ const SuratMasuk = ({ suratMasuk, kepengurusanLab, anggotaLab, filters, flash, c
             <Head title="Surat Masuk" />
             <PageHeader
                 title="Surat Masuk"
-                description={kepengurusanLab ? `${kepengurusanLab.laboratorium?.nama} · ${kepengurusanLab.tahunKepengurusan?.tahun}` : "Pilih laboratorium pada navigasi untuk mulai."}
+                description="Kelola surat masuk dan tindak lanjutnya."
                 actions={<>{canExport && kepengurusanLab && <Button variant="ghost" onClick={handleExport}><Download className="h-4 w-4" />Ekspor Excel</Button>}{canCreate && <Button onClick={openCreateModal} disabled={!kepengurusanLab}><Plus className="h-4 w-4" />Tambah surat</Button>}</>}
             />
             <PageSection>

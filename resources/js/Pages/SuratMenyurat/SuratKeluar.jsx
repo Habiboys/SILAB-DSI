@@ -88,7 +88,7 @@ const SuratKeluar = ({ suratKeluar, kepengurusanLab, konfigurasi, filters, flash
             <Head title="Surat Keluar" />
             <PageHeader
                 title="Surat Keluar"
-                description={kepengurusanLab ? `${kepengurusanLab.laboratorium?.nama} · ${kepengurusanLab.tahunKepengurusan?.tahun}` : "Pilih laboratorium pada navigasi untuk mulai."}
+                description="Kelola surat keluar dan penomorannya."
                 actions={<>{canExport && kepengurusanLab && <Button variant="ghost" onClick={handleExport}><Download className="h-4 w-4" />Ekspor Excel</Button>}{canConfig && kepengurusanLab && <Button variant="ghost" href={route("surat-menyurat.konfigurasi.show", { kepengurusan_lab_id: kepengurusanLab.id })}><Settings className="h-4 w-4" />Konfigurasi</Button>}{canCreate && <Button onClick={openCreateModal} disabled={!kepengurusanLab}><Plus className="h-4 w-4" />Tambah surat</Button>}</>}
             />
             <PageSection>

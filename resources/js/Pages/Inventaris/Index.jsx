@@ -186,7 +186,7 @@ export default function InventarisIndex({
             <Head title="Daftar Inventaris" />
             <PageHeader
                 title="Daftar Aset Laboratorium"
-                description={kepengurusanlab?.laboratorium?.nama ? `Laboratorium ${kepengurusanlab.laboratorium.nama}` : "Kelola aset laboratorium beserta label dan QR code."}
+                description="Kelola aset laboratorium beserta label dan QR code."
                 actions={<>
                     {canManageItems && <Button onClick={() => setIsCreateModalOpen(true)}>Tambah Aset</Button>}
                     <Button variant="ghost" href={route("inventaris.export-excel", { lab_id: filters.lab_id })}><FileDown className="h-4 w-4" /> Export Excel</Button>

@@ -135,3 +135,28 @@ test('returning with injected context prunes history instead of cycling between 
     assert.equal(history.length, 2);
     assert.equal(backDestination(current, '/praktikum', history, routes, origin), '/praktikum?page=2');
 });
+
+
+test('back ignores a stale forward tail before the navigate event records the new page', () => {
+    const studentRoutes = { ...routes, 'praktikan.modul.praktikum': { uri: 'praktikan/modul/{praktikum}', methods: ['GET'] } };
+    const list = page('/praktikan/daftar-tugas?lab_id=a&kepengurusan_lab_id=period-a');
+    const module = page('/praktikan/modul/practice-a?lab_id=a&kepengurusan_lab_id=period-a');
+    const tasks = page('/praktikan/praktikum/practice-a/tugas?lab_id=a&kepengurusan_lab_id=period-a');
+    let history = [];
+    for (const entry of [list, module, tasks]) history = recordPage(history, entry, origin);
+    assert.equal(backDestination(tasks, list.url, history, studentRoutes, origin), module.url);
+    assert.equal(backDestination(module, list.url, history, studentRoutes, origin), list.url);
+    assert.match(backDestination(list, '/dashboard', history, studentRoutes, origin), /^\/dashboard/);
+    assert.equal(backDestination(module, list.url, history, studentRoutes, origin, 'cancel'), list.url);
+});
+
+test('breadcrumbs do not repeat the laboratory already selected in the navbar', () => {
+    const current = page('/kegiatan/id-a', 'a', { laboratorium: [{ id: 'a', nama: 'Lab berulang' }], kegiatan: { id: 'id-a', nama_kegiatan: 'Kegiatan A' } });
+    assert.ok(crumbs(current).every(item => item.label !== 'Lab berulang'));
+});
+
+
+test('a fallback pointing at the current page cannot create a self loop', () => {
+    const current = page('/praktikan/daftar-tugas');
+    assert.match(backDestination(current, '/praktikan/daftar-tugas', [], routes, origin), /^\/dashboard/);
+});
