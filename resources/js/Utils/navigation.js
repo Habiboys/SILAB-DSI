@@ -133,7 +133,7 @@ export function backDestination(page, fallback, history, routes, origin, mode = 
     const current = internalUrl(page.url, origin);
     const context = navigationContext(page);
     const settledHistory = recordPage(history, page, origin);
-    const candidates = settledHistory.slice(0, -1).filter((entry) => internalUrl(entry.url, origin)?.pathname !== current?.pathname);
+    const candidates = settledHistory.slice(0, -1).filter((entry) => internalUrl(entry.url, origin)?.pathname !== current?.pathname || !sameContext(entry.context, context));
     const previous = [...candidates].reverse().find((entry) => matchPage(entry.url, routes, origin));
     if (mode === 'back' && previous) return previous.url;
     const target = matchPage(fallback, routes, origin) && internalUrl(fallback, origin)?.pathname !== current?.pathname ? fallback : '/dashboard';

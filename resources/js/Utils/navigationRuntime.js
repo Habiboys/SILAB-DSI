@@ -19,7 +19,7 @@ export function goBack(page, fallback, mode = 'back') {
     const origin = window.location.origin;
     const before = history;
     const destination = backDestination(page, fallback, history, navigationRoutes(), origin, mode);
-    if (new URL(destination, origin).pathname === new URL(page.url, origin).pathname) return;
+    if (new URL(destination, origin).href === new URL(page.url, origin).href) return;
     history = consumeBackHistory(history, page, destination, origin);
     persistHistory();
     backInFlight = true;

@@ -87,11 +87,44 @@
                 <h1 id="error-title">@yield('message')</h1>
                 <p class="description">@yield('description', 'Permintaan Anda belum dapat diproses. Periksa kembali alamat halaman atau coba beberapa saat lagi.')</p>
                 <div class="actions">
-                    <a href="{{ auth()->check() ? url('/dashboard') : url('/') }}" class="btn btn-primary">Kembali ke beranda</a>
-                    <a href="{{ url()->previous() }}" class="btn btn-outline">Halaman sebelumnya</a>
+                    <a href="{{ auth()->check() ? '/dashboard' : '/' }}" class="btn btn-primary">Kembali ke beranda</a>
+                    <a href="{{ auth()->check() ? '/dashboard' : '/' }}" class="btn btn-outline" id="previous-page">Halaman sebelumnya</a>
                 </div>
             </div>
         </section>
     </main>
+    <script>
+        (() => {
+            const link = document.getElementById('previous-page');
+            const key = 'silab.navigation.v1';
+            const current = new URL(location.href);
+            const internal = value => {
+                try {
+                    const url = new URL(value, current.origin);
+                    return url.origin === current.origin && !url.username && !url.password
+                        && url.pathname !== current.pathname ? url : null;
+                } catch { return null; }
+            };
+            let saved;
+            let index = -1;
+            try {
+                saved = JSON.parse(sessionStorage.getItem(key) || 'null');
+                if (saved?.owner === @json(auth()->id()) && Array.isArray(saved.history)) {
+                    index = saved.history.findLastIndex(entry => typeof entry?.url === 'string' && internal(entry.url));
+                }
+            } catch { saved = null; }
+            const target = index >= 0 ? internal(saved.history[index].url) : internal(document.referrer);
+            if (target) link.href = target.pathname + target.search + target.hash;
+            link.addEventListener('click', event => {
+                if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                event.preventDefault();
+                if (saved && index >= 0) {
+                    saved.history = saved.history.slice(0, index + 1);
+                    try { sessionStorage.setItem(key, JSON.stringify(saved)); } catch {}
+                }
+                location.replace(link.href);
+            });
+        })();
+    </script>
 </body>
 </html>
