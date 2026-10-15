@@ -909,36 +909,33 @@ export default function TugasSubmissions({
                             </div>
                         </div>
                         <div className="mt-4 sm:mt-0">
-                            <div className="flex space-x-2">
+                            <div className="flex flex-wrap items-center gap-2">
                                 {canUpdate && (
-                                    <button type="button"
+                                    <Button type="button"
                                         onClick={() =>
                                             router.visit(
                                                 `/praktikum/tugas/${tugas.id}/komponen`,
                                             )
                                         }
-                                        className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary flex items-center space-x-2"
+                                        variant="primary" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
                                     >
                                         <Settings className="w-4 h-4" />
                                         <span>Kelola Komponen Rubrik</span>
-                                    </button>
+                                    </Button>
                                 )}
                                 {canGrade &&
                                     tugas.komponen_rubriks &&
                                     tugas.komponen_rubriks.length > 0 && (
-                                        <button type="button"
+                                        <Button type="button"
                                             onClick={() =>
                                                 setIsEditMode(!isEditMode)
                                             }
-                                            className={`px-4 py-2 rounded-md flex items-center space-x-2 ${
-                                                isEditMode
-                                                    ? "bg-error text-white hover:bg-error"
-                                                    : "bg-secondary text-white hover:bg-secondary"
-                                            }`}
+                                            variant={isEditMode ? "danger" : "secondary"}
+                                            size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
                                         >
                                             {isEditMode ? (
                                                 <>
-                                                    <X className="w-4 h-4" />
+                                                    <XCircle className="w-4 h-4" />
                                                     <span>
                                                         Batalkan Input Nilai
                                                     </span>
@@ -951,7 +948,7 @@ export default function TugasSubmissions({
                                                     </span>
                                                 </>
                                             )}
-                                        </button>
+                                        </Button>
                                     )}
                                 {canGrade && (
                                     <>
@@ -959,27 +956,27 @@ export default function TugasSubmissions({
                                             onClick={() =>
                                                 setIsNilaiTambahanOpen(true)
                                             }
-                                            variant="success" size="sm" className="gap-2"
+                                            variant="success" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
                                         >
                                             <Plus className="w-4 h-4" />
                                             <span>Nilai Tambahan</span>
                                         </Button>
                                         <Button type="button"
                                             onClick={handleDownloadTemplate}
-                                            variant="primary" size="sm" className="gap-2"
+                                            variant="primary" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
                                         >
                                             <FileSpreadsheet className="w-4 h-4" />
                                             <span>Download Template</span>
                                         </Button>
-                                        <button type="button"
+                                        <Button type="button"
                                             onClick={() =>
                                                 setIsImportModalOpen(true)
                                             }
-                                            className="bg-warning text-white px-4 py-2 rounded-md hover:bg-warning flex items-center space-x-2"
+                                            variant="warning" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
                                         >
                                             <Upload className="w-4 h-4" />
                                             <span>Import Nilai</span>
-                                        </button>
+                                        </Button>
                                     </>
                                 )}
                             </div>

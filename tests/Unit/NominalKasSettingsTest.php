@@ -57,7 +57,7 @@ class NominalKasSettingsTest extends TestCase
         $this->assertSame('2026-10-01', $second->periode_mulai->toDateString());
     }
 
-    public function test_migration_keeps_active_record_and_preserves_bills_and_payment_links(): void
+    public function test_saving_consolidates_duplicates_and_preserves_bills_and_payment_links(): void
     {
         $this->nominal('active', true); $this->nominal('newer-inactive', false);
         foreach (['active' => 'a', 'newer-inactive' => 'b'] as $nominal => $id) {
@@ -66,8 +66,7 @@ class NominalKasSettingsTest extends TestCase
             DB::table('pemasukan_keuangan')->insert(['id' => $id, 'kepengurusan_lab_id' => 'period',
                 'nominal_kas_id' => $nominal, 'tagihan_kas_id' => $id, 'nominal' => 5000]);
         }
-        $migration = require base_path('database/migrations/2026_10_15_000001_unique_nominal_kas_per_kepengurusan.php');
-        $migration->up();
+        (new NominalKasSettings())->save('period', ['nominal' => 15000, 'periode' => 'bulanan', 'is_active' => true]);
         $this->assertSame('active', DB::table('nominal_kas')->sole()->id);
         $bill = DB::table('tagihan_kas')->sole();
         $this->assertEquals(20000, $bill->total_tagihan);
@@ -75,7 +74,6 @@ class NominalKasSettingsTest extends TestCase
         $this->assertSame(['active'], DB::table('pemasukan_keuangan')->distinct()->pluck('nominal_kas_id')->all());
         $this->assertSame([$bill->id], DB::table('pemasukan_keuangan')->distinct()->pluck('tagihan_kas_id')->all());
         $this->assertSame(2, DB::table('pemasukan_keuangan')->count());
-        $this->expectException(\Illuminate\Database\QueryException::class);
-        $this->nominal('duplicate', true);
+        $this->assertEquals(15000, DB::table('nominal_kas')->sole()->nominal);
     }
 }
