@@ -684,6 +684,7 @@ class PraktikanController extends Controller
                 })
                 ->get();
 
+            $tugas->each(fn ($item) => $item->setAttribute('praktikum_id', $pp->praktikum_id));
             $tugasPraktikums = $tugasPraktikums->merge($tugas);
         }
 
