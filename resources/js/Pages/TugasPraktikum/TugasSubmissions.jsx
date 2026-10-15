@@ -857,6 +857,17 @@ export default function TugasSubmissions({
     const visibleSubmissions = filteredSubmissions || [];
     const visibleNonSubmitted = filteredNonSubmitted || [];
 
+    const rubricCount = tugas.komponen_rubriks?.length || 0;
+    const desktopColumnCount = Math.max(1,
+        ['praktikan', 'kelas', 'status', 'file', 'catatan', 'waktu', 'nilai_tambahan']
+            .filter(key => visibleColumns[key]).length
+        + (visibleColumns.komponen ? Math.max(1, rubricCount) : 0)
+        + (rubricCount && visibleColumns.total ? 1 : 0)
+        + (rubricCount && visibleColumns.feedback ? 1 : 0)
+        + (visibleColumns.aksi && canGrade ? 1 : 0));
+    const mobileColumnCount = 4 + (visibleColumns.waktu ? 1 : 0)
+        + (rubricCount ? rubricCount + 2 : 0) + (canGrade ? 1 : 0);
+
     return (
         <DashboardLayout>
             <Head title={`Pengumpulan Tugas - ${tugas.judul_tugas}`} />
@@ -882,13 +893,13 @@ export default function TugasSubmissions({
                         </div>
                     )}
 
-                    <div className="sm:flex sm:items-center sm:justify-between">
-                        <div className="sm:flex sm:items-center">
+                    <div className="space-y-4">
+                        <div className="flex min-w-0 items-start gap-3">
                             <div className="flex-shrink-0">
                                 <BookOpen className="h-8 w-8 text-base-content/50" />
                             </div>
-                            <div className="mt-4 sm:mt-0 sm:ml-4">
-                                <h2 className="text-xl font-bold text-base-content">
+                            <div className="min-w-0 flex-1">
+                                <h2 className="break-words text-xl font-bold text-base-content">
                                     Pengumpulan Tugas: {tugas.judul_tugas}
                                 </h2>
                                 <div className="text-base-content/70 text-sm">
@@ -908,8 +919,8 @@ export default function TugasSubmissions({
                                 </div>
                             </div>
                         </div>
-                        <div className="mt-4 sm:mt-0">
-                            <div className="flex flex-wrap items-center gap-2">
+                        <div className="border-t border-base-200 pt-4">
+                            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,14rem),1fr))] gap-2">
                                 {canUpdate && (
                                     <Button type="button"
                                         onClick={() =>
@@ -917,9 +928,9 @@ export default function TugasSubmissions({
                                                 `/praktikum/tugas/${tugas.id}/komponen`,
                                             )
                                         }
-                                        variant="primary" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
+                                        variant="primary" size="sm" className="h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal px-3 py-2 text-center text-sm font-semibold"
                                     >
-                                        <Settings className="w-4 h-4" />
+                                        <Settings className="h-4 w-4 shrink-0" />
                                         <span>Kelola Komponen Rubrik</span>
                                     </Button>
                                 )}
@@ -931,18 +942,18 @@ export default function TugasSubmissions({
                                                 setIsEditMode(!isEditMode)
                                             }
                                             variant={isEditMode ? "danger" : "secondary"}
-                                            size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
+                                            size="sm" className="h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal px-3 py-2 text-center text-sm font-semibold"
                                         >
                                             {isEditMode ? (
                                                 <>
-                                                    <XCircle className="w-4 h-4" />
+                                                    <XCircle className="h-4 w-4 shrink-0" />
                                                     <span>
                                                         Batalkan Input Nilai
                                                     </span>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Edit className="w-4 h-4" />
+                                                    <Edit className="h-4 w-4 shrink-0" />
                                                     <span>
                                                         Aktifkan Input Nilai
                                                     </span>
@@ -956,25 +967,25 @@ export default function TugasSubmissions({
                                             onClick={() =>
                                                 setIsNilaiTambahanOpen(true)
                                             }
-                                            variant="success" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
+                                            variant="success" size="sm" className="h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal px-3 py-2 text-center text-sm font-semibold"
                                         >
-                                            <Plus className="w-4 h-4" />
+                                            <Plus className="h-4 w-4 shrink-0" />
                                             <span>Nilai Tambahan</span>
                                         </Button>
                                         <Button type="button"
                                             onClick={handleDownloadTemplate}
-                                            variant="primary" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
+                                            variant="primary" size="sm" className="h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal px-3 py-2 text-center text-sm font-semibold"
                                         >
-                                            <FileSpreadsheet className="w-4 h-4" />
+                                            <FileSpreadsheet className="h-4 w-4 shrink-0" />
                                             <span>Download Template</span>
                                         </Button>
                                         <Button type="button"
                                             onClick={() =>
                                                 setIsImportModalOpen(true)
                                             }
-                                            variant="warning" size="sm" className="h-11 shrink-0 gap-2 whitespace-nowrap text-sm font-semibold"
+                                            variant="warning" size="sm" className="h-auto min-h-11 w-full min-w-0 gap-2 whitespace-normal px-3 py-2 text-center text-sm font-semibold"
                                         >
-                                            <Upload className="w-4 h-4" />
+                                            <Upload className="h-4 w-4 shrink-0" />
                                             <span>Import Nilai</span>
                                         </Button>
                                     </>
@@ -2271,7 +2282,7 @@ export default function TugasSubmissions({
                                             0)) && (
                                     <tr>
                                         <td
-                                            colSpan="6"
+                                            colSpan={desktopColumnCount}
                                             className="px-6 py-12 text-center"
                                         >
                                             <FileText className="mx-auto h-12 w-12 text-base-content/50" />
@@ -3103,14 +3114,7 @@ export default function TugasSubmissions({
                                             0)) && (
                                     <tr>
                                         <td
-                                            colSpan={
-                                                tugas.komponen_rubriks &&
-                                                tugas.komponen_rubriks.length >
-                                                    0
-                                                    ? tugas.komponen_rubriks
-                                                          .length + 6
-                                                    : 6
-                                            }
+                                            colSpan={mobileColumnCount}
                                             className="px-6 py-12 text-center"
                                         >
                                             <FileText className="mx-auto h-12 w-12 text-base-content/50" />

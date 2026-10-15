@@ -1,6 +1,6 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { Calendar, Download, Upload } from 'lucide-react';
+import { Calendar, Download, Eye, Upload } from 'lucide-react';
 import { useState } from 'react';
 import Button from '@/Components/Button';
 import FormField from '@/Components/FormField';
@@ -57,7 +57,8 @@ export default function PraktikumTugas({ praktikan, tugasPraktikums = [], riwaya
                                 {pengumpulan.feedback && <p className="break-words"><strong>Umpan balik:</strong> {pengumpulan.feedback}</p>}
                             </div>}
                             {expired && !pengumpulan && <p className="text-sm text-error">Tenggat pengumpulan telah lewat.</p>}
-                            <div className="mt-auto flex flex-col gap-2 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
+                            <div className="mt-auto flex flex-col gap-2 border-t border-base-200 pt-4 sm:flex-row sm:flex-wrap sm:justify-end">
+                                <Button href={pengumpulan?.id ? route('praktikan.riwayat.show', { pengumpulan: pengumpulan.id }) : route('praktikan.tugas.show', { tugas: tugas.id })} variant="outline" size="sm"><Eye className="h-4 w-4" />{pengumpulan?.id ? 'Detail Pengumpulan' : 'Detail Tugas'}</Button>
                                 {tugas.file_tugas && <Button external href={route('praktikan.tugas.view-instruksi', { tugas: tugas.id })} target="_blank" rel="noopener noreferrer" variant="outline" size="sm"><Download className="h-4 w-4" />Lihat Instruksi</Button>}
                                 {!pengumpulan && !expired && <Button size="sm" onClick={() => { form.reset(); form.clearErrors(); setSelectedTugas(tugas); }}><Upload className="h-4 w-4" />Kumpul Tugas</Button>}
                             </div>
