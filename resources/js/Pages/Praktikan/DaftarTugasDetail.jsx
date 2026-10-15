@@ -3,6 +3,7 @@ import { useKepengurusanAccess } from "@/Hooks/useKepengurusanAccess";
 import { AlertCircle, Calendar, CheckCircle, Clock, Download, ExternalLink, FileText, Info, Plus, Search, Trash2, Upload, X, XCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { firstMessage } from "@/Utils/notifications";
 import ConfirmModal from "../../Components/ConfirmModal";
 import DashboardLayout from "../../Layouts/DashboardLayout";
 
@@ -106,16 +107,11 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
 
     const handleSubmit = () => {
         if (!canMutate) return;
-        if (uploadForm.files.length === 0 && uploadForm.links.length === 0) {
-            toast.error(
-                "Minimal harus ada satu file atau satu link untuk dikumpulkan.",
-            );
+        const validLinks = uploadForm.links.filter((link) => link.trim() !== "");
+        if (uploadForm.files.length === 0 && validLinks.length === 0) {
+            toast.error("Minimal harus ada satu file atau satu link untuk dikumpulkan.");
             return;
         }
-
-        const validLinks = uploadForm.links.filter(
-            (link) => link.trim() !== "",
-        );
 
         setIsSubmitting(true);
         const formData = new FormData();
@@ -133,6 +129,8 @@ export default function DaftarTugasDetail({ tugas, pengumpulan }) {
         router.post(`/praktikum/tugas/${tugas.id}/pengumpulan`, formData, { onSuccess: () => {
 
                 setUploadForm({ files: [], links: [], catatan: "" });
+            }, onError: (errors) => {
+                toast.error(firstMessage(errors) || "Pengumpulan tugas belum berhasil.");
             }, onFinish: () => {
                 setIsSubmitting(false);
             } });

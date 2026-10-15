@@ -1,296 +1,84 @@
 import DashboardLayout from '@/Layouts/DashboardLayout';
-import { Head, useForm } from "@inertiajs/react";
-import { AlertCircle, Calendar, CheckCircle, Clock, Download, FileText, Upload, XCircle } from "lucide-react";
+import { Head, useForm } from '@inertiajs/react';
+import { Calendar, Download, Upload } from 'lucide-react';
 import { useState } from 'react';
-import Modal from '../../Components/Modal';
-import PageHeader from '../../Components/PageHeader';
+import Button from '@/Components/Button';
+import FormField from '@/Components/FormField';
+import Modal from '@/Components/Modal';
+import PageHeader from '@/Components/PageHeader';
+import PageSection from '@/Components/PageSection';
+import StatusBadge from '@/Components/StatusBadge';
 
-export default function PraktikumTugas({ praktikan, tugasPraktikums, riwayatPengumpulan }) {
-    const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
+const statuses = {
+    belum_dikumpulkan: { label: 'Belum Dikumpulkan', tone: 'warning' },
+    dikumpulkan: { label: 'Dikumpulkan', tone: 'info' },
+    dinilai: { label: 'Dinilai', tone: 'success' },
+    terlambat: { label: 'Terlambat', tone: 'error' },
+};
+const formatDate = (value) => value ? new Date(value).toLocaleString('id-ID', {
+    day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit',
+}) : '-';
+
+export default function PraktikumTugas({ praktikan, tugasPraktikums = [], riwayatPengumpulan = [] }) {
     const [selectedTugas, setSelectedTugas] = useState(null);
-
-
-    const praktikanData = praktikan?.praktikan ?? {};
-    const praktikumData = praktikan?.praktikum ?? praktikan?.praktikumData ?? {};
-    const kelasData = praktikan?.kelas ?? null;
-    const submitForm = useForm({
-        file_pengumpulan: null,
-        catatan: '',
-    });
-
-    const openSubmitModal = (tugas) => {
-        setSelectedTugas(tugas);
-        submitForm.reset();
-        setIsSubmitModalOpen(true);
-    };
-
-    const closeSubmitModal = () => {
-        setIsSubmitModalOpen(false);
-        setSelectedTugas(null);
-        submitForm.reset();
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        submitForm.post(route('praktikum.tugas.pengumpulan.store', { tugas: selectedTugas.id }), {
+    const praktikum = praktikan?.praktikum ?? praktikan?.praktikumData ?? {};
+    const title = `Tugas ${praktikum.mata_kuliah || praktikum.nama_praktikum || 'Praktikum'}`;
+    const form = useForm({ files: [], catatan: '' });
+    const close = () => { if (form.processing) return; setSelectedTugas(null); form.reset(); form.clearErrors(); };
+    const submit = (event) => {
+        event.preventDefault();
+        if (!selectedTugas) return;
+        form.post(route('praktikum.tugas.pengumpulan.store', { tugas: selectedTugas.id }), {
             preserveScroll: true,
-            onSuccess: () => {
-                closeSubmitModal();
-
-                window.location.reload();
-            },
-            onError: () => {
-
-            }
+            onSuccess: () => { setSelectedTugas(null); form.reset(); form.clearErrors(); },
         });
     };
 
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'dikumpulkan':
-                return 'text-primary bg-primary/15';
-            case 'dinilai':
-                return 'text-success bg-success/15';
-            case 'terlambat':
-                return 'text-error bg-error/15';
-            default:
-                return 'text-base-content/70 bg-base-200';
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'dikumpulkan':
-                return <Clock className="w-4 h-4" />;
-            case 'dinilai':
-                return <CheckCircle className="w-4 h-4" />;
-            case 'terlambat':
-                return <XCircle className="w-4 h-4" />;
-            default:
-                return <AlertCircle className="w-4 h-4" />;
-        }
-    };
-
-    const isDeadlinePassed = (deadline) => {
-        return new Date(deadline) < new Date();
-    };
-
-    return (
-        <DashboardLayout backFallback={route("praktikan.daftar-tugas")}><Head title={`Tugas ${praktikumData.mata_kuliah || praktikumData.nama_praktikum || "Praktikum"}`} />
-
-            <div className="min-h-screen bg-base-200">
-
-                <PageHeader
-                    title={`Tugas ${praktikumData.mata_kuliah || praktikumData.nama_praktikum || "Praktikum"}`}
-                    description={kelasData?.nama_kelas ? `Kelas ${kelasData.nama_kelas}` : undefined}
-                />
-
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-                    <div className="space-y-6">
-                        <h2 className="text-lg font-semibold text-base-content">Daftar Tugas</h2>
-
-                        {tugasPraktikums.length === 0 ? (
-                            <div className="text-center py-12">
-                                <FileText className="mx-auto h-12 w-12 text-base-content/50" />
-                                <h3 className="mt-2 text-sm font-medium text-base-content">Belum ada tugas</h3>
-                                <p className="mt-1 text-sm text-base-content/60">Belum ada tugas yang diberikan untuk praktikum ini.</p>
+    return <DashboardLayout backFallback={route('praktikan.daftar-tugas')}>
+        <Head title={title} />
+        <PageHeader title={title} description={praktikan?.kelas?.nama_kelas ? `Kelas ${praktikan.kelas.nama_kelas}` : undefined} />
+        <PageSection title="Daftar Tugas" description={`${tugasPraktikums.length} tugas tersedia untuk kelas Anda.`}>
+            {tugasPraktikums.length === 0 ? <p className="py-8 text-center text-sm text-base-content/60">Belum ada tugas untuk kelas ini.</p> :
+                <div className={`grid gap-4 ${tugasPraktikums.length > 1 ? 'xl:grid-cols-2' : ''}`}>
+                    {tugasPraktikums.map((tugas) => {
+                        const pengumpulan = riwayatPengumpulan.find(item => item.tugas_praktikum_id === tugas.id);
+                        const status = statuses[pengumpulan?.status] || statuses.belum_dikumpulkan;
+                        const expired = tugas.deadline && new Date(tugas.deadline) < new Date();
+                        return <article key={tugas.id} className="flex min-w-0 flex-col gap-4 rounded-box border border-base-300 p-4 sm:p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                                <h3 className="min-w-0 flex-1 break-words text-base font-semibold">{tugas.judul_tugas}</h3>
+                                <StatusBadge tone={status.tone} label={status.label} className="shrink-0" />
                             </div>
-                        ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {tugasPraktikums.map((tugas) => {
-                                    const pengumpulan = riwayatPengumpulan.find(
-                                        r => r.tugas_praktikum_id === tugas.id
-                                    );
-                                    const status = pengumpulan ? pengumpulan.status : 'belum_dikumpulkan';
-                                    const isTerlambat = isDeadlinePassed(tugas.deadline);
-
-                                    return (
-                                        <div key={tugas.id} className="bg-base-100 rounded-lg shadow-sm border border-base-300 p-6">
-                                            <div className="flex items-start justify-between mb-4">
-                                                <h3 className="text-lg font-medium text-base-content">
-                                                    {tugas.judul_tugas}
-                                                </h3>
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                                                    {getStatusIcon(status)}
-                                                    <span className="ml-1 capitalize">
-                                                        {status.replace('_', ' ')}
-                                                    </span>
-                                                </span>
-                                            </div>
-
-                                            {tugas.deskripsi && (
-                                                <p className="text-base-content/70 mb-4">{tugas.deskripsi}</p>
-                                            )}
-
-                                            <div className="space-y-2 mb-4">
-                                                <div className="flex items-center text-sm text-base-content/60">
-                                                    <Calendar className="w-4 h-4 mr-2" />
-                                                    <span>Deadline: {new Date(tugas.deadline).toLocaleDateString('id-ID')}</span>
-                                                </div>
-
-                                                {isTerlambat && (
-                                                    <div className="text-sm text-error font-medium">
-                                                        ⚠️ Deadline telah lewat
-                                                    </div>
-                                                )}
-                                            </div>
-
-
-                                            {tugas.file_tugas && (
-                                                <div className="mb-4">
-                                                    <a
-                                                        href={route('praktikum.tugas.view', { tugas: tugas.id })}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="inline-flex items-center px-3 py-2 border border-base-300 shadow-sm text-sm font-medium rounded-md text-base-content bg-base-100 hover:bg-base-200"
-                                                    >
-                                                        <Download className="w-4 h-4 mr-2" />
-                                                        Lihat Instruksi
-                                                    </a>
-                                                </div>
-                                            )}
-
-
-                                            {pengumpulan && (
-                                                <div className="mb-4 p-3 bg-base-200 rounded-md">
-                                                    <div className="text-sm">
-                                                        <div className="font-medium text-base-content mb-1">
-                                                            Status Pengumpulan:
-                                                        </div>
-                                                        <div className="space-y-1">
-                                                            <div className="flex items-center">
-                                                                <Clock className="w-4 h-4 mr-2 text-base-content/50" />
-                                                                <span>Dikumpulkan: {new Date(pengumpulan.submitted_at).toLocaleString('id-ID')}</span>
-                                                            </div>
-
-                                                            {pengumpulan.nilai && (
-                                                                <div className="flex items-center">
-                                                                    <CheckCircle className="w-4 h-4 mr-2 text-success" />
-                                                                    <span>Nilai: {pengumpulan.nilai}</span>
-                                                                </div>
-                                                            )}
-
-                                                            {pengumpulan.feedback && (
-                                                                <div className="mt-2 p-2 bg-primary/10 rounded text-sm text-primary">
-                                                                    <strong>Feedback:</strong> {pengumpulan.feedback}
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-
-                                            {!pengumpulan && !isTerlambat && (
-                                                <button type="button"
-                                                    onClick={() => openSubmitModal(tugas)}
-                                                    className="w-full inline-flex justify-center items-center px-4 py-2 bg-primary text-white text-sm font-medium rounded-md hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                                                >
-                                                    <Upload className="w-4 h-4 mr-2" />
-                                                    Kumpul Tugas
-                                                </button>
-                                            )}
-
-                                            {!pengumpulan && isTerlambat && (
-                                                <div className="text-center py-2 text-sm text-error font-medium">
-                                                    Deadline telah lewat
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })}
+                            {tugas.deskripsi && <p className="whitespace-pre-wrap break-words text-sm text-base-content/70">{tugas.deskripsi}</p>}
+                            <p className="flex items-start gap-2 text-sm text-base-content/60"><Calendar className="mt-0.5 h-4 w-4 shrink-0" /><span>Tenggat: {formatDate(tugas.deadline)}</span></p>
+                            {pengumpulan && <div className="space-y-2 rounded-box bg-base-200 p-3 text-sm">
+                                <p>Dikumpulkan: {formatDate(pengumpulan.submitted_at)}</p>
+                                {pengumpulan.nilai !== null && pengumpulan.nilai !== undefined && <p className="font-medium">Nilai: {pengumpulan.nilai}</p>}
+                                {pengumpulan.feedback && <p className="break-words"><strong>Umpan balik:</strong> {pengumpulan.feedback}</p>}
+                            </div>}
+                            {expired && !pengumpulan && <p className="text-sm text-error">Tenggat pengumpulan telah lewat.</p>}
+                            <div className="mt-auto flex flex-col gap-2 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
+                                {tugas.file_tugas && <Button external href={route('praktikan.tugas.view-instruksi', { tugas: tugas.id })} target="_blank" rel="noopener noreferrer" variant="outline" size="sm"><Download className="h-4 w-4" />Lihat Instruksi</Button>}
+                                {!pengumpulan && !expired && <Button size="sm" onClick={() => { form.reset(); form.clearErrors(); setSelectedTugas(tugas); }}><Upload className="h-4 w-4" />Kumpul Tugas</Button>}
                             </div>
-                        )}
-                    </div>
+                        </article>;
+                    })}
+                </div>}
+        </PageSection>
+        <Modal show={!!selectedTugas} onClose={close} maxWidth="md">
+            <form onSubmit={submit} className="space-y-4 p-4 sm:p-6">
+                <div><h2 className="text-lg font-semibold">Kumpul Tugas</h2><p className="mt-1 break-words text-sm text-base-content/60">{selectedTugas?.judul_tugas}</p></div>
+                <FormField label="File tugas" required error={form.errors.files || form.errors['files.0']} hint="PDF, DOC, DOCX, ZIP, atau RAR. Maksimal 10 MB per file.">
+                    <input type="file" multiple required accept=".pdf,.doc,.docx,.zip,.rar" className="file-input min-h-11 w-full" onChange={event => form.setData('files', Array.from(event.target.files))} />
+                </FormField>
+                <FormField label="Catatan (opsional)" error={form.errors.catatan}>
+                    <textarea className="textarea min-h-24 w-full" rows={3} value={form.data.catatan} onChange={event => form.setData('catatan', event.target.value)} />
+                </FormField>
+                <div className="flex flex-col-reverse gap-2 border-t border-base-200 pt-4 sm:flex-row sm:justify-end">
+                    <Button variant="ghost" onClick={close} disabled={form.processing}>Batal</Button>
+                    <Button type="submit" loading={form.processing}>Kumpul Tugas</Button>
                 </div>
-            </div>
-
-
-            <Modal
-                show={isSubmitModalOpen && !!selectedTugas}
-                onClose={closeSubmitModal}
-                maxWidth="md"
-            >
-                <div className="p-6">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-semibold">Kumpul Tugas</h3>
-                        </div>
-
-                        <div className="mb-4">
-                            <h4 className="font-medium text-base-content">{selectedTugas?.judul_tugas ?? 'Tugas belum dipilih'}</h4>
-                            {selectedTugas?.deadline && (
-                                <p className="text-sm text-base-content/70">
-                                    Deadline: {new Date(selectedTugas.deadline).toLocaleDateString('id-ID')}
-                                </p>
-                            )}
-                            {selectedTugas?.deskripsi && (
-                                <p className="text-sm text-base-content/70 mt-1">{selectedTugas.deskripsi}</p>
-                            )}
-                        </div>
-
-                        <form onSubmit={handleSubmit} encType="multipart/form-data">
-                            <div className="mb-4">
-                                <label htmlFor="file_pengumpulan" className="block text-sm font-medium text-base-content mb-1">
-                                    File Tugas *
-                                </label>
-                                <input
-                                    type="file"
-                                    id="file_pengumpulan"
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        submitForm.errors.file_pengumpulan ? 'border-error' : 'border-base-300'
-                                    } focus:outline-none focus:ring-2 focus:ring-primary`}
-                                    onChange={(e) => submitForm.setData('file_pengumpulan', e.target.files[0])}
-                                    accept=".pdf,.doc,.docx,.zip,.rar"
-                                    required
-                                />
-                                <p className="mt-1 text-sm text-base-content/60">
-                                    Format: PDF, DOC, DOCX, ZIP, RAR. Maksimal 10MB.
-                                </p>
-                                {submitForm.errors.file_pengumpulan && (
-                                    <p className="mt-1 text-sm text-error">{submitForm.errors.file_pengumpulan}</p>
-                                )}
-                            </div>
-
-                            <div className="mb-4">
-                                <label htmlFor="catatan" className="block text-sm font-medium text-base-content mb-1">
-                                    Catatan (Opsional)
-                                </label>
-                                <textarea
-                                    id="catatan"
-                                    rows="3"
-                                    className={`w-full px-3 py-2 border rounded-md ${
-                                        submitForm.errors.catatan ? 'border-error' : 'border-base-300'
-                                    } focus:outline-none focus:ring-2 focus:ring-primary`}
-                                    value={submitForm.data.catatan}
-                                    onChange={(e) => submitForm.setData('catatan', e.target.value)}
-                                    placeholder="Tambahkan catatan atau keterangan tambahan..."
-                                />
-                                {submitForm.errors.catatan && (
-                                    <p className="mt-1 text-sm text-error">{submitForm.errors.catatan}</p>
-                                )}
-                            </div>
-
-                            <div className="flex justify-end space-x-3 mt-6">
-                                <button
-                                    type="button"
-                                    onClick={closeSubmitModal}
-                                    className="px-4 py-2 bg-base-300 text-base-content rounded-md hover:bg-base-300 transition"
-                                >
-                                    Batal
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={submitForm.processing}
-                                    className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary transition disabled:opacity-75"
-                                >
-                                    {submitForm.processing ? 'Mengumpulkan...' : 'Kumpul Tugas'}
-                                </button>
-                            </div>
-                        </form>
-                </div>
-            </Modal>
-        </DashboardLayout>
-    );
+            </form>
+        </Modal>
+    </DashboardLayout>;
 }

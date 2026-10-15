@@ -11,6 +11,7 @@ use App\Exports\TugasSubmissionExport;
 use App\Exports\MultipleTugasSubmissionExport;
 use App\Support\KelasScopeResolver;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -34,14 +35,14 @@ class PengumpulanTugasController extends Controller
     public function store(Request $request, $tugasId)
     {
         // Validasi fleksibel untuk file dan/atau link
-        $hasFiles = $request->has('files') && $request->files->count() > 0;
-        $hasLinks = $request->has('links') && count(array_filter($request->links ?? [])) > 0;
+        $hasFiles = $request->hasFile('files');
+        $request->validate(['files' => 'nullable|array', 'links' => 'nullable|array', 'links.*' => 'nullable|url|max:500']);
+        $links = array_values(array_filter($request->input('links', []), fn ($link) => is_string($link) && trim($link) !== ''));
+        $request->merge(['links' => $links]);
+        $hasLinks = count($links) > 0;
 
         if (!$hasFiles && !$hasLinks) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Minimal harus ada satu file atau satu link'
-            ], 400);
+            throw ValidationException::withMessages(['files' => 'Minimal harus ada satu file atau satu link']);
         }
 
         $validationRules = [
@@ -74,10 +75,7 @@ class PengumpulanTugasController extends Controller
             ->first();
 
         if (!$praktikan) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Anda tidak terdaftar di praktikum ini'
-            ], 403);
+            abort(403, 'Anda tidak terdaftar di praktikum ini');
         }
 
         // Ambil PraktikanPraktikum record untuk FK baru
@@ -88,10 +86,7 @@ class PengumpulanTugasController extends Controller
             ->first();
 
         if (!$praktikanPraktikum) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Data enrollment praktikum tidak ditemukan'
-            ], 403);
+            abort(403, 'Data enrollment praktikum tidak ditemukan');
         }
 
         // Check if already submitted
@@ -100,10 +95,7 @@ class PengumpulanTugasController extends Controller
             ->first();
 
         if ($existing) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Tugas sudah dikumpulkan'
-            ], 400);
+            throw ValidationException::withMessages(['files' => 'Tugas sudah dikumpulkan']);
         }
 
         $status = 'dikumpulkan';

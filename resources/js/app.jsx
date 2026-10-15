@@ -10,7 +10,7 @@ import { installNotifications } from "./Utils/notifications";
 import { LabProvider } from "./Components/LabContext";
 import { installNavigation } from "./Utils/navigationRuntime";
 
-const appName = import.meta.env.VITE_APP_NAME || "Laravel";
+const appName = import.meta.env.VITE_APP_NAME || "SILAB";
 
 const pages = import.meta.glob("./Pages/**/*.{jsx,tsx}");
 

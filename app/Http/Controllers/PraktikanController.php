@@ -442,7 +442,9 @@ class PraktikanController extends Controller
         return Inertia::render('Praktikan/PraktikumTugas', [
             'praktikan' => $praktikanPraktikum,
             'tugasPraktikums' => $tugasPraktikums,
-            'riwayatPengumpulan' => $riwayatPengumpulan
+            'riwayatPengumpulan' => $riwayatPengumpulan,
+            'practicumYear' => $period?->tahunKepengurusan?->tahun,
+            'practicumArchive' => $period ? !$period->is_active : false,
         ]);
     }
 
@@ -646,20 +648,30 @@ class PraktikanController extends Controller
     }
 
 
-    public function daftarTugas()
+    public function daftarTugas(Request $request)
     {
         $user = Auth::user();
 
-        $praktikanPraktikums = PraktikanPraktikum::with(['praktikum.kepengurusanLab.laboratorium', 'kelas'])
+        $periodId = $request->input('kepengurusan_lab_id') ?: session('active_kepengurusan_lab_id');
+        $period = $periodId ? \App\Models\KepengurusanLab::find($periodId) : null;
+        if (!$period) {
+            $period = \App\Models\KepengurusanLab::query()
+                ->when($request->input('lab_id'), fn ($q, $labId) => $q->where('laboratorium_id', $labId))
+                ->with('tahunKepengurusan')->get()->sortByDesc(fn ($p) =>
+                    ($p->is_active ? '1' : '0') . ($p->tahunKepengurusan?->tahun ?? ''))->first();
+        }
+        $yearId = $period?->tahun_kepengurusan_id;
+
+        $praktikanPraktikums = PraktikanPraktikum::with(['praktikum.kepengurusanLab.laboratorium', 'praktikum.kepengurusanLab.tahunKepengurusan', 'kelas'])
             ->whereHas('praktikan', function($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
-            ->where('status', 'aktif')
+            ->when($yearId, fn ($q) => $q->whereHas('praktikum.kepengurusanLab', fn ($p) => $p->where('tahun_kepengurusan_id', $yearId)))
             ->get();
 
         $tugasPraktikums = collect();
         foreach ($praktikanPraktikums as $pp) {
-            $kelasIds = Kelas::where('praktikum_id', $pp->praktikum_id)->pluck('id');
+            $kelasIds = collect(array_filter([$pp->kelas_id, $pp->kelas?->parent_kelas_id]));
             $pertemuanIds = PertemuanPraktikum::whereIn('kelas_id', $kelasIds)->pluck('id');
             $parentKelasId = Kelas::find($pp->kelas_id)?->parent_kelas_id;
 

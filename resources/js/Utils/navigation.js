@@ -7,7 +7,7 @@ const LABELS = {
     'riwayat-keuangan': 'Riwayat Keuangan', 'catatan-kas': 'Catatan Kas', 'rekap-keuangan': 'Rekap Keuangan',
     praktikan: 'Praktikan', tugas: 'Tugas', modul: 'Modul', pertemuan: 'Pertemuan', riwayat: 'Riwayat',
     create: 'Tambah', edit: 'Edit', show: 'Detail', results: 'Hasil', submissions: 'Pengumpulan Tugas',
-    komponen: 'Komponen Rubrik', 'daftar-tugas': 'Kelas Praktikum Saya', 'riwayat-tugas': 'Riwayat Pengumpulan',
+    komponen: 'Komponen Rubrik', 'daftar-tugas': 'Praktikum Saya', 'riwayat-tugas': 'Riwayat Pengumpulan',
     'surat-menyurat': 'Surat Menyurat', 'surat-masuk': 'Surat Masuk', 'surat-keluar': 'Surat Keluar',
 };
 const NAME_KEYS = ['mata_kuliah', 'nama_praktikum', 'judul_tugas', 'judul', 'nama_kegiatan', 'nama_proker', 'nama_kelas', 'nama', 'name', 'perihal', 'kode_barang'];
@@ -163,7 +163,7 @@ export function buildBreadcrumbs(page, routes, makeRoute, history, origin) {
     const tugas = page.props?.tugas || page.props?.tugasPraktikum || entities.find((entity) => entity.judul_tugas);
     const praktikumId = praktikum?.id || tugas?.praktikum_id || page.props?.pertemuan?.praktikum_id;
     if (current.pathname.startsWith('/praktikan/')) {
-        add('praktikan.daftar-tugas', {}, 'Kelas Praktikum Saya');
+        add('praktikan.daftar-tugas', {}, 'Praktikum Saya');
         if (validId(praktikumId)) {
             add('praktikan.praktikum.tugas', { praktikum: praktikumId }, praktikum?.mata_kuliah || 'Tugas Praktikum');
             if (current.pathname.includes('/riwayat-tugas/')) add('praktikan.riwayat.praktikum', { praktikum: praktikumId }, 'Riwayat Pengumpulan');
