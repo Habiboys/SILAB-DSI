@@ -443,8 +443,6 @@ class PraktikanController extends Controller
             'praktikan' => $praktikanPraktikum,
             'tugasPraktikums' => $tugasPraktikums,
             'riwayatPengumpulan' => $riwayatPengumpulan,
-            'practicumYear' => $period?->tahunKepengurusan?->tahun,
-            'practicumArchive' => $period ? !$period->is_active : false,
         ]);
     }
 
@@ -721,6 +719,8 @@ class PraktikanController extends Controller
         return Inertia::render('Praktikan/DaftarTugas', [
             'praktikans' => $praktikanPraktikums,
             'tugasPraktikums' => $tugasPraktikums,
+            'practicumYear' => $period?->tahunKepengurusan?->tahun,
+            'practicumArchive' => $period ? !$period->is_active : false,
             'riwayatPengumpulan' => $riwayatPengumpulan
         ]);
     }

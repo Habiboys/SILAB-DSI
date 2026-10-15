@@ -47,7 +47,7 @@ export default function DaftarTugas({ praktikans = [], tugasPraktikums = [], riw
     return <DashboardLayout>
         <Head title="Praktikum Saya" />
         <PageHeader title="Praktikum Saya" description="Pantau tugas, buka modul, dan lihat riwayat pengumpulan."
-            actions={kepengurusan_list.length > 0 && <label className="fieldset"><span className="fieldset-legend">Tahun praktikum</span><select className="select min-h-11 w-full sm:w-48" value={selected_kepengurusan?.id || ''} onChange={changeYear}>{kepengurusan_list.map(item => <option key={item.id} value={item.id}>{item.label || item.tahun}{!item.is_active ? ' ? Arsip' : ''}</option>)}</select></label>} />
+            actions={kepengurusan_list.length > 0 && <label className="fieldset"><span className="fieldset-legend">Tahun praktikum</span><select className="select min-h-11 w-full sm:w-48" value={selected_kepengurusan?.id || ''} onChange={changeYear}>{kepengurusan_list.map(item => <option key={item.id} value={item.id}>{item.label || item.tahun}{!item.is_active ? ' - Arsip' : ''}</option>)}</select></label>} />
         <div className="space-y-6">
         <div className="flex flex-wrap items-center gap-3">
             <div className="tabs tabs-box w-fit" role="tablist" aria-label="Navigasi praktikum">
@@ -72,7 +72,7 @@ export default function DaftarTugas({ praktikans = [], tugasPraktikums = [], riw
                 </div>
             </article>)}
         </div>
-        {kelas.length === 0 && <PageSection><p className="py-8 text-center text-sm text-base-content/60">Anda belum terdaftar pada kelas praktikum aktif.</p></PageSection>}
+        {kelas.length === 0 && <PageSection><p className="py-8 text-center text-sm text-base-content/60">Tidak ada praktikum pada tahun yang dipilih.</p></PageSection>}
         </>}
         {tab === 'tugas' && <div className="space-y-4">
             {upcoming.length === 0 ? <PageSection title="Tugas yang Perlu Dikumpulkan"><div className="space-y-3 py-6 text-center"><p className="text-sm text-base-content/60">Tidak ada tugas yang perlu dikumpulkan.</p><Button variant="outline" onClick={() => setTab('praktikum')}>Lihat Praktikum</Button></div></PageSection> :
