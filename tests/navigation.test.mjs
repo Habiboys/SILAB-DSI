@@ -119,3 +119,19 @@ test('direct task access preserves classroom context and rejects a stored differ
     assert.match(target, /kelas_id=class-b/);
     assert.doesNotMatch(target, /class-a/);
 });
+
+
+test('returning with injected context prunes history instead of cycling between task pages', () => {
+    let history = [];
+    for (const url of ['/praktikum?page=2', '/praktikum/practice-a', '/praktikum/practice-a/tugas', '/praktikum/tugas/task-a/submissions']) {
+        history = recordPage(history, page(url), origin);
+    }
+    let current = page('/praktikum/practice-a/tugas?lab_id=a&kepengurusan_lab_id=period-a');
+    history = recordPage(history, current, origin);
+    assert.equal(history.length, 3);
+    assert.equal(backDestination(current, '/praktikum/practice-a', history, routes, origin), '/praktikum/practice-a');
+    current = page('/praktikum/practice-a?lab_id=a&kepengurusan_lab_id=period-a');
+    history = recordPage(history, current, origin);
+    assert.equal(history.length, 2);
+    assert.equal(backDestination(current, '/praktikum', history, routes, origin), '/praktikum?page=2');
+});

@@ -168,6 +168,13 @@ class KegiatanController extends Controller
             'peserta.user',
             'dokumentasiKegiatan.uploader',
         ]);
+        foreach ($kegiatan->dokumentasiKegiatan as $dokumentasi) {
+            $disk = \Illuminate\Support\Facades\Storage::disk('public');
+            $exists = $dokumentasi->file_path && $disk->exists($dokumentasi->file_path);
+            $mime = $exists ? $disk->mimeType($dokumentasi->file_path) : null;
+            $dokumentasi->setAttribute('is_image', in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true));
+            $dokumentasi->setAttribute('file_url', $exists ? $disk->url($dokumentasi->file_path) : null);
+        }
 
         $user = Auth::user();
         $currentLab = $user->getCurrentLab();

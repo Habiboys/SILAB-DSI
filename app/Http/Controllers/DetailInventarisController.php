@@ -82,7 +82,7 @@ class DetailInventarisController extends Controller
         ]);
 
         if ($request->hasFile('foto')) {
-            $validated['foto'] = $request->file('foto')->store('detail-aset', 'public');
+            $validated['foto'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto'), 'detail-aset');
         }
         $validated['foto'] ??= '';
         $validated['nama'] = $validated['nama'] ?? KategoriAset::findOrFail($validated['kategori_aset_id'])->nama;
@@ -131,7 +131,7 @@ class DetailInventarisController extends Controller
             if ($detailAset->foto) {
                 Storage::disk('public')->delete($detailAset->foto);
             }
-            $validated['foto'] = $request->file('foto')->store('detail-aset', 'public');
+            $validated['foto'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto'), 'detail-aset');
         } else {
             unset($validated['foto']);
         }

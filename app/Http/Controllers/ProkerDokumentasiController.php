@@ -20,8 +20,7 @@ class ProkerDokumentasiController extends Controller
 
         $count = 0;
         foreach ($request->file('files') as $idx => $file) {
-            $fileName = time() . '_' . $idx . '_' . $file->getClientOriginalName();
-            $filePath = $file->storeAs('proker-dokumentasi', $fileName, 'public');
+            $filePath = app(\App\Services\ImageUploadCompressor::class)->store($file, 'proker-dokumentasi');
 
             ProkerDokumentasi::create([
                 'proker_id'   => $proker->id,

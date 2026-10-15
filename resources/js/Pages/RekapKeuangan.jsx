@@ -16,15 +16,8 @@ const formatCurrency = (amount) => {
     }).format(numAmount);
 };
 
-const SummaryCard = ({ label, value, tone = "text-primary", border = "border-primary" }) => (
-    <div className={`rounded-lg border-l-4 bg-base-100 p-4 shadow-sm ${border}`}>
-        <div className="mb-1 text-sm text-base-content/60">{label}</div>
-        <div className={`text-lg font-bold lg:text-xl ${tone}`}>{value}</div>
-    </div>
-);
-
 const columns = [
-    { key: "no", header: "No", cellClassName: "text-base-content/60", render: (_item, index) => index + 1 },
+    { key: "no", header: "No", cellClassName: "text-base-content/60", render: (_item, index) => (index ?? 0) + 1 },
     { key: "nama_bulan", header: "Bulan" },
     { key: "tahun", header: "Tahun" },
     { key: "pemasukan", header: "Pemasukan", cellClassName: "font-medium text-success", render: (item) => formatCurrency(item.pemasukan) },
@@ -32,7 +25,7 @@ const columns = [
     { key: "saldo", header: "Saldo", cellClassName: "font-medium", render: (item) => <span className={item.saldo >= 0 ? "text-primary" : "text-error"}>{formatCurrency(item.saldo)}</span> },
 ];
 
-const RekapKeuangan = ({ rekapKeuangan, kepengurusanlab, flash, keuanganSummary }) => {
+const RekapKeuangan = ({ rekapKeuangan, kepengurusanlab, keuanganSummary }) => {
     const { selectedLab } = useLab();
     const { selected_kepengurusan } = usePage().props;
     const selectedTahunId = selected_kepengurusan?.id;
@@ -45,14 +38,23 @@ const RekapKeuangan = ({ rekapKeuangan, kepengurusanlab, flash, keuanganSummary 
         <DashboardLayout>
             <Head title="Rekap Keuangan Bulanan" />
 
-            <PageHeader title="Rekap Keuangan Bulanan" />
+            <PageHeader title="Rekap Keuangan Bulanan" description="Ringkasan pemasukan, pengeluaran, dan saldo per bulan." />
 
             {kepengurusanlab && (
-                <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    <SummaryCard label="Total Saldo" value={formatCurrency(totalSaldo)} tone={totalSaldo >= 0 ? "text-primary" : "text-error"} />
-                    <SummaryCard label="Total Pemasukan" value={formatCurrency(totalPemasukan)} tone="text-success" border="border-success" />
-                    <SummaryCard label="Total Pengeluaran" value={formatCurrency(totalPengeluaran)} tone="text-error" border="border-error" />
-                </div>
+                <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3" aria-label="Ringkasan keuangan">
+                    <div className="border-b-2 border-info bg-base-100 px-4 py-3">
+                        <div className="text-sm text-base-content/70">Saldo</div>
+                        <div className={`mt-1 text-2xl font-bold ${totalSaldo >= 0 ? "text-info" : "text-error"}`}>{formatCurrency(totalSaldo)}</div>
+                    </div>
+                    <div className="border-b-2 border-success bg-base-100 px-4 py-3">
+                        <div className="text-sm text-base-content/70">Total Pemasukan</div>
+                        <div className="mt-1 text-2xl font-bold text-success">{formatCurrency(totalPemasukan)}</div>
+                    </div>
+                    <div className="border-b-2 border-error bg-base-100 px-4 py-3">
+                        <div className="text-sm text-base-content/70">Total Pengeluaran</div>
+                        <div className="mt-1 text-2xl font-bold text-error">{formatCurrency(totalPengeluaran)}</div>
+                    </div>
+                </section>
             )}
 
             <PageSection bodyClassName="p-0 sm:p-0">
@@ -62,11 +64,11 @@ const RekapKeuangan = ({ rekapKeuangan, kepengurusanlab, flash, keuanganSummary 
                     </DataTableHead>
                     <tbody>
                         {rekapKeuangan.length > 0 ? (
-                            rekapKeuangan.map((item) => (
+                            rekapKeuangan.map((item, index) => (
                                 <tr key={`${item.tahun}-${item.bulan}`} className="hover">
                                     {columns.map((column) => (
                                         <td key={column.key} className={column.cellClassName ?? ""}>
-                                            {column.render ? column.render(item) : item[column.key]}
+                                            {column.render ? column.render(item, index) : item[column.key]}
                                         </td>
                                     ))}
                                 </tr>

@@ -79,7 +79,7 @@ class DendaPiketController extends Controller
                 throw ValidationException::withMessages(['nominal' => 'Nominal melebihi sisa denda.']);
             }
             if ($request->hasFile('bukti')) {
-                $buktiPath = $request->file('bukti')->store('bukti-denda-piket', 'public');
+                $buktiPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('bukti'), 'bukti-denda-piket');
             }
             PemasukanKeuangan::create([
                 'tanggal' => $validated['tanggal'],

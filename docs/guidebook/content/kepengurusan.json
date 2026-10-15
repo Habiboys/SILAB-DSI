@@ -1,0 +1,514 @@
+{
+  "id": "kepengurusan",
+  "title": "Modul Kepengurusan",
+  "introduction": "Modul Kepengurusan menghubungkan periode laboratorium, anggota dan jabatan, program kerja, kegiatan, evaluasi, serta laporan akhir. Program kerja menjadi rencana dan sasaran divisi; kegiatan mencatat pelaksanaan yang terkait program kerja. Laporan Kalab dan LPJ Laboratorium mengambil data tersebut agar tidak perlu disusun ulang dari awal.",
+  "flow": "Pengelola menyiapkan periode dan anggota → divisi atau PJ membuat program kerja dan indikator → program kerja diajukan dan ditinjau → kegiatan diajukan pada proker yang disetujui → pelaksanaan, capaian, dokumentasi, dan laporan kegiatan dilengkapi → data diperiksa → Laporan Kalab atau Laporan LPJ Labor dihasilkan. Persetujuan proker dan persetujuan kegiatan merupakan dua keputusan berbeda.",
+  "prerequisites": [
+    "Pilih laboratorium dan kepengurusan yang benar. Kepengurusan arsip dapat dibaca tetapi membatasi perubahan.",
+    "Periksa jabatan, divisi, dan penanggung jawab. Hak mengubah data dapat bergantung pada izin jabatan, laboratorium, divisi, dan penugasan PJ.",
+    "Siapkan rencana kerja, indikator capaian, tanggal, bukti pelaksanaan, dan informasi SK yang sah sebelum membuat laporan."
+  ],
+  "access": [
+    [
+      "Pengelola periode dan anggota",
+      "Penyiapan organisasi",
+      "Menyiapkan periode, SK, anggota, jabatan, dan transfer sesuai izin."
+    ],
+    [
+      "Koordinator divisi atau PJ berwenang",
+      "Program kerja dan realisasi",
+      "Menyusun proker, indikator, penugasan PJ, capaian, serta evaluasi pada lingkup yang diizinkan."
+    ],
+    [
+      "Kalab atau peninjau berwenang",
+      "Keputusan pengajuan",
+      "Memeriksa dan menyetujui atau menolak proker serta kegiatan sesuai izin masing-masing. Nama jabatan saja tidak menjamin tombol tersedia."
+    ],
+    [
+      "Asisten atau petugas kegiatan berwenang",
+      "Pelaksanaan kegiatan",
+      "Mengajukan kegiatan, mencatat peserta, mengunggah dokumentasi dan laporan, serta menyiapkan data LPJ."
+    ],
+    [
+      "Penyusun laporan dan Kalab",
+      "Pemeriksaan serta keluaran laporan",
+      "Memeriksa kelengkapan, membuat Laporan Kalab atau LPJ Labor, lalu memeriksa PDF sebelum diserahkan."
+    ],
+    [
+      "Pengguna dengan akses baca saja",
+      "Baca sesuai lingkup",
+      "Melihat periode, anggota, proker, atau kegiatan. Tidak diberi subbab baca berulang; pemeriksaan untuk keputusan dan pelaporan tetap dijelaskan."
+    ]
+  ],
+  "groups": [
+    {
+      "id": "organisasi",
+      "title": "Pengelola periode dan anggota",
+      "tasks": [
+        {
+          "id": "periode",
+          "title": "Menyiapkan periode dan SK kepengurusan",
+          "summary": "Periode laboratorium menentukan lingkup anggota dan pekerjaan. Tahun kepengurusan dan periode laboratorium harus dibedakan.",
+          "before": [
+            "Tahun kepengurusan serta laboratorium tersedia.",
+            "Akun memiliki izin mengelola periode atau struktur; SK yang digunakan sudah benar."
+          ],
+          "steps": [
+            "Buka **Kepengurusan → Periode Kepengurusan** dan periksa laboratorium serta periode yang sudah ada.",
+            "Gunakan aksi penambahan bila tersedia. Pilih tahun kepengurusan dan laboratorium, lalu unggah SK bila sudah tersedia. SK menerima PDF maksimum 5 MB.",
+            "Simpan dan periksa baris periode. Kombinasi laboratorium dan tahun tidak boleh dibuat ganda.",
+            "Untuk penggantian SK, gunakan aksi pembaruan SK yang tersedia dan periksa berkas baru setelah disimpan.",
+            "Jika perlu mengaktifkan periode, periksa tahun dan laboratorium sebelum menjalankan aksi status aktif. Mengaktifkan satu periode menonaktifkan periode lain pada laboratorium yang sama."
+          ],
+          "success": "Periode dan SK sesuai; status aktif menunjukkan periode yang digunakan untuk pekerjaan berjalan.",
+          "failure": "Jangan mengaktifkan atau menonaktifkan periode hanya untuk mencoba tombol. Perubahan memengaruhi hak menulis pada modul terkait.",
+          "figures": [
+            {
+              "id": "periode",
+              "path": "output/guidebook/kepengurusan/periode.png",
+              "caption": "Daftar periode dan SK kepengurusan laboratorium",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "anggota",
+          "title": "Menambahkan dan memperbaiki anggota",
+          "summary": "Identitas pengguna dan keanggotaan periode berbeda. Periksa NIM atau identitas agar tidak membuat akun maupun keanggotaan ganda.",
+          "before": [
+            "Akun berwenang mengelola anggota pada kepengurusan aktif.",
+            "Nama, email, NIM/NIDN/NIP, jenis kelamin, jabatan, dan identitas tambahan telah diperiksa."
+          ],
+          "steps": [
+            "Buka **Kepengurusan → Anggota**. Cari nama atau NIM dan periksa jabatan sebelum menambahkan orang.",
+            "Gunakan aksi tambah yang tersedia. Isi nama lengkap, email, NIM/NIDN/NIP, jenis kelamin, serta **Jabatan**. Lengkapi nomor anggota dan data lain yang diperlukan.",
+            "Jika memakai foto profil, pilih JPG, JPEG, atau PNG maksimum 2 MB. Periksa laboratorium serta periode, lalu pilih **Simpan**.",
+            "Untuk perubahan, buka edit anggota yang benar. Perbaiki data atau jabatan dan simpan. Biarkan **Password (Opsional)** kosong bila tidak melakukan penggantian yang memang diperlukan.",
+            "Periksa hasil pada daftar, termasuk jabatan dan nomor anggota. NIM/NIDN/NIP pada form edit tidak dapat diubah."
+          ],
+          "success": "Anggota serta jabatannya sesuai kepengurusan dan identitas yang benar.",
+          "failure": "Jika identitas sudah tergabung pada periode yang sama, periksa catatan yang ada. Jangan menambah angka pada NIM atau membuat email lain untuk melewati pemeriksaan.",
+          "figures": [
+            {
+              "id": "anggota",
+              "path": "output/guidebook/kepengurusan/anggota.png",
+              "caption": "Daftar anggota dengan identitas disamarkan",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "transfer",
+          "title": "Meneruskan anggota dari periode sebelumnya",
+          "summary": "Transfer menambahkan keanggotaan pada periode tujuan; bukan menghapus riwayat periode sebelumnya.",
+          "before": [
+            "Periode sumber dan tujuan tersedia; tujuan adalah kepengurusan yang akan dikelola.",
+            "Akun memiliki kewenangan transfer dan daftar anggota yang diteruskan telah disetujui."
+          ],
+          "steps": [
+            "Pada **Anggota**, buka **Transfer Anggota dari Kepengurusan Sebelumnya** bila tersedia.",
+            "Pilih **Kepengurusan Sebelumnya**, lalu periksa orang yang berasal dari periode tersebut.",
+            "Pilih **Struktur untuk Anggota yang Ditransfer** dan centang hanya anggota yang akan diteruskan.",
+            "Periksa periode tujuan, jumlah pilihan, dan jabatan, lalu **Transfer Anggota**.",
+            "Baca hasil dan periksa daftar tujuan. Jika beberapa orang memiliki jabatan berbeda, proses sesuai kelompok jabatan dan periksa hasilnya."
+          ],
+          "success": "Anggota yang berhasil ditransfer tercatat pada periode tujuan tanpa menggandakan orang yang sudah ada.",
+          "failure": "Hasil dapat mencatat sebagian anggota tidak diproses karena sudah ada atau tidak memenuhi pilihan sumber. Periksa hasil sebelum mengulangi seluruh pilihan."
+        }
+      ]
+    },
+    {
+      "id": "proker",
+      "title": "Koordinator divisi dan penanggung jawab",
+      "tasks": [
+        {
+          "id": "buat-proker",
+          "title": "Membuat draft program kerja",
+          "summary": "Rencana awal disimpan sebagai Draft. Menyimpan proker belum berarti proker telah disetujui.",
+          "before": [
+            "Akun berwenang membuat proker pada kepengurusan aktif.",
+            "Nama, deskripsi, divisi, tujuan, sasaran, keluaran, dan rencana waktu telah disiapkan."
+          ],
+          "steps": [
+            "Buka **Kepengurusan → Program Kerja**. Periksa daftar agar rencana tidak ganda, lalu **Tambah Proker**.",
+            "Isi nama proker, **Divisi / Struktur**, dan deskripsi. Lengkapi tujuan, sasaran, output kegiatan, tanggal, serta keterangan sesuai kebutuhan.",
+            "Pilih penanggung jawab yang sesuai dari anggota kepengurusan. Jika melampirkan dokumen rencana, gunakan PDF, DOC, atau DOCX maksimum 10 MB.",
+            "Periksa status pelaksanaan awal dan rentang tanggal; tanggal selesai tidak boleh sebelum tanggal mulai. Simpan formulir.",
+            "Buka detail dan pastikan status pengajuan **Draft**, kemudian lengkapi indikator sebelum mengajukan."
+          ],
+          "success": "Draft tersimpan pada divisi dan kepengurusan yang benar.",
+          "failure": "Jika tidak dapat mengedit, periksa izin, kesesuaian divisi atau PJ, dan laboratorium. Jangan membuat proker pengganti sebelum memeriksa draft yang sudah ada.",
+          "figures": [
+            {
+              "id": "proker",
+              "path": "output/guidebook/kepengurusan/proker.png",
+              "caption": "Daftar program kerja serta pintu masuk laporan",
+              "after_step": 1
+            },
+            {
+              "id": "form-proker",
+              "path": "output/guidebook/kepengurusan/form-proker.png",
+              "caption": "Formulir pembuatan program kerja",
+              "after_step": 2
+            }
+          ]
+        },
+        {
+          "id": "indikator",
+          "title": "Menetapkan PJ dan parameter penilaian",
+          "summary": "PJ menentukan penanggung jawab, sedangkan parameter menyediakan ukuran capaian. Keduanya diperlukan agar pelaksanaan dapat ditelusuri.",
+          "before": [
+            "Draft atau proker yang tepat telah dibuka dan akun memiliki izin pengelolaan.",
+            "Indikator dan bobot telah disepakati."
+          ],
+          "steps": [
+            "Pada detail proker, periksa bagian **Penanggung Jawab**. Gunakan **Tambah**, pilih anggota yang benar, lalu simpan.",
+            "Pada **Parameter Penilaian**, pilih **Tambah Parameter**. Isi nama indikator dan bobot antara 1 sampai 100 persen.",
+            "Simpan dan ulangi untuk indikator lain. Total bobot tidak boleh melebihi 100 persen; pastikan rancangan bobot lengkap sebelum digunakan menilai capaian.",
+            "Periksa daftar PJ, indikator, dan ringkasan total bobot. Jika mengubah atau menghapus parameter setelah capaian diisi, periksa dampaknya pada keseluruhan hasil."
+          ],
+          "success": "PJ dan indikator tercatat serta total bobot sesuai rancangan.",
+          "failure": "Parameter capaian belum dapat diisi sebelum proker disetujui. Periksa pula izin divisi atau penugasan PJ.",
+          "figures": [
+            {
+              "id": "parameter",
+              "path": "output/guidebook/kepengurusan/form-parameter.png",
+              "caption": "Formulir indikator dan bobot parameter proker",
+              "after_step": 2
+            }
+          ]
+        },
+        {
+          "id": "ajukan",
+          "title": "Mengajukan program kerja untuk ditinjau",
+          "summary": "Pengajuan mengirim draft untuk keputusan peninjau. Bedakan status pengajuan dari status pelaksanaan.",
+          "before": [
+            "Status pengajuan masih Draft.",
+            "Informasi, PJ, rencana, dan indikator telah diperiksa."
+          ],
+          "steps": [
+            "Buka detail draft dan periksa nama, divisi, tujuan, sasaran, output, tanggal, serta lampiran.",
+            "Pilih **Ajukan Persetujuan** dan baca dialog konfirmasi sebelum mengirim.",
+            "Periksa status menjadi **Diajukan** dan tunggu keputusan peninjau.",
+            "Jika ditolak, baca catatan dan koordinasikan cara pengajuan perbaikan yang tersedia. Jangan menganggap perubahan isi otomatis mengembalikan status menjadi Draft."
+          ],
+          "success": "Draft berubah menjadi Diajukan dan dapat ditinjau pemegang kewenangan persetujuan.",
+          "failure": "Aksi pengajuan hanya berlaku pada Draft. Jika status sudah berubah, muat ulang sebelum mengulangi pengiriman."
+        },
+        {
+          "id": "capaian",
+          "title": "Memperbarui pelaksanaan dan capaian proker",
+          "summary": "Realisasi dicatat setelah proker disetujui. Angka capaian harus didukung bukti kegiatan.",
+          "before": [
+            "Status pengajuan Disetujui.",
+            "Akun memiliki izin progres dan berada pada divisi atau PJ yang sesuai."
+          ],
+          "steps": [
+            "Buka proker dan cocokkan status pengajuan serta status pelaksanaan. Periksa bukti pelaksanaan yang akan dicatat.",
+            "Untuk pembaruan informasi atau status pelaksanaan, gunakan edit proker dari daftar bila tersedia. Pilih Belum Mulai, Sedang Berjalan, Selesai, atau Ditunda sesuai keadaan, lalu simpan.",
+            "Pada **Parameter Penilaian**, gunakan tindakan capaian yang tersedia untuk mengisi persentase 0 sampai 100 pada indikator yang benar.",
+            "Simpan dan periksa **Capaian Tertimbang**, bobot, serta status. Nilai tertimbang bergantung pada bobot; jangan menyamakan angka satu indikator dengan capaian seluruh proker."
+          ],
+          "success": "Status dan capaian tersimpan sesuai realisasi yang dapat dibuktikan.",
+          "failure": "Jika tindakan terkunci, pastikan proker telah disetujui. Jangan mengisi 100 persen hanya karena kegiatan sudah direncanakan.",
+          "figures": [
+            {
+              "id": "detail-proker",
+              "path": "output/guidebook/kepengurusan/proker-detail.png",
+              "caption": "Detail proker yang sudah disetujui beserta indikatornya",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "evaluasi",
+          "title": "Mengisi evaluasi dan bahan LPJ",
+          "summary": "Evaluasi menjelaskan hasil pelaksanaan dan perbaikan yang diperlukan. Isian ini menjadi bahan laporan akhir.",
+          "before": [
+            "Proker telah disetujui dan petugas berwenang mengubah progres.",
+            "Keterlaksanaan, kendala, solusi, dan rekomendasi telah dirangkum."
+          ],
+          "steps": [
+            "Pada detail proker, buka **Evaluasi & LPJ** dan pilih **Edit**.",
+            "Tentukan keterlaksanaan **Terlaksana**, **Sebagian**, atau **Tidak Terlaksana** sesuai bukti.",
+            "Isi **Kendala**, **Solusi**, dan **Saran** dengan informasi yang dapat ditindaklanjuti. Bedakan hambatan, tindakan yang telah dilakukan, dan rekomendasi berikutnya.",
+            "Simpan evaluasi dan periksa hasil yang ditampilkan sebelum membuat laporan."
+          ],
+          "success": "Keterlaksanaan serta catatan evaluasi tersimpan dan siap diperiksa dalam LPJ.",
+          "failure": "Jika evaluasi tidak dapat disimpan, periksa persetujuan proker dan kewenangan. Hasil yang belum disimpan tidak akan menjadi dasar laporan.",
+          "figures": [
+            {
+              "id": "evaluasi",
+              "path": "output/guidebook/kepengurusan/form-evaluasi.png",
+              "caption": "Formulir evaluasi pelaksanaan untuk bahan LPJ",
+              "after_step": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "peninjau",
+      "title": "Kalab atau peninjau yang berwenang",
+      "tasks": [
+        {
+          "id": "approve-proker",
+          "title": "Memutuskan pengajuan program kerja",
+          "summary": "Peninjau memeriksa kebutuhan, tanggung jawab, dan ukuran hasil sebelum memberi keputusan. Izin persetujuan mengikuti konfigurasi serta lingkup laboratorium.",
+          "before": [
+            "Proker berstatus Diajukan.",
+            "Akun mempunyai kewenangan menyetujui proker di laboratorium tersebut."
+          ],
+          "steps": [
+            "Buka detail proker yang diajukan. Periksa divisi, PJ, rencana waktu, tujuan, indikator, bobot, serta lampiran.",
+            "Pilih **Setujui** atau **Tolak** sesuai hasil pemeriksaan. Isi catatan yang tersedia, terutama alasan penolakan.",
+            "Baca dialog dan konfirmasikan keputusan setelah seluruh data sesuai.",
+            "Periksa status pengajuan. Persetujuan menjadikan proker Disetujui dengan status pelaksanaan awal Belum Mulai; penolakan menjadikannya Ditolak.",
+            "Sampaikan tindak lanjut kepada pengaju. Persetujuan proker belum sekaligus menyetujui setiap kegiatan di bawahnya."
+          ],
+          "success": "Keputusan tersimpan dan pengaju mengetahui apakah proker boleh dilanjutkan.",
+          "failure": "Hanya proker Diajukan yang dapat diputuskan melalui alur ini. Jika status berubah saat diperiksa, muat ulang detail."
+        },
+        {
+          "id": "approve-kegiatan",
+          "title": "Memutuskan pengajuan kegiatan",
+          "summary": "Kegiatan memiliki keputusan tersendiri meskipun prokernya sudah disetujui.",
+          "before": [
+            "Akun mempunyai izin persetujuan kegiatan pada lingkup laboratorium terkait.",
+            "Pengajuan kegiatan serta proker induknya dapat diperiksa."
+          ],
+          "steps": [
+            "Buka detail dari **Kegiatan**. Periksa nama, tujuan, proker, tanggal, lokasi atau tautan pertemuan, dan pihak pelaksana.",
+            "Pastikan kegiatan yang akan diputuskan benar, lalu pilih **Setujui** atau **Tolak** pada bagian persetujuan.",
+            "Baca dialog **Setujui Kegiatan** atau **Tolak Kegiatan** sebelum konfirmasi.",
+            "Periksa status setelah keputusan. Kegiatan yang disetujui dapat dilanjutkan untuk pengelolaan peserta dan dokumen sesuai izin. Jika ditolak, pengaju perlu menindaklanjuti perbaikan bersama pengelola."
+          ],
+          "success": "Status kegiatan menunjukkan keputusan peninjau dan tindak lanjutnya jelas.",
+          "failure": "Jangan mengulangi keputusan pada kegiatan lain dengan nama serupa. Cocokkan proker dan tanggal terlebih dahulu."
+        }
+      ]
+    },
+    {
+      "id": "kegiatan",
+      "title": "Asisten dan petugas kegiatan berwenang",
+      "tasks": [
+        {
+          "id": "buat-kegiatan",
+          "title": "Mengajukan kegiatan di bawah program kerja",
+          "summary": "Kegiatan mencatat pelaksanaan terjadwal dari proker. Penyimpanan kegiatan baru langsung menjadi pengajuan untuk ditinjau.",
+          "before": [
+            "Proker sudah Disetujui dan sesuai laboratorium.",
+            "Nama, tanggal, jenis pelaksanaan, lokasi, serta tautan bila daring telah disiapkan."
+          ],
+          "steps": [
+            "Buka **Kegiatan** dan gunakan aksi tambah bila tersedia.",
+            "Pilih proker yang sesuai. Isi nama kegiatan, tanggal mulai dan selesai, serta deskripsi.",
+            "Lengkapi tipe kegiatan, lokasi, dan link meeting bila diperlukan. Periksa rentang tanggal sebelum mengirim.",
+            "Pilih **Ajukan Kegiatan** dan pastikan status **Diajukan** pada daftar atau detail. Pantau keputusan sebelum melanjutkan tindakan yang mensyaratkan persetujuan."
+          ],
+          "success": "Kegiatan tercatat sebagai pengajuan pada proker yang benar.",
+          "failure": "Jika pilihan proker kosong, periksa persetujuan, status pelaksanaan yang ditampilkan formulir, serta konteks kepengurusan. Jangan membuat proker pengganti untuk melewati pemeriksaan.",
+          "figures": [
+            {
+              "id": "kegiatan",
+              "path": "output/guidebook/kepengurusan/kegiatan.png",
+              "caption": "Daftar kegiatan pada konteks kepengurusan yang dipilih",
+              "after_step": 1
+            },
+            {
+              "id": "form-kegiatan",
+              "path": "output/guidebook/kepengurusan/form-kegiatan.png",
+              "caption": "Formulir pengajuan kegiatan pada proker yang disetujui",
+              "after_step": 3
+            }
+          ]
+        },
+        {
+          "id": "dokumen-kegiatan",
+          "title": "Mengunggah dokumentasi dan laporan kegiatan",
+          "summary": "Dokumentasi dan laporan merupakan dua jenis bukti yang berbeda. Unggah pada kegiatan yang benar agar dapat ditelusuri saat menyusun LPJ.",
+          "before": [
+            "Kegiatan tersedia dan akun memiliki tindakan unggah yang sesuai.",
+            "Berkas serta judul telah diperiksa."
+          ],
+          "steps": [
+            "Buka detail kegiatan dan cocokkan nama, proker, serta tanggal.",
+            "Pada **Dokumentasi Kegiatan**, pilih **Upload Dokumentasi**. Isi judul dan pilih berkas yang sesuai, lalu simpan. Format yang didukung PDF, DOC, DOCX, JPG, JPEG, PNG, ZIP, atau MP4 maksimum 50 MB.",
+            "Pada **Laporan Kegiatan**, pilih **Upload Laporan**. Tentukan jenis laporan, periode bulan atau tahun bila diperlukan, dan keterangan capaian.",
+            "Pilih file laporan PDF, DOC, atau DOCX maksimum 10 MB, lalu simpan unggahan.",
+            "Buka atau unduh kembali dokumen untuk memeriksa hasil. Koreksi atau hapus berkas hanya setelah memastikan dokumen yang dipilih dan penggantinya."
+          ],
+          "success": "Bukti kegiatan terdaftar serta dapat dibaca kembali dari detail kegiatan.",
+          "failure": "LPJ lengkap tidak otomatis menyalin seluruh isi semua berkas unggahan. Periksa hasil PDF dan siapkan lampiran terpisah bila diperlukan."
+        },
+        {
+          "id": "peserta-kegiatan",
+          "title": "Mencatat peserta kegiatan untuk tindak lanjut",
+          "summary": "Daftar peserta dipakai untuk administrasi kegiatan dan penerbitan dokumen peserta sesuai kebutuhan.",
+          "before": [
+            "Kegiatan telah disetujui dan akun memiliki izin pengelolaan peserta.",
+            "Daftar hadir atau peserta yang akan dicatat sudah diperiksa."
+          ],
+          "steps": [
+            "Buka kegiatan yang benar, lalu **Kelola Peserta & Sertifikat** atau menu peserta yang tersedia.",
+            "Gunakan tindakan penambahan peserta, pilih atau isi identitas sesuai formulir, lalu simpan.",
+            "Periksa daftar untuk memastikan orang tidak ganda dan sesuai kegiatan.",
+            "Jika perlu sertifikat, gunakan **Kelola Sertifikat**, siapkan template kategori yang diminta, pilih penerima yang telah diperiksa, lalu ikuti konfirmasi penerbitan yang tersedia. Periksa hasil sebelum dibagikan."
+          ],
+          "success": "Peserta tercatat dan dapat dipakai untuk administrasi serta penerbitan sesuai kewenangan.",
+          "failure": "Jangan menerbitkan sertifikat sebagai cara mencoba tombol. Pastikan daftar penerima serta template benar; penetapan peserta tidak menggantikan pemeriksaan kelayakan."
+        }
+      ]
+    },
+    {
+      "id": "laporan",
+      "title": "Tugas bersama penyusun laporan dan Kalab",
+      "tasks": [
+        {
+          "id": "periksa-laporan",
+          "title": "Memeriksa data sebelum membuat laporan",
+          "summary": "Laporan mengambil data dari proker dan kegiatan pada laboratorium serta periode yang dipilih. Asisten penyusun, koordinator, dan Kalab memeriksa data sumber sebelum menghasilkan PDF; kekurangan data perlu diperbaiki pada proker atau kegiatan terkait.",
+          "before": [
+            "Laboratorium serta periode laporan telah ditetapkan.",
+            "Pihak yang memeriksa dapat membaca data sumber terkait."
+          ],
+          "steps": [
+            "Buka **Program Kerja** pada periode yang akan dilaporkan. Cocokkan daftar proker dengan rencana kerja dan keputusan yang sudah ada.",
+            "Periksa status pelaksanaan, PJ, parameter, bobot, capaian, keterlaksanaan, kendala, solusi, serta saran setiap proker.",
+            "Periksa kegiatan yang disetujui dan dokumentasinya. LPJ lengkap mengambil proker serta kegiatan yang disetujui; draft atau pengajuan yang belum lolos tidak boleh dianggap otomatis masuk laporan.",
+            "Cocokkan anggota dan jabatan dengan personalia, serta periksa data SK dan identitas penanggung jawab.",
+            "Perbaiki data sumber melalui petugas berwenang. Tentukan apakah yang dibutuhkan **Laporan Kalab** atau **Laporan LPJ Labor**."
+          ],
+          "success": "Data sumber dan jenis laporan telah diperiksa sebelum menghasilkan PDF.",
+          "failure": "PDF yang berhasil diunduh belum berarti datanya lengkap atau telah disahkan. Isian kosong dan evaluasi yang belum tersedia perlu ditindaklanjuti."
+        },
+        {
+          "id": "laporan-kalab",
+          "title": "Membuat laporan untuk dosen atau Kepala Lab",
+          "summary": "Tombol aplikasi bernama Laporan Kalab. Laporan merangkum data proker dan kegiatan untuk pemeriksaan dosen atau Kepala Lab. Lengkapi data sumber terlebih dahulu, lalu periksa rangkumannya sebelum digunakan.",
+          "before": [
+            "Data sumber telah diperiksa.",
+            "Nomor SK, judul keputusan, tanggal SK, jadwal, kesimpulan, serta penutup tersedia dari sumber yang sah."
+          ],
+          "steps": [
+            "Pada **Program Kerja**, pilih **Laporan Kalab**. Periksa nama laboratorium dan tahun kepengurusan.",
+            "Isi **Dasar (Nomor SK)**, **Judul Surat Keputusan**, **Tanggal SK**, **Jadwal Kegiatan**, **Kesimpulan**, dan **Penutup** sesuai kebutuhan laporan.",
+            "Tentukan pilihan **Sertakan tanda tangan digital** hanya setelah memastikan data serta kewenangan penggunaan tanda tangan sesuai. Pengetikan memperbarui pratinjau setelah jeda.",
+            "Periksa hasil pada pratinjau. Jika penampil gagal tetapi layanan PDF tersedia, gunakan **Download PDF** lalu buka berkas secara terpisah untuk pemeriksaan.",
+            "Cocokkan identitas, personalia, uraian kegiatan, kesimpulan, dan kelengkapan SK sebelum menyerahkannya kepada dosen atau Kalab untuk tindak lanjut."
+          ],
+          "success": "PDF rangkuman dapat diunduh dan diperiksa sebelum digunakan sebagai laporan. Contoh di buku memperlihatkan keluaran dengan data SK belum dilengkapi.",
+          "failure": "Pada pemeriksaan lokal, PDF rangkuman valid berhasil dibuat meskipun penampil gagal. Jangan menilai isi sudah benar hanya karena proses unduhan selesai.",
+          "figures": [
+            {
+              "id": "form-kalab",
+              "path": "output/guidebook/kepengurusan/laporan-kalab.png",
+              "caption": "Formulir Laporan Kalab dan pilihan unduh PDF",
+              "after_step": 2
+            },
+            {
+              "id": "pdf-kalab",
+              "path": "output/guidebook/kepengurusan/pdf-rangkuman-1.png",
+              "caption": "Contoh halaman PDF rangkuman dengan data SK belum lengkap",
+              "after_step": 5
+            }
+          ]
+        },
+        {
+          "id": "lpj-asisten",
+          "title": "Membuat LPJ dari proker dan kegiatan",
+          "summary": "Tombol aplikasi bernama Laporan LPJ Labor. LPJ mengambil data proker dan kegiatan yang disetujui, termasuk capaian, evaluasi, serta dokumentasi yang tersedia. Laporan mencakup pertanggungjawaban laboratorium dan divisi.",
+          "before": [
+            "Proker, capaian, evaluasi, kegiatan yang disetujui, serta dokumentasi telah diperiksa.",
+            "Penanggung jawab mengetahui kekurangan data yang masih perlu dilengkapi."
+          ],
+          "steps": [
+            "Pada **Program Kerja**, pilih **Laporan LPJ Labor** dan periksa laboratorium serta periode.",
+            "Baca keterangan pratinjau. Foto dokumentasi tidak dimuat pada pratinjau untuk mempercepat proses, tetapi dapat disertakan pada PDF unduhan.",
+            "Pilih **Download PDF**. Tunggu sampai berkas selesai diunduh dan buka untuk memeriksa seluruh bagiannya.",
+            "Periksa cover, lembar pengesahan, personalia, pembagian divisi, proker, PJ, indikator, capaian, evaluasi, kegiatan, serta dokumentasi yang tersedia. Periksa juga lampiran tambahan yang diminta pengelola.",
+            "Jika ada kekeliruan, perbaiki data sumber melalui petugas terkait dan hasilkan ulang PDF. Serahkan versi yang telah diperiksa untuk proses pengesahan di luar tindakan unduh."
+          ],
+          "success": "PDF LPJ laboratorium tersedia dari data aplikasi. Generate tidak otomatis membuat keputusan persetujuan atau menandakan laporan telah disahkan.",
+          "failure": "Jika foto tidak ada, periksa dokumentasi kegiatan, status persetujuan, dan berkas gambar sumber. Jangan menyimpulkan seluruh lampiran unggahan otomatis digabung sebagai halaman PDF.",
+          "figures": [
+            {
+              "id": "form-lpj",
+              "path": "output/guidebook/kepengurusan/lpj-labor.png",
+              "caption": "Halaman Laporan LPJ Labor dan pilihan unduh",
+              "after_step": 2
+            },
+            {
+              "id": "pdf-lpj",
+              "path": "output/guidebook/kepengurusan/pdf-lengkap-1.png",
+              "caption": "Contoh cover PDF LPJ yang dihasilkan dari data lokal",
+              "after_step": 4
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "issues": [
+    [
+      "Tombol perubahan tidak tersedia",
+      "Periksa izin jabatan, divisi atau PJ, laboratorium, serta kepengurusan aktif."
+    ],
+    [
+      "Anggota sudah terdaftar",
+      "Periksa identitas dan keanggotaan periode sebelum menambah atau mengulang transfer."
+    ],
+    [
+      "Proker tidak dapat diajukan",
+      "Aksi pengajuan hanya untuk Draft. Periksa status terbaru dan kelengkapan rencana."
+    ],
+    [
+      "Capaian atau evaluasi terkunci",
+      "Proker harus Disetujui dan petugas harus memiliki izin progres pada lingkupnya."
+    ],
+    [
+      "Tidak ada pilihan proker untuk kegiatan",
+      "Periksa persetujuan, konteks laboratorium, dan status proker yang tersedia pada formulir."
+    ],
+    [
+      "Dokumen kegiatan gagal diunggah",
+      "Periksa format dan ukuran: laporan maksimum 10 MB; dokumentasi maksimum 50 MB."
+    ],
+    [
+      "Pratinjau laporan gagal",
+      "Coba Download PDF dan periksa berkas. Pada contoh lokal, PDF valid tersedia walau penampil gagal."
+    ],
+    [
+      "Isi laporan kurang lengkap",
+      "Perbaiki proker, kegiatan yang disetujui, capaian, evaluasi, personalia, SK, atau berkas sumber, lalu hasilkan ulang."
+    ],
+    [
+      "Foto tidak tampil pada pratinjau LPJ",
+      "Pratinjau lengkap sengaja tidak memuat gambar. Periksa dokumentasi pada PDF hasil unduhan."
+    ]
+  ],
+  "evidence": [
+    "routes/web.php",
+    "app/Policies/KepengurusanUserPolicy.php",
+    "app/Policies/ProkerPolicy.php",
+    "app/Http/Controllers/AnggotaController.php",
+    "app/Http/Controllers/KepengurusanLabController.php",
+    "app/Http/Controllers/ProkerController.php",
+    "app/Http/Controllers/ProkerParameterController.php",
+    "app/Http/Controllers/KegiatanController.php",
+    "app/Http/Controllers/LaporanKegiatanController.php",
+    "app/Http/Controllers/DokumentasiKegiatanController.php",
+    "app/Http/Controllers/LpjKepengurusanController.php",
+    "resources/js/Pages/Anggota.jsx",
+    "resources/js/Pages/KepengurusanLab.jsx",
+    "resources/js/Pages/Proker/Index.jsx",
+    "resources/js/Pages/Proker/Show.jsx",
+    "resources/js/Pages/Kegiatan/Create.jsx",
+    "resources/js/Pages/Kegiatan/Show.jsx",
+    "resources/js/Pages/LpjKepengurusan/PreviewPage.jsx"
+  ],
+  "limitations": [
+    "Screenshot Kepengurusan diambil dari localhost tanggal 15 Oktober 2026 menggunakan akun Asisten. Formulir proker, parameter, dan evaluasi hanya dibuka; tidak disimpan. Anggota disamarkan pada screenshot daftar. Tindakan pengelola dan persetujuan dijelaskan dari source serta label UI karena akun screenshot tidak memiliki semua kewenangan.",
+    "Data contoh memiliki proker yang sudah disetujui tetapi belum memiliki kegiatan pada filter yang diperiksa. Prosedur kegiatan dijelaskan dari source; tidak dibuat kegiatan atau persetujuan baru. Laporan PDF rangkuman dan lengkap berhasil dihasilkan untuk pemeriksaan. Penampil pratinjau di aplikasi gagal memuat PDF; contoh halaman PDF di panduan berasal dari keluaran yang valid. Data SK dan evaluasi contoh belum lengkap sehingga keluaran tersebut bukan laporan resmi yang sudah disahkan."
+  ]
+}

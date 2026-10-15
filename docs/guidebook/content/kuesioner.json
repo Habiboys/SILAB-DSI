@@ -1,0 +1,248 @@
+{
+  "id": "kuesioner",
+  "title": "Modul Kuesioner",
+  "introduction": "Modul Kuesioner digunakan untuk mengumpulkan masukan pengguna. Superadmin membuat kuesioner, menentukan sasaran peran, menyusun pertanyaan atau tautan, dan mengatur status pengisian. Responden mengisi sesuai sasaran; hasil internal diperiksa untuk evaluasi dan tindak lanjut.",
+  "flow": "Superadmin menyiapkan kuesioner internal atau eksternal → menentukan sasaran dan status → responden mengisi → hasil internal diperiksa untuk evaluasi. Kuesioner eksternal menyimpan jawaban pada layanan tujuan. Pengisian tidak melalui tahap persetujuan jawaban.",
+  "prerequisites": [
+    "Gunakan akun sesuai peran. Pembuatan kuesioner dalam panduan ini dilakukan oleh Superadmin.",
+    "Siapkan tujuan, sasaran peran, pertanyaan atau tautan, serta waktu pengisian.",
+    "Periksa status wajib agar pengguna sasaran dapat menyelesaikan pengisian sebelum melanjutkan ke menu lain."
+  ],
+  "access": [
+    [
+      "Superadmin",
+      "Pembuatan dan pengelolaan",
+      "Membuat internal/eksternal, mengatur target dan status, memperbaiki atau menghapus sesuai izin."
+    ],
+    [
+      "Superadmin atau pemeriksa berizin hasil",
+      "Evaluasi dan tindak lanjut",
+      "Memeriksa hasil per pertanyaan dan per responden untuk keputusan perbaikan."
+    ],
+    [
+      "Responden yang ditargetkan",
+      "Pengisian",
+      "Mengisi internal atau membuka tautan eksternal. Peran dapat berupa asisten, praktikan, dosen, atau peran sasaran lain."
+    ],
+    [
+      "Pengguna dengan akses baca saja",
+      "Melihat detail",
+      "Cukup disebutkan di sini; tidak mendapat prosedur melihat berulang. Tampilan tombol tidak menggantikan pemeriksaan kewenangan."
+    ]
+  ],
+  "groups": [
+    {
+      "id": "superadmin",
+      "title": "Superadmin dan pemeriksa hasil yang berwenang",
+      "tasks": [
+        {
+          "id": "internal",
+          "title": "Membuat kuesioner internal",
+          "summary": "Superadmin membuat pertanyaan yang diisi langsung pada SILAB. Siapkan tujuan dan sasaran pengisian sebelum mengaktifkannya.",
+          "before": [
+            "Masuk sebagai Superadmin dengan akses pengelolaan Kuesioner.",
+            "Judul, pertanyaan, sasaran peran, serta tanggal pengisian telah ditentukan."
+          ],
+          "steps": [
+            "Buka **Kuesioner**, periksa daftar agar tidak membuat kuesioner ganda, lalu pilih **Buat Kuesioner**.",
+            "Isi **Judul**, **Deskripsi**, dan pilih **Tipe: Internal**. Isi **Tanggal Mulai** serta **Tanggal Selesai**; tanggal selesai tidak boleh lebih awal dari tanggal mulai.",
+            "Pada **Target Responden**, pilih minimal satu peran yang harus mengisi. Sasaran berupa peran pengguna, sehingga perlu diperiksa sebelum kuesioner diaktifkan.",
+            "Pada **Pertanyaan**, tulis pertanyaan dan pilih **Tipe Jawaban**: Teks Singkat, Teks Panjang, Pilihan Ganda, Kotak Centang, atau Skala 1-5.",
+            "Untuk Pilihan Ganda dan Kotak Centang, gunakan **Tambah Opsi** dan isi setiap pilihan. Tandai **Wajib diisi** sesuai kebutuhan; gunakan **Tambah Pertanyaan** untuk pertanyaan berikutnya.",
+            "Periksa pertanyaan, opsi, tanggal, dan sasaran. Atur status **Aktif, dapat diakses responden** sesuai kesiapan; pilihan wajib dibahas pada prosedur berikutnya. Pilih **Simpan**.",
+            "Cari kuesioner pada daftar dan buka detail untuk memeriksa tipe, status, periode, serta susunan pertanyaan."
+          ],
+          "success": "Kuesioner tersimpan dan detailnya sesuai rancangan. Tidak ada tahap persetujuan terpisah pada alur ini.",
+          "failure": "Jika penyimpanan ditolak, periksa pesan pada formulir, tanggal, pertanyaan, dan sasaran peran. Jika proses terputus, cari hasil pada daftar sebelum membuat ulang.",
+          "figures": [
+            {
+              "id": "daftar",
+              "path": "output/guidebook/kuesioner/daftar.png",
+              "caption": "Daftar Kuesioner pada akun Superadmin sebelum ada data",
+              "after_step": 1
+            },
+            {
+              "id": "internal",
+              "path": "output/guidebook/kuesioner/buat-detail.png",
+              "caption": "Formulir internal beserta periode dan status",
+              "after_step": 2
+            },
+            {
+              "id": "opsi",
+              "path": "output/guidebook/kuesioner/opsi.png",
+              "caption": "Target peran serta penyusunan pertanyaan dan opsi tanpa menyimpan",
+              "after_step": 5
+            }
+          ]
+        },
+        {
+          "id": "wajib",
+          "title": "Mengatur status aktif dan kewajiban pengisian",
+          "summary": "Status aktif dan wajib mempunyai fungsi berbeda. Kuesioner wajib yang aktif dapat mengarahkan responden sasaran ke formulir sebelum menu lain bisa diakses.",
+          "before": [
+            "Kuesioner internal dan sasaran perannya sudah diperiksa.",
+            "Pertanyaan siap dijawab dan seluruh opsi tersedia."
+          ],
+          "steps": [
+            "Buka detail kuesioner yang benar, lalu pilih **Edit**.",
+            "Centang **Aktif, dapat diakses responden** untuk mengaktifkan. Jika pengisian harus didahulukan, centang **Wajib diisi sebelum responden mengakses menu lain**.",
+            "Periksa kembali **Target Responden** sebelum mengaktifkan kewajiban. Pengaturan ini dapat memengaruhi seluruh pengguna pada peran yang dipilih.",
+            "Pilih **Perbarui** dan periksa status pada daftar. Untuk menghentikan pengisian wajib, ubah pengaturannya atau nonaktifkan kuesioner."
+          ],
+          "success": "Pengaturan tersimpan. Responden sasaran yang belum menjawab dapat diarahkan ke kuesioner wajib.",
+          "failure": "Jangan mengandalkan tanggal selesai saja untuk melepas pengalihan wajib; nonaktifkan status wajib atau aktif bila pengisian ditutup. Hindari menerapkan wajib pada kuesioner eksternal karena penyelesaian di layanan luar tidak otomatis tercatat pada SILAB."
+        },
+        {
+          "id": "eksternal",
+          "title": "Membuat kuesioner dengan tautan eksternal",
+          "summary": "Superadmin menyediakan tautan ke layanan survei lain. Jawaban pada layanan tersebut tidak otomatis menjadi hasil respons internal SILAB.",
+          "before": [
+            "Tautan formulir sudah diuji dan dapat dibuka oleh sasaran pengguna.",
+            "Tanggal, sasaran peran, dan pengelola hasil eksternal sudah ditetapkan."
+          ],
+          "steps": [
+            "Pada **Kuesioner**, pilih **Buat Kuesioner**. Isi judul dan deskripsi yang menjelaskan tujuan pengisian.",
+            "Pilih **Tipe: Eksternal (tautan)**, lalu isi **Link Eksternal** dengan alamat formulir yang benar.",
+            "Isi tanggal mulai dan selesai, pilih **Target Responden**, serta atur status aktif. Jangan aktifkan wajib sebelum tersedia cara pencatatan penyelesaian yang sesuai.",
+            "Pilih **Simpan**. Buka detail dan periksa alamat pada **Link Eksternal** serta tombol **Buka Link**."
+          ],
+          "success": "Detail kuesioner menampilkan tautan yang mengarah ke formulir tujuan.",
+          "failure": "Jika tautan tidak terbuka atau meminta akses, perbaiki alamat dan izin pada layanan formulir. Hasil eksternal diperiksa melalui layanan tersebut.",
+          "figures": [
+            {
+              "id": "eksternal",
+              "path": "output/guidebook/kuesioner/buat-eksternal.png",
+              "caption": "Pilihan eksternal dengan kolom tautan formulir",
+              "after_step": 2
+            }
+          ]
+        },
+        {
+          "id": "ubah",
+          "title": "Memperbaiki atau menutup kuesioner",
+          "summary": "Periksa dampak perubahan terhadap jawaban yang sudah terkumpul. Penonaktifan dapat dipakai untuk menutup pengisian tanpa langsung menghapus data.",
+          "before": [
+            "Kuesioner yang akan diubah sudah diidentifikasi berdasarkan judul dan periode.",
+            "Respons yang telah masuk dan kebutuhan penyimpanannya sudah diperiksa."
+          ],
+          "steps": [
+            "Buka detail lalu pilih **Edit**. Periksa judul, tipe, sasaran, pertanyaan, dan status yang berlaku.",
+            "Perbaiki isian yang diperlukan. Hindari mengubah arti pertanyaan atau menghapus pertanyaan yang sudah dijawab tanpa pemeriksaan pengelola hasil.",
+            "Untuk menutup pengisian, lepaskan centang **Aktif, dapat diakses responden** dan pastikan wajib tidak lagi aktif.",
+            "Pilih **Perbarui**, lalu cocokkan detail dan hasil respons.",
+            "Jika memang harus menghapus, kembali ke daftar, pilih aksi hapus pada baris yang benar, baca dialog **Hapus Kuesioner**, dan konfirmasikan **Hapus** hanya setelah dampaknya dipahami."
+          ],
+          "success": "Perubahan tampil pada detail, atau kuesioner hilang dari daftar setelah penghapusan yang dikonfirmasi.",
+          "failure": "Penghapusan bersifat permanen dan dialog memperingatkan bahwa respons terkait ikut dihapus. Gunakan penonaktifan bila data masih diperlukan."
+        },
+        {
+          "id": "hasil",
+          "title": "Memeriksa hasil untuk evaluasi dan tindak lanjut",
+          "summary": "Superadmin atau pemeriksa dengan akses hasil membandingkan ringkasan pertanyaan dengan jawaban responden sebelum menyusun tindak lanjut.",
+          "before": [
+            "Kuesioner internal yang benar telah dipilih.",
+            "Akun memiliki akses hasil respons."
+          ],
+          "steps": [
+            "Buka detail lalu pilih **Lihat Hasil Respons**. Periksa judul serta jumlah responden.",
+            "Pada tab **Per Pertanyaan**, baca jumlah jawaban, distribusi pilihan, dan jawaban teks. Jumlah jawaban dapat berbeda dari jumlah responden.",
+            "Untuk Kotak Centang, seorang responden dapat memilih beberapa opsi sehingga persentase seluruh opsi tidak harus berjumlah 100 persen.",
+            "Buka tab **Per Responden** untuk memeriksa rincian dan waktu pengiriman bila diperlukan untuk verifikasi atau tindak lanjut. Jawaban pada halaman ini dapat dikaitkan dengan nama pengguna; jangan menjanjikan anonimitas.",
+            "Catat temuan dan tindakan perbaikan sesuai kewenangan. Tombol **Unduh Excel** belum menghasilkan berkas pada versi yang diperiksa; jangan menganggap ekspor sudah berhasil hanya karena muncul pesan."
+          ],
+          "success": "Temuan evaluasi berasal dari kuesioner dan respons yang tepat, dengan batasan data yang dipahami.",
+          "failure": "Jika hasil tidak bisa diakses, periksa kewenangan hasil. Jika belum ada respons, belum ada dasar untuk menyimpulkan penilaian pengguna. Untuk survei eksternal, gunakan hasil dari layanan formulir tujuan."
+        }
+      ]
+    },
+    {
+      "id": "responden",
+      "title": "Responden sesuai sasaran peran",
+      "tasks": [
+        {
+          "id": "isi",
+          "title": "Mengisi dan mengirim kuesioner internal",
+          "summary": "Asisten, praktikan, dosen, atau peran lain mengisi sesuai sasaran yang ditetapkan Superadmin. Pengiriman internal dicatat atas akun yang digunakan.",
+          "before": [
+            "Masuk dengan akun sendiri yang termasuk sasaran responden.",
+            "Kuesioner yang hendak diisi serta petunjuk periodenya telah diperiksa."
+          ],
+          "steps": [
+            "Buka **Kuesioner**, pilih detail yang sesuai, lalu pilih **Isi Kuesioner**. Jika diarahkan otomatis ke kuesioner wajib, periksa judul sebelum menjawab.",
+            "Baca deskripsi dan jawab pertanyaan. Pilihan Ganda memilih satu opsi, Kotak Centang dapat memilih beberapa opsi, dan Skala 1-5 mengikuti rentang Tidak Setuju sampai Sangat Setuju.",
+            "Lengkapi pertanyaan bertanda wajib. Periksa seluruh jawaban sebelum mengirim; jika isian kosong ditolak, lengkapi sesuai pesan formulir.",
+            "Pilih **Kirim Jawaban** satu kali dan tunggu proses selesai. Pengiriman yang berhasil mengembalikan pengguna ke dashboard dengan pesan terima kasih.",
+            "Bila perlu, buka kembali detail dan periksa **Sudah Diisi** atau keterangan bahwa jawaban sudah tersimpan. Jika masih ada kuesioner wajib lain, selesaikan yang berikutnya."
+          ],
+          "success": "Respons tersimpan dan pengisian ulang untuk kuesioner yang sama ditolak. Tidak ada langkah persetujuan jawaban atau edit jawaban setelah kirim pada alur yang diperiksa.",
+          "failure": "Jika muncul sudah mengisi, jangan membuat akun lain untuk mengulang. Jika akses ditolak, periksa sasaran peran dengan Superadmin. Bila proses terputus, periksa status jawaban sebelum mengirim ulang."
+        },
+        {
+          "id": "tautan",
+          "title": "Mengisi kuesioner eksternal",
+          "summary": "Pengisian dilakukan pada layanan yang ditautkan oleh Superadmin. Selesai mengisi di luar aplikasi tidak otomatis membuat status Sudah Diisi pada SILAB.",
+          "before": [
+            "Alamat formulir pada detail sesuai tujuan survei.",
+            "Akun atau izin layanan luar tersedia bila formulir memerlukannya."
+          ],
+          "steps": [
+            "Buka detail kuesioner bertipe **Eksternal** dan baca deskripsinya.",
+            "Pilih **Buka Link** untuk membuka formulir pada layanan tujuan.",
+            "Isi dan kirim mengikuti petunjuk layanan tersebut, lalu periksa bukti keberhasilan pada halaman formulir.",
+            "Kembali ke SILAB. Jika aplikasi tetap mengarahkan ke kuesioner wajib, hubungi Superadmin untuk pemeriksaan pengaturan; jangan menganggap tautan yang dibuka sudah tercatat sebagai respons internal."
+          ],
+          "success": "Layanan formulir tujuan mengonfirmasi pengiriman. Hasilnya dikelola pada layanan tersebut.",
+          "failure": "Jika tautan rusak atau akses tertutup, sampaikan judul kuesioner dan kendalanya kepada Superadmin agar alamat atau izin dapat diperbaiki."
+        }
+      ]
+    }
+  ],
+  "issues": [
+    [
+      "Menu atau tombol pembuatan tidak tersedia",
+      "Pembuatan dilakukan oleh Superadmin; periksa akses pengelolaan dengan administrator."
+    ],
+    [
+      "Terus diarahkan ke kuesioner wajib",
+      "Selesaikan pengisian internal. Jika tautan eksternal atau formulir tidak dapat diselesaikan, minta Superadmin memeriksa sasaran, aktif, dan wajib."
+    ],
+    [
+      "Tanggal selesai lewat tetapi pengalihan masih terjadi",
+      "Superadmin perlu memeriksa status aktif dan wajib; pengalihan wajib tidak cukup ditutup dengan tanggal saja pada versi yang diperiksa."
+    ],
+    [
+      "Opsi tidak tersedia",
+      "Superadmin perlu memperbaiki daftar opsi sebelum responden melanjutkan."
+    ],
+    [
+      "Isian kosong ditolak",
+      "Lengkapi jawaban sesuai pesan validasi; jangan menjanjikan semua pertanyaan tanpa tanda wajib dapat dikosongkan."
+    ],
+    [
+      "Sudah mengisi",
+      "Pengisian ulang ditolak. Sampaikan kebutuhan koreksi kepada Superadmin."
+    ],
+    [
+      "Unduh Excel tidak menghasilkan file",
+      "Ekspor belum tersedia pada implementasi yang diperiksa. Gunakan pemeriksaan hasil di aplikasi."
+    ],
+    [
+      "Hasil survei eksternal tidak muncul",
+      "Periksa hasil pada layanan formulir tujuan; tidak ada sinkronisasi otomatis yang dijelaskan oleh alur ini."
+    ]
+  ],
+  "evidence": [
+    "app/Http/Controllers/KuesionerController.php",
+    "app/Http/Controllers/ResponKuesionerController.php",
+    "app/Http/Middleware/EnsureMandatoryKuesionerCompleted.php",
+    "routes/web.php",
+    "resources/js/Pages/Kuesioner/Index.jsx",
+    "resources/js/Pages/Kuesioner/Show.jsx",
+    "resources/js/Pages/Kuesioner/Results.jsx",
+    "resources/js/Pages/Kuesioner/Partisipasi.jsx",
+    "resources/js/Pages/Kuesioner/Partials/KuesionerForm.jsx"
+  ],
+  "limitations": [
+    "Screenshot formulir Kuesioner diambil dari localhost pada akun Superadmin, 15 Oktober 2026, tanpa menyimpan data. Daftar masih kosong; prosedur pengisian dan hasil diperiksa dari source serta label antarmuka, belum diuji dengan pengiriman jawaban. Ekspor Excel belum tersedia dan penyelesaian eksternal tidak otomatis tercatat di SILAB."
+  ]
+}

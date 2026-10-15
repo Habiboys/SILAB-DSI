@@ -76,17 +76,7 @@ const Praktikum = ({
         mata_kuliah_id: "",
         mata_kuliah: "",
         tahun_id: selectedTahun,
-        jadwal: [
-            {
-                id: "",
-                praktikum_id: "",
-                hari: "",
-                kelas: "",
-                jam_mulai: "",
-                jam_selesai: "",
-                ruangan: "",
-            },
-        ],
+
     });
 
     const deleteForm = useForm({});
@@ -204,24 +194,6 @@ const Praktikum = ({
         return `${formatSingleTime(jamMulai)} - ${formatSingleTime(jamSelesai)}`;
     };
 
-    const addJadwal = () => {
-        const newJadwal = {
-            hari: "",
-            kelas: "",
-            jam_mulai: "",
-            jam_selesai: "",
-            ruangan: "",
-        };
-
-        createForm.setData("jadwal", [...createForm.data.jadwal, newJadwal]);
-    };
-
-    const removeJadwal = (index) => {
-        const updatedJadwal = [...createForm.data.jadwal];
-        updatedJadwal.splice(index, 1);
-        createForm.setData("jadwal", updatedJadwal);
-    };
-
     const openCreateModal = () => {
         if (!canCreate) return;
 
@@ -264,101 +236,10 @@ const Praktikum = ({
         return true;
     };
 
-    const handleJadwalChange = (index, field, value) => {
-        const updatedJadwal = [...createForm.data.jadwal];
-        updatedJadwal[index] = {
-            ...updatedJadwal[index],
-            [field]: value,
-        };
-
-        if (field === "jam_mulai" || field === "jam_selesai") {
-            const startTime =
-                field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
-            const endTime =
-                field === "jam_selesai"
-                    ? value
-                    : updatedJadwal[index].jam_selesai;
-
-            if (startTime && endTime) {
-                if (!isValidTimeRange(startTime, endTime)) {
-                    toast.error(
-                        `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
-                    );
-                }
-            }
-        }
-
-        createForm.setData("jadwal", updatedJadwal);
-    };
-
-    const handleEditJadwalChange = (index, field, value) => {
-        const updatedJadwal = [...editForm.data.jadwal];
-        updatedJadwal[index] = {
-            ...updatedJadwal[index],
-            [field]: value,
-        };
-
-        if (field === "jam_mulai" || field === "jam_selesai") {
-            const startTime =
-                field === "jam_mulai" ? value : updatedJadwal[index].jam_mulai;
-            const endTime =
-                field === "jam_selesai"
-                    ? value
-                    : updatedJadwal[index].jam_selesai;
-
-            if (startTime && endTime) {
-                if (!isValidTimeRange(startTime, endTime)) {
-                    toast.error(
-                        `Jam mulai harus lebih awal dari jam selesai pada jadwal ke-${index + 1}`,
-                    );
-                }
-            }
-        }
-
-        editForm.setData("jadwal", updatedJadwal);
-    };
-
-    const addJadwalToEdit = () => {
-        const updatedJadwal = [...editForm.data.jadwal];
-        updatedJadwal.push({
-            kelas: "",
-            hari: "",
-            jam_mulai: "",
-            jam_selesai: "",
-            ruangan: "",
-        });
-        editForm.setData("jadwal", updatedJadwal);
-    };
-
-    const removeJadwalFromEdit = (index) => {
-        const updatedJadwal = [...editForm.data.jadwal];
-        updatedJadwal.splice(index, 1);
-        editForm.setData("jadwal", updatedJadwal);
-    };
-
     const openEditModal = (praktikum) => {
         if (!canUpdate) return;
 
         setSelectedPraktikum(praktikum);
-
-        const jadwalData =
-            praktikum.jadwal_praktikum &&
-            Array.isArray(praktikum.jadwal_praktikum)
-                ? praktikum.jadwal_praktikum.map((jadwal) => ({
-                      ...jadwal,
-                      kelas: jadwal.kelas || jadwal.nama_kelas || "",
-                  }))
-                : [];
-
-        if (jadwalData.length === 0) {
-            jadwalData.push({
-                kelas: "",
-                hari: "",
-                jam_mulai: "",
-                jam_selesai: "",
-                ruangan: "",
-            });
-        }
 
         editForm.setData({
             id: praktikum.id,
@@ -367,7 +248,6 @@ const Praktikum = ({
             tahun_id: praktikum.tahun_id,
             mata_kuliah_id: praktikum.mata_kuliah_id || praktikum.mata_kuliah_rel?.id || "",
             mata_kuliah: praktikum.mata_kuliah,
-            jadwal: jadwalData,
         });
 
         setIsEditModalOpen(true);
@@ -385,37 +265,10 @@ const Praktikum = ({
 
         if (!canUpdate) return;
 
-        let hasTimeError = false;
-        editForm.data.jadwal.forEach((jadwal, index) => {
-            if (!isValidTimeRange(jadwal.jam_mulai, jadwal.jam_selesai)) {
-                toast.error(
-                    `Jadwal ke-${index + 1}: Jam mulai harus lebih awal dari jam selesai`,
-                );
-                hasTimeError = true;
-            }
-        });
-
-        if (hasTimeError) {
-            return;
-        }
-
         editForm.put(route("praktikum.update", editForm.data.id), {
             onSuccess: () => {
                 closeEditModal();
 
-            },
-            onError: (errors) => {
-                Object.keys(errors).forEach((key) => {
-                    if (key.startsWith("jadwal.")) {
-                        const parts = key.split(".");
-                        if (parts.length === 3) {
-                            const index = parseInt(parts[1]);
-
-                        }
-                    } else {
-
-                    }
-                });
             },
             preserveScroll: true,
         });
@@ -667,6 +520,7 @@ const Praktikum = ({
                         <FormField
                             label="Mata Kuliah"
                             error={editForm.errors?.mata_kuliah_id}
+                            hint="Kelas dan jadwal diatur di halaman detail praktikum saat menambah atau mengedit kelas."
                             required
                         >
                             <select
@@ -686,183 +540,6 @@ const Praktikum = ({
                             </select>
                         </FormField>
 
-                        <div className="mt-4 flex items-center justify-between">
-                            <h4 className="text-sm font-medium">
-                                Jadwal Praktikum
-                            </h4>
-                            <Button
-                                variant="success"
-                                size="sm"
-                                onClick={addJadwalToEdit}
-                            >
-                                <Plus className="h-4 w-4" />
-                                Tambah
-                            </Button>
-                        </div>
-
-                        <div className="mt-3 space-y-3">
-                            {editForm.data.jadwal.map((jadwal, index) => (
-                                <div
-                                    key={index}
-                                    className="rounded-box border border-base-content/10 bg-base-200/40 p-4"
-                                >
-                                    <div className="mb-3 flex items-center justify-between">
-                                        <h5 className="text-sm font-medium text-base-content/70">
-                                            Jadwal #{index + 1}
-                                        </h5>
-                                        {editForm.data.jadwal.length > 1 && (
-                                            <Button
-                                                type="button"
-                                                title="Hapus"
-                                                aria-label={`Hapus jadwal ${index + 1}`}
-                                                onClick={() =>
-                                                    removeJadwalFromEdit(index)
-                                                }
-                                                variant="ghost" size="sm" className="btn-square min-w-11 text-error hover:bg-error/10"
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-
-                                    {jadwal.id && (
-                                        <input
-                                            type="hidden"
-                                            name={`jadwal[${index}][id]`}
-                                            value={jadwal.id}
-                                        />
-                                    )}
-
-                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                        <FormField
-                                            label="Kelas"
-                                            required
-                                            error={
-                                                editForm.errors?.jadwal?.[index]
-                                                    ?.kelas
-                                            }
-                                        >
-                                            <input
-                                                type="text"
-                                                value={jadwal.kelas}
-                                                onChange={(e) =>
-                                                    handleEditJadwalChange(
-                                                        index,
-                                                        "kelas",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="input min-h-11 w-full focus:input-primary"
-                                                required
-                                            />
-                                        </FormField>
-
-                                        <FormField
-                                            label="Hari"
-                                            required
-                                            error={
-                                                editForm.errors?.jadwal?.[index]
-                                                    ?.hari
-                                            }
-                                        >
-                                            <select
-                                                value={jadwal.hari}
-                                                onChange={(e) =>
-                                                    handleEditJadwalChange(
-                                                        index,
-                                                        "hari",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="select min-h-11 w-full focus:select-primary"
-                                                required
-                                            >
-                                                <option value="">
-                                                    Pilih Hari
-                                                </option>
-                                                {hariOptions.map((hari) => (
-                                                    <option
-                                                        key={hari}
-                                                        value={hari}
-                                                    >
-                                                        {hari}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                        </FormField>
-
-                                        <FormField
-                                            label="Jam Mulai"
-                                            required
-                                            error={
-                                                editForm.errors?.jadwal?.[index]
-                                                    ?.jam_mulai
-                                            }
-                                        >
-                                            <input
-                                                type="time"
-                                                value={jadwal.jam_mulai}
-                                                onChange={(e) =>
-                                                    handleEditJadwalChange(
-                                                        index,
-                                                        "jam_mulai",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="input min-h-11 w-full focus:input-primary"
-                                                required
-                                            />
-                                        </FormField>
-
-                                        <FormField
-                                            label="Jam Selesai"
-                                            required
-                                            error={
-                                                editForm.errors?.jadwal?.[index]
-                                                    ?.jam_selesai
-                                            }
-                                        >
-                                            <input
-                                                type="time"
-                                                value={jadwal.jam_selesai}
-                                                onChange={(e) =>
-                                                    handleEditJadwalChange(
-                                                        index,
-                                                        "jam_selesai",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="input min-h-11 w-full focus:input-primary"
-                                                required
-                                            />
-                                        </FormField>
-
-                                        <FormField
-                                            label="Ruangan"
-                                            required
-                                            error={
-                                                editForm.errors?.jadwal?.[index]
-                                                    ?.ruangan
-                                            }
-                                        >
-                                            <input
-                                                type="text"
-                                                value={jadwal.ruangan}
-                                                onChange={(e) =>
-                                                    handleEditJadwalChange(
-                                                        index,
-                                                        "ruangan",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className="input min-h-11 w-full focus:input-primary"
-                                                required
-                                            />
-                                        </FormField>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
 
                     <footer className="flex justify-end gap-2 border-t border-base-content/10 px-5 py-4">

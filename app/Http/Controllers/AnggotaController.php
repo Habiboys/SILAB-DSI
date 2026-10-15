@@ -346,7 +346,7 @@ class AnggotaController extends Controller
                             Storage::disk('public')->delete($profile->foto_profile);
                         }
 
-                        $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
+                        $fotoPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto_profile'), 'profile-photos');
                         $profile->foto_profile = $fotoPath;
                         $profile->save();
                     }
@@ -354,7 +354,7 @@ class AnggotaController extends Controller
 
                     $fotoPath = null;
                     if ($request->hasFile('foto_profile')) {
-                        $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
+                        $fotoPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto_profile'), 'profile-photos');
                     }
 
                     $profile = Profile::create([
@@ -464,7 +464,7 @@ class AnggotaController extends Controller
 
                 $fotoPath = null;
                 if ($request->hasFile('foto_profile')) {
-                    $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
+                    $fotoPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto_profile'), 'profile-photos');
                 }
 
                 $profile = Profile::create([
@@ -629,7 +629,7 @@ class AnggotaController extends Controller
                 Storage::disk('public')->delete($profile->foto_profile);
             }
 
-            $fotoPath = $request->file('foto_profile')->store('profile-photos', 'public');
+            $fotoPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto_profile'), 'profile-photos');
             $profile->foto_profile = $fotoPath;
         }
 

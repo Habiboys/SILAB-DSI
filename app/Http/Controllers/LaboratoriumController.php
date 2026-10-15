@@ -30,7 +30,7 @@ class LaboratoriumController extends Controller
         $data = ['nama' => $request->nama, 'is_active' => true];
 
         if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('laboratorium', 'public');
+            $path = app(\App\Services\ImageUploadCompressor::class)->store($request->file('logo'), 'laboratorium');
             $data['logo'] = $path;
         }
 
@@ -64,7 +64,7 @@ class LaboratoriumController extends Controller
         $oldLogo = $laboratorium->logo;
 
         if ($request->hasFile('logo')) {
-            $data['logo'] = $request->file('logo')->store('laboratorium', 'public');
+            $data['logo'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('logo'), 'laboratorium');
             if (!$data['logo']) return back()->withErrors(['logo' => 'Gagal mengupload logo.']);
         }
 

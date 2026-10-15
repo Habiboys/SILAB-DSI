@@ -103,7 +103,7 @@ export function recordPage(history, page, origin) {
     if (last && internalUrl(last.url, origin)?.pathname === url.pathname && sameContext(last.context, entry.context)) {
         return [...history.slice(0, -1), entry];
     }
-    const previous = history.findLastIndex((item) => item.url === entry.url && sameContext(item.context, entry.context));
+    const previous = history.findLastIndex((item) => internalUrl(item.url, origin)?.pathname === url.pathname && sameContext(item.context, entry.context));
     return previous >= 0 ? [...history.slice(0, previous), entry] : [...history, entry].slice(-60);
 }
 

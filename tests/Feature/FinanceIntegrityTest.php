@@ -34,6 +34,55 @@ class FinanceIntegrityTest extends TestCase
         return PemasukanKeuangan::sole();
     }
 
+    public function test_finance_page_uses_server_permissions_instead_of_role_permission_list(): void
+    {
+        $this->withoutVite();
+        $reader = User::factory()->create(['access_lab_id' => $this->period->laboratorium_id]);
+        $role = Role::findOrCreate('asisten', 'web');
+        foreach (['keuangan.view', 'keuangan.create-transaksi', 'keuangan.update-transaksi', 'keuangan.manage-nominal-kas'] as $name) {
+            $permission = \App\Models\Permission\Permission::findOrCreate($name, 'web');
+            if ($name === 'keuangan.view') $role->givePermissionTo($permission);
+        }
+        $reader->assignRole($role);
+        $reader->profile()->create(['nomor_induk' => 'FINANCE-READER', 'jenis_kelamin' => 'laki-laki', 'no_hp' => '081234567890']);
+        $this->actingAs($reader)->get(route('riwayat-keuangan.index', ['kepengurusan_lab_id' => $this->period->id]))
+            ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->component('RiwayatKeuangan')->where('can.create', false)->where('can.update', false)
+                ->where('can.delete', false)->where('can.manage_nominal_kas', false));
+    }
+
+    public function test_nominal_save_updates_one_record_and_page_returns_its_values(): void
+    {
+        $this->withoutVite();
+        $id = $this->bill->nominal_kas_id;
+        foreach ([15000, 20000] as $amount) {
+            $this->post(route('nominal-kas.store'), ['kepengurusan_lab_id' => $this->period->id,
+                'nominal' => $amount, 'periode' => 'mingguan', 'deskripsi' => 'Kas mingguan',
+                'periode_mulai' => '2026-10-01', 'periode_berakhir' => '2026-12-31'])
+                ->assertSessionHasNoErrors()->assertRedirect();
+        }
+        $this->assertDatabaseCount('nominal_kas', 1);
+        $this->assertDatabaseHas('nominal_kas', ['id' => $id, 'nominal' => 20000]);
+        $this->get(route('riwayat-keuangan.index', ['kepengurusan_lab_id' => $this->period->id]))
+            ->assertOk()->assertInertia(fn (\Inertia\Testing\AssertableInertia $page) => $page
+                ->where('can.manage_nominal_kas', true)->has('nominalKas', 1)
+                ->where('nominalKas.0.id', $id)->where('nominalKas.0.periode', 'mingguan')
+                ->where('nominalKas.0.deskripsi', 'Kas mingguan'));
+    }
+
+    public function test_transaction_evidence_accepts_a_file_and_compresses_it(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+        $this->post(route('riwayat-keuangan.store'), ['kepengurusan_lab_id' => $this->period->id,
+            'lab_id' => $this->period->laboratorium_id,
+            'tanggal' => '2026-10-15', 'nominal' => 1000, 'jenis' => 'masuk', 'deskripsi' => 'Bukti unggahan',
+            'bukti' => \Illuminate\Http\UploadedFile::fake()->image('bukti.jpg', 3200, 1600)])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $payment = PemasukanKeuangan::sole();
+        $image = \Illuminate\Support\Facades\Storage::disk('public')->get($payment->bukti);
+        $this->assertSame(1600, getimagesizefromstring($image)[0]);
+    }
+
     public function test_editing_a_payment_keeps_the_bill_balance_consistent(): void
     {
         $payment = $this->pay();

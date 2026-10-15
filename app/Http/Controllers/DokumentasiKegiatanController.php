@@ -15,10 +15,10 @@ class DokumentasiKegiatanController extends Controller
     {
         $request->validate([
             'judul' => 'required|string|max:255',
-            'file'  => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,zip,mp4|max:51200',
+            'file'  => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png,gif,webp,zip,mp4|max:51200',
         ]);
 
-        $path = $request->file('file')->store('dokumentasi-kegiatan', 'public');
+        $path = app(\App\Services\ImageUploadCompressor::class)->store($request->file('file'), 'dokumentasi-kegiatan');
 
         DokumentasiKegiatan::create([
             'kegiatan_id' => $kegiatan->id,

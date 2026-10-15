@@ -1,0 +1,277 @@
+{
+  "id": "piket",
+  "title": "Modul Piket",
+  "introduction": "Modul Piket digunakan untuk menyiapkan periode dan petugas, mencatat kehadiran, serta memproses perubahan jadwal. Petugas menyelesaikan check-in dan checkout; pengelola menyiapkan jadwal dan menindaklanjuti pengajuan sesuai kewenangannya.",
+  "flow": "Pengelola menyiapkan periode dan jadwal. Petugas mendaftarkan wajah jika diwajibkan, melakukan check-in, melaksanakan piket, lalu checkout. Pengajuan perubahan jadwal harus menunggu keputusan sebelum digunakan.",
+  "prerequisites": [
+    "Akun terhubung dengan laboratorium dan kepengurusan yang sesuai.",
+    "Kepengurusan dapat ditulis, periode aktif, dan jadwal petugas tersedia pada tanggal piket.",
+    "Kamera tersedia; izin lokasi dan pendaftaran wajah yang disetujui diperlukan jika periode mewajibkannya."
+  ],
+  "access": [
+    [
+      "Asisten dan petugas terjadwal",
+      "Tindakan pribadi",
+      "Mendaftarkan wajah, check-in, checkout, dan mengajukan perubahan jadwal miliknya."
+    ],
+    [
+      "Admin dan superadmin yang berwenang",
+      "Pengelolaan sesuai laboratorium",
+      "Mengatur periode; mengatur jadwal bila memiliki izin; meninjau wajah dengan kewenangan verifikasi."
+    ],
+    [
+      "Pengelola pengajuan yang berwenang",
+      "Keputusan dalam lingkup kepengurusan",
+      "Memeriksa dan menyetujui atau menolak perubahan jadwal yang dapat diproses akunnya."
+    ],
+    [
+      "Pembaca jadwal dan rekap",
+      "Baca sesuai hak akses",
+      "Termasuk Kadep atau Praktikan sesuai konfigurasi. Cukup gunakan menu baca yang tersedia; tidak ada prosedur tindakan khusus pada buku ini."
+    ]
+  ],
+  "groups": [
+    {
+      "id": "petugas",
+      "title": "Asisten dan petugas piket",
+      "tasks": [
+        {
+          "id": "daftar-wajah",
+          "title": "Mendaftarkan wajah",
+          "summary": "Lakukan pendaftaran sebelum absensi pada periode yang mewajibkan verifikasi wajah.",
+          "before": [
+            "Pilih kepengurusan laboratorium yang aktif.",
+            "Siapkan kamera di tempat dengan pencahayaan cukup."
+          ],
+          "steps": [
+            "Buka **Pendaftaran Wajah** melalui **Kelola wajah** atau **Daftarkan wajah sekarang** pada halaman absensi.",
+            "Periksa status. Jika belum aktif, pilih **Buka kamera**, lalu **Rekam verifikasi**. Tatap kamera dan tahan posisi sampai rekaman siap.",
+            "Pilih **Kirim untuk ditinjau** segera setelah rekaman siap, mengikuti batas waktu yang ditampilkan.",
+            "Tunggu keputusan admin. Jika status masih **Menunggu admin**, pendaftaran belum dapat digunakan untuk absensi yang mewajibkan wajah."
+          ],
+          "success": "Status menjadi Aktif setelah disetujui peninjau yang berwenang. Pengajuan yang ditolak perlu diperbaiki dan direkam ulang.",
+          "failure": "Periksa izin kamera, pencahayaan, dan catatan admin jika tersedia. Jangan mencabut data wajah untuk menyelesaikan absensi.",
+          "figures": [
+            {
+              "id": "wajah",
+              "path": "output/absensi-piket/wajah-actual.png",
+              "caption": "Pendaftaran wajah sebelum kamera dibuka",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "checkin",
+          "title": "Melakukan check-in",
+          "summary": "Check-in mencatat waktu mulai piket dan rencana kegiatan. Mengambil foto saja belum mencatat kehadiran.",
+          "before": [
+            "Periode aktif dan jadwal hari ini tersedia.",
+            "Pendaftaran wajah sudah disetujui jika diwajibkan; berada dalam radius piket jika lokasi diwajibkan."
+          ],
+          "steps": [
+            "Pilih **Piket → Ambil Absen**. Periksa tanggal, periode, dan hari jadwal.",
+            "Tanpa verifikasi wajah, pilih **Buka Kamera** lalu **Ambil Foto**. Gunakan **Ambil Ulang** bila perlu. Jika wajah diwajibkan, pilih **Buka kamera** lalu **Rekam verifikasi**.",
+            "Pilih **Check In Sekarang**, lalu isi **Rencana kegiatan** sesuai tugas yang akan dikerjakan.",
+            "Pilih **Check In Sekarang** di dialog dan tunggu pengiriman berhasil.",
+            "Pastikan halaman menampilkan **Sedang piket sejak** beserta jam masuk."
+          ],
+          "success": "Jam masuk tersimpan dan sesi piket berjalan. Waktu dihitung otomatis ketika pengiriman berhasil.",
+          "failure": "Jika muncul Bukan jadwal piket Anda, periksa kepengurusan dan jadwal bersama pengelola. Jika pengiriman gagal, baca pesan dan periksa status halaman sebelum mengirim ulang.",
+          "figures": [
+            {
+              "id": "awal",
+              "path": "output/absensi-piket/checkin-ready.png",
+              "caption": "Jadwal dan periode sebelum check-in",
+              "after_step": 1
+            },
+            {
+              "id": "rencana",
+              "path": "output/absensi-piket/checkin-form.png",
+              "caption": "Formulir rencana kegiatan check-in",
+              "after_step": 3
+            },
+            {
+              "id": "sesi",
+              "path": "output/absensi-piket/session-running.png",
+              "caption": "Sesi piket setelah check-in berhasil",
+              "after_step": 5
+            }
+          ]
+        },
+        {
+          "id": "checkout",
+          "title": "Melakukan checkout",
+          "summary": "Checkout melengkapi catatan kehadiran dengan waktu selesai dan kegiatan yang telah dilakukan. Selesaikan pada hari yang sama.",
+          "before": [
+            "Check-in sudah tercatat dan durasi minimum terpenuhi.",
+            "Siapkan bukti kamera baru dan tetap berada dalam radius jika lokasi diwajibkan."
+          ],
+          "steps": [
+            "Buka **Ambil Absen** dan periksa progres durasi. Tunggu sampai checkout dapat dilakukan.",
+            "Ambil foto checkout atau rekam verifikasi wajah sesuai pengaturan periode.",
+            "Pilih **Isi kegiatan & checkout**. Isi **Kegiatan yang dilakukan** dengan pekerjaan yang benar-benar selesai.",
+            "Pilih **Checkout Sekarang** dan tunggu hasil pengiriman.",
+            "Pastikan muncul pesan checkout berhasil dan status **Piket selesai**."
+          ],
+          "success": "Check-in dan checkout hari itu tercatat. Catatan kegiatan sudah sesuai pekerjaan yang dilakukan.",
+          "failure": "Jika formulir gagal sesaat setelah check-in, muat ulang Ambil Absen, ambil bukti checkout kembali, lalu kirim ulang. Pada pengujian lokal, langkah ini diperlukan agar ID absensi baru terbaca. Jika lupa checkout pada hari sebelumnya, hubungi admin.",
+          "figures": [
+            {
+              "id": "kegiatan",
+              "path": "output/absensi-piket/checkout-form.png",
+              "caption": "Formulir kegiatan dan checkout",
+              "after_step": 3
+            },
+            {
+              "id": "selesai",
+              "path": "output/absensi-piket/piket-complete.png",
+              "caption": "Status piket selesai setelah checkout",
+              "after_step": 5
+            }
+          ]
+        },
+        {
+          "id": "ganti-jadwal",
+          "title": "Mengajukan perubahan jadwal",
+          "summary": "Ajukan perubahan sebelum memakai hari pengganti. Permintaan belum mengubah jadwal efektif sampai disetujui.",
+          "before": [
+            "Memiliki jadwal pada periode aktif.",
+            "Tidak ada permintaan lain berstatus menunggu untuk jadwal yang sama."
+          ],
+          "steps": [
+            "Buka **Piket → Ganti Jadwal**, lalu pilih **Buat Permintaan Baru**.",
+            "Pilih **Jadwal Piket yang Akan Diganti** dan **Ganti ke Hari** dari pilihan yang tersedia.",
+            "Isi **Alasan Ganti Jadwal** dengan 10–500 karakter, lalu pilih **Kirim Permintaan**.",
+            "Pantau **Status dan Riwayat Permintaan**. Baca keputusan dan catatan pengelola sebelum mengikuti hari baru."
+          ],
+          "success": "Pengajuan mula-mula berstatus menunggu. Setelah Disetujui, hari pengganti berlaku untuk periode pengajuan. Jika Ditolak, jadwal lama tetap berlaku.",
+          "failure": "Jika hari tidak tersedia atau sudah ada permintaan menunggu, hubungi pengelola atau tunggu keputusan pengajuan sebelumnya.",
+          "figures": []
+        }
+      ]
+    },
+    {
+      "id": "pengelola",
+      "title": "Pengelola yang berwenang",
+      "tasks": [
+        {
+          "id": "periode",
+          "title": "Mengatur periode piket",
+          "summary": "Siapkan rentang tanggal dan persyaratan kehadiran sebelum petugas mengambil absen. Pengaturan periode pada implementasi yang diperiksa memerlukan admin berwenang atau superadmin.",
+          "before": [
+            "Pilih laboratorium dan kepengurusan aktif yang benar.",
+            "Tentukan durasi, rentang tanggal, dan kebutuhan lokasi serta wajah."
+          ],
+          "steps": [
+            "Buka **Periode Piket**, lalu pilih **+ Tambah Periode**.",
+            "Isi **Nama Periode** dan **Tanggal Mulai (Senin)**. Periksa **Tanggal Selesai (Jumat)** pada minggu yang sama.",
+            "Isi **Lama Piket (menit)** antara 30–480. Atur verifikasi wajah dan lokasi sesuai kebijakan; lengkapi koordinat dan radius bila lokasi diaktifkan.",
+            "Pilih **Aktifkan Periode** bila siap digunakan, lalu **Simpan**.",
+            "Periksa daftar periode dan status Aktif. Mengaktifkan satu periode akan menonaktifkan periode lain yang aktif pada kepengurusan tersebut."
+          ],
+          "success": "Periode tersimpan tanpa rentang bertumpuk. Petugas memakai persyaratan periode yang aktif.",
+          "failure": "Periksa pesan validasi tanggal, lama piket, lokasi, atau akses. Contoh demo satu menit pada screenshot bukan nilai yang dapat dimasukkan melalui formulir periode biasa.",
+          "figures": []
+        },
+        {
+          "id": "jadwal",
+          "title": "Mengatur petugas dan jadwal",
+          "summary": "Tetapkan anggota pada hari piketnya. Akun harus memiliki kewenangan mengelola jadwal di laboratorium terkait.",
+          "before": [
+            "Kepengurusan aktif dan anggota tersedia.",
+            "Pembagian hari sudah ditentukan."
+          ],
+          "steps": [
+            "Buka **Piket → Jadwal Piket** dan periksa laboratorium serta tahun kepengurusan.",
+            "Pada hari yang dipilih, gunakan tombol **Tambah Petugas**.",
+            "Centang anggota yang akan bertugas, lalu pilih **Simpan**.",
+            "Periksa nama anggota pada kolom hari yang benar. Jika perlu menghapus penugasan, periksa identitas dan hari terlebih dahulu, lalu gunakan aksi hapus dan konfirmasi **Hapus**."
+          ],
+          "success": "Anggota tampil pada jadwal hari yang ditetapkan dan dapat mengambil absen bila syarat lainnya terpenuhi.",
+          "failure": "Jika anggota atau aksi tidak tersedia, periksa kepengurusan dan kewenangan akun. Jangan menghapus penugasan hanya untuk mengatasi kesalahan periode.",
+          "figures": []
+        },
+        {
+          "id": "tinjau-wajah",
+          "title": "Meninjau pendaftaran wajah",
+          "summary": "Peninjau memeriksa kecocokan wajah dan identitas sebelum mengaktifkan pendaftaran. Tugas ini berlaku bagi admin dengan kewenangan verifikasi di lab tersebut atau superadmin.",
+          "before": [
+            "Pendaftaran masih menunggu, belum kedaluwarsa, dan kepengurusannya aktif.",
+            "Peninjau berada pada lingkup laboratorium yang berwenang."
+          ],
+          "steps": [
+            "Buka **Pendaftaran Wajah**, lalu **Tinjau pendaftaran** jika tersedia.",
+            "Pada **Tinjauan Wajah**, periksa nama, email, waktu pengajuan, dan **Foto tinjauan**. Pastikan wajah sesuai identitas pemohon.",
+            "Pilih **Setujui** jika sesuai atau **Tolak** jika tidak sesuai, lalu konfirmasikan keputusan pada dialog.",
+            "Pastikan pendaftaran diproses dan tidak lagi berada dalam daftar menunggu. Pemohon dapat memeriksa status pada Pendaftaran Wajah."
+          ],
+          "success": "Persetujuan mengaktifkan data wajah baru. Penolakan tidak mengaktifkan pengajuan; pemohon perlu memperbaiki pendaftaran. Penggantian data aktif berlaku setelah pengajuan baru disetujui.",
+          "failure": "Jika pengajuan sudah diproses atau kedaluwarsa, jangan mengirim keputusan berulang. Muat ulang daftar dan minta pengajuan baru bila diperlukan.",
+          "figures": []
+        },
+        {
+          "id": "tinjau-jadwal",
+          "title": "Memutuskan perubahan jadwal",
+          "summary": "Pengelola pengajuan menilai permintaan dalam lingkup kepengurusan yang dapat diproses akunnya. Nama role saja tidak menjamin tombol keputusan tersedia.",
+          "before": [
+            "Permintaan masih berstatus menunggu.",
+            "Kepengurusan aktif dan akun dapat membuka pengelolaan pengajuan untuk laboratorium tersebut."
+          ],
+          "steps": [
+            "Buka **Kelola Ganti Jadwal Piket** pada menu pengelolaan yang tersedia.",
+            "Periksa identitas pemohon, periode, hari lama, hari baru, dan alasannya. Pastikan perubahan dapat dilaksanakan.",
+            "Pilih **Setujui** atau **Tolak**, lalu isi **Catatan Admin** bila perlu, maksimum 500 karakter.",
+            "Konfirmasikan keputusan dengan tombol **Setujui** atau **Tolak** pada dialog.",
+            "Periksa status Disetujui atau Ditolak dan catatan keputusan. Pemohon menindaklanjuti hasil melalui Status dan Riwayat Permintaan."
+          ],
+          "success": "Keputusan tersimpan bersama pengelola dan waktu pemrosesan. Persetujuan mengizinkan override hari pada periode pengajuan; penolakan mempertahankan jadwal lama.",
+          "failure": "Permintaan yang sudah diproses tidak dapat diputus ulang. Jika akses ditolak, periksa lingkup laboratorium dan kepengurusan, lalu hubungi administrator.",
+          "figures": []
+        }
+      ]
+    }
+  ],
+  "issues": [
+    [
+      "Periode atau jadwal tidak tersedia",
+      "Periksa tanggal, kepengurusan, dan status aktif bersama pengelola."
+    ],
+    [
+      "Kamera tidak tersedia",
+      "Periksa izin kamera browser dan kamera perangkat, lalu coba lagi."
+    ],
+    [
+      "Lokasi ditolak atau di luar radius",
+      "Aktifkan GPS serta izin lokasi, lalu dekati titik piket yang ditetapkan."
+    ],
+    [
+      "Wajah belum aktif atau rekaman gagal",
+      "Periksa status pendaftaran, cahaya, dan izin kamera. Rekam ulang dan kirim segera."
+    ],
+    [
+      "Checkout belum dapat dilakukan",
+      "Penuhi durasi minimum dan siapkan bukti kamera baru."
+    ],
+    [
+      "Checkout gagal setelah check-in",
+      "Muat ulang Ambil Absen dan ulangi pengambilan bukti checkout. Hubungi admin jika masih gagal."
+    ]
+  ],
+  "evidence": [
+    "routes/web.php bagian route piket",
+    "app/Policies/JadwalPiketPolicy.php",
+    "app/Http/Controllers/FaceEnrollmentController.php",
+    "app/Http/Controllers/GantiJadwalPiketController.php",
+    "app/Http/Controllers/PeriodePiketController.php",
+    "resources/js/Pages/Piket/WajahReview.jsx",
+    "resources/js/Pages/GantiJadwalPiket.jsx",
+    "resources/js/Pages/KelolaGantiJadwal.jsx",
+    "resources/js/Pages/PeriodePiket.jsx",
+    "database/seeders/RolePermissionSeeder.php"
+  ],
+  "limitations": [
+    "Screenshot berasal dari demo lokal tanggal 15 Oktober 2026 dengan kamera virtual. Periode demo berdurasi satu menit disiapkan khusus di luar form periode normal; jangan menirunya sebagai kebijakan operasional.",
+    "Pengajuan ganti jadwal dan tugas pengelola diverifikasi dari source serta label UI; belum memiliki screenshot proses atau keputusan nyata. Hak akses aktual juga dipengaruhi role, jabatan, laboratorium, dan kepengurusan.",
+    "Contoh Piket berfokus pada absensi, periode, jadwal, dan pengajuan. Pembayaran denda serta koreksi absensi manual belum dirinci pada bab Piket."
+  ]
+}

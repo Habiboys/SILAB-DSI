@@ -377,7 +377,7 @@ const Anggota = ({
             <Head title="Keanggotaan Lab" />
 
             <PageHeader
-                title={`Keanggotaan ${selectedLab?.nama_lab || selectedLab?.nama || "Laboratorium"}`}
+                title={Keanggotaan }
                 description="Kelola anggota, jabatan, dan riwayat kepengurusan."
                 actions={<>{canTransfer && <Button variant="secondary" onClick={() => setShowTransferModal(true)}>Transfer Anggota Lama</Button>}{canAccess && isActiveYear && <Button onClick={openCreateModal}>Tambah Anggota</Button>}</>}
             />

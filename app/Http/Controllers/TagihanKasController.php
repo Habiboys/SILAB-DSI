@@ -68,7 +68,7 @@ class TagihanKasController extends Controller
                 throw ValidationException::withMessages(['nominal' => 'Nominal melebihi sisa tagihan kas.']);
             }
             if ($request->hasFile('bukti')) {
-                $buktiPath = $request->file('bukti')->store('bukti-tagihan-kas', 'public');
+                $buktiPath = app(\App\Services\ImageUploadCompressor::class)->store($request->file('bukti'), 'bukti-tagihan-kas');
             }
             PemasukanKeuangan::create([
                 'tanggal' => $validated['tanggal'],

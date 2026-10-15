@@ -167,8 +167,15 @@ class RiwayatKeuanganController extends Controller
         $nominalKas = [];
         if ($kepengurusanlab) {
             $nominalKas = NominalKas::where('kepengurusan_lab_id', $kepengurusanlab->id)
-                ->orderBy('created_at', 'desc')
+                ->orderByDesc('is_active')->orderByDesc('updated_at')->orderByDesc('created_at')
                 ->get();
+        }
+
+        if ($riwayatKeuangan instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            foreach ($riwayatKeuangan->items() as $transaction) {
+                $transaction->setAttribute('can_update', Gate::allows('update', $transaction));
+                $transaction->setAttribute('can_delete', Gate::allows('delete', $transaction));
+            }
         }
 
         return Inertia::render('RiwayatKeuangan', [
@@ -178,6 +185,12 @@ class RiwayatKeuanganController extends Controller
             'laboratorium' => $laboratorium,
             'asisten' => $asisten,
             'nominalKas' => $nominalKas,
+            'can' => [
+                'create' => Gate::allows('create', PemasukanKeuangan::class),
+                'update' => $request->user()->hasPositionPermission('keuangan.update-transaksi'),
+                'delete' => Gate::allows('delete-transaksi'),
+                'manage_nominal_kas' => Gate::allows('manageNominalKas', PemasukanKeuangan::class),
+            ],
             'totalPemasukan' => $totalPemasukan,
             'totalPengeluaran' => $totalPengeluaran,
             'saldo' => $saldo,
@@ -196,14 +209,13 @@ class RiwayatKeuanganController extends Controller
     {
         Gate::authorize('create', PemasukanKeuangan::class);
 
-        \Illuminate\Support\Facades\Log::info('Store request data:', $request->all());
 
         $validatedData = $request->validate([
             'tanggal' => 'required|date',
             'nominal' => 'required|numeric|min:500',
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
-            'bukti' => 'nullable|string',
+            'bukti' => $request->hasFile('bukti') ? 'nullable|image|mimes:jpeg,png,gif,webp|max:5120' : 'nullable|string|max:7000000',
             'lab_id' => 'required|exists:laboratorium,id',
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
             'user_id' => 'nullable|string|exists:users,id',
@@ -270,31 +282,14 @@ class RiwayatKeuanganController extends Controller
 
         $validatedData['bukti'] = null;
 
-        if ($request->filled('bukti') && preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
+        if ($request->hasFile('bukti')) {
+            $validatedData['bukti'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('bukti'), 'bukti');
+        } elseif ($request->filled('bukti') && preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
 
-            $buktiData = substr($request->bukti, strpos($request->bukti, ',') + 1);
-            $buktiData = base64_decode($buktiData);
-
-            $mimeType = explode(':', substr($request->bukti, 0, strpos($request->bukti, ';')))[1];
-            $extension = explode('/', $mimeType)[1];
-
-            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-            if (!in_array($extension, $allowedExtensions)) {
-                return back()->withErrors(['bukti' => 'File harus berupa gambar (jpg, jpeg, png, gif)']);
+            $path = app(\App\Services\ImageUploadCompressor::class)->storeDataUri($request->bukti, 'bukti');
+            if (! $path) {
+                throw \Illuminate\Validation\ValidationException::withMessages(['bukti' => 'File harus berupa gambar JPEG, PNG, GIF, atau WebP yang valid.']);
             }
-
-            $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($validatedData['deskripsi']));
-            $safeName = substr($safeName, 0, 30);
-            $fileName = "bukti-" . time() . "-" . $safeName . "." . $extension;
-
-            $directory = 'bukti';
-            if (!Storage::disk('public')->exists($directory)) {
-                Storage::disk('public')->makeDirectory($directory);
-            }
-
-            $path = $directory . '/' . $fileName;
-
-            Storage::disk('public')->put($path, $buktiData);
 
             $validatedData['bukti'] = $path;
         }
@@ -319,12 +314,15 @@ class RiwayatKeuanganController extends Controller
             'nominal' => 'required|numeric|min:0',
             'jenis' => 'required|in:masuk,keluar',
             'deskripsi' => 'required|string',
-            'bukti' => 'nullable|string',
+            'bukti' => $request->hasFile('bukti') ? 'nullable|image|mimes:jpeg,png,gif,webp|max:5120' : 'nullable|string|max:7000000',
 
         ]);
 
 
-        if ($request->filled('bukti')) {
+        if ($request->hasFile('bukti')) {
+            $validatedData['bukti'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('bukti'), 'bukti');
+            if ($riwayatKeuangan->bukti) Storage::disk('public')->delete($riwayatKeuangan->bukti);
+        } elseif ($request->filled('bukti')) {
 
             if ($request->bukti === 'hapus') {
 
@@ -336,29 +334,10 @@ class RiwayatKeuanganController extends Controller
 
             elseif (preg_match('/^data:image\/(\w+);base64,/', $request->bukti)) {
 
-                $buktiData = substr($request->bukti, strpos($request->bukti, ',') + 1);
-                $buktiData = base64_decode($buktiData);
-
-                $mimeType = explode(':', substr($request->bukti, 0, strpos($request->bukti, ';')))[1];
-                $extension = explode('/', $mimeType)[1];
-
-                $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
-                if (!in_array($extension, $allowedExtensions)) {
-                    return back()->withErrors(['bukti' => 'File harus berupa gambar (jpg, jpeg, png, gif)']);
+                $path = app(\App\Services\ImageUploadCompressor::class)->storeDataUri($request->bukti, 'bukti');
+                if (! $path) {
+                    throw \Illuminate\Validation\ValidationException::withMessages(['bukti' => 'File harus berupa gambar JPEG, PNG, GIF, atau WebP yang valid.']);
                 }
-
-                $safeName = preg_replace('/[^a-z0-9]+/', '-', strtolower($validatedData['deskripsi']));
-                $safeName = substr($safeName, 0, 30);
-                $fileName = "bukti-" . time() . "-" . $safeName . "." . $extension;
-
-                $directory = 'bukti';
-                if (!Storage::disk('public')->exists($directory)) {
-                    Storage::disk('public')->makeDirectory($directory);
-                }
-
-                $path = $directory . '/' . $fileName;
-
-                Storage::disk('public')->put($path, $buktiData);
 
                 if ($riwayatKeuangan->bukti && Storage::disk('public')->exists($riwayatKeuangan->bukti)) {
                     Storage::disk('public')->delete($riwayatKeuangan->bukti);
@@ -642,10 +621,12 @@ class RiwayatKeuanganController extends Controller
             'nominal' => 'required|numeric|min:0',
             'periode' => 'required|in:mingguan,bulanan',
             'deskripsi' => 'nullable|string|max:500',
+            'periode_mulai' => 'nullable|date',
+            'periode_berakhir' => 'nullable|date|after_or_equal:periode_mulai',
         ]);
 
-        NominalKas::updateOrCreate(
-            ['kepengurusan_lab_id' => $request->kepengurusan_lab_id],
+        app(\App\Services\NominalKasSettings::class)->save(
+            $request->kepengurusan_lab_id,
             [
                 'nominal'          => $request->nominal,
                 'periode'          => $request->periode,

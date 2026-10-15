@@ -14,6 +14,8 @@ import { useState } from "react";
 
 import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
+import FormField from "../../Components/FormField";
+import Modal from "../../Components/Modal";
 import PageHeader from "../../Components/PageHeader";
 import PageSection from "../../Components/PageSection";
 import StatusBadge from "../../Components/StatusBadge";
@@ -57,6 +59,7 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
     const [approvalTarget, setApprovalTarget] = useState(null);
     const [showDokForm, setShowDokForm] = useState(false);
     const [deletingDok, setDeletingDok] = useState(null);
+    const [previewDok, setPreviewDok] = useState(null);
 
     const {
         data: lpjData,
@@ -343,10 +346,7 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                                     onSubmit={submitDok}
                                     className="space-y-3"
                                 >
-                                    <div>
-                                        <label className="block text-xs font-medium text-base-content mb-1">
-                                            Judul / Nama Dokumentasi
-                                        </label>
+                                    <FormField label="Judul / Nama Dokumentasi" error={dokErrors.judul} required>
                                         <input
                                             type="text"
                                             list="dok-judul-list"
@@ -358,7 +358,7 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                                                 )
                                             }
                                             placeholder="Contoh: Foto Kegiatan, Notulensi Rapat..."
-                                            className="w-full text-sm rounded-md border-base-300 shadow-sm focus:border-primary focus:ring-primary"
+                                            className="input min-h-11 w-full"
                                             required
                                         />
                                         <datalist id="dok-judul-list">
@@ -368,12 +368,7 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                                             <option value="Presensi" />
                                             <option value="Materi / Slide" />
                                         </datalist>
-                                        {dokErrors.judul && (
-                                            <p className="text-error text-xs mt-1">
-                                                {dokErrors.judul}
-                                            </p>
-                                        )}
-                                    </div>
+                                    </FormField>
                                     <div>
                                         <label className="block text-xs font-medium text-base-content mb-1">
                                             File (PDF, Word, Gambar, ZIP, MP4 —
@@ -429,7 +424,11 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
                                             <div className="flex-shrink-0">
-                                                {fileIcon(dok.file_path)}
+                                                {dok.is_image && dok.file_url ? (
+                                                    <Button variant="ghost" onClick={() => setPreviewDok(dok)} aria-label={`Lihat gambar ${dok.judul}`}>
+                                                        <img src={dok.file_url} alt={dok.judul} className="h-16 w-20 rounded object-cover" loading="lazy" />
+                                                    </Button>
+                                                ) : fileIcon(dok.file_path)}
                                             </div>
                                             <div className="min-w-0">
                                                 <p className="text-sm font-medium text-base-content truncate">
@@ -755,6 +754,16 @@ export default function KegiatanShow({ kegiatan, can: permissions }) {
                 cancelText="Batal"
                 type="danger"
             />
+            <Modal show={!!previewDok} onClose={() => setPreviewDok(null)} maxWidth="4xl">
+                <div className="space-y-4 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                        <h3 className="font-semibold">{previewDok?.judul}</h3>
+                        <Button variant="ghost" onClick={() => setPreviewDok(null)}>Tutup</Button>
+                    </div>
+                    {previewDok && <img src={previewDok.file_url} alt={previewDok.judul} className="mx-auto max-h-[75vh] max-w-full object-contain" />}
+                    {previewDok && <Button variant="secondary" href={route("dokumentasi-kegiatan.download", previewDok.id)}>Unduh Gambar</Button>}
+                </div>
+            </Modal>
         </DashboardLayout>
     );
 }

@@ -328,13 +328,6 @@ class PraktikumController extends Controller
             'mata_kuliah_id' => 'nullable|exists:mata_kuliah,id|required_without:mata_kuliah',
             'mata_kuliah' => 'nullable|string|max:255|required_without:mata_kuliah_id',
             'kepengurusan_lab_id' => 'required|exists:kepengurusan_lab,id',
-            'jadwal' => 'required|array|min:1',
-            'jadwal.*.id' => 'nullable|exists:kelas,id',
-            'jadwal.*.kelas' => 'required|string|max:50',
-            'jadwal.*.hari' => 'required|string|max:20',
-            'jadwal.*.jam_mulai' => 'required|string',
-            'jadwal.*.jam_selesai' => 'required|string',
-            'jadwal.*.ruangan' => 'required|string|max:50',
         ]);
 
         try {
@@ -343,7 +336,7 @@ class PraktikumController extends Controller
             $praktikum = Praktikum::findOrFail($id);
 
             $mataKuliahId = $validatedData['mata_kuliah_id'] ?? null;
-            $mataKuliahNama = $validatedData['mata_kuliah'];
+            $mataKuliahNama = $validatedData['mata_kuliah'] ?? $praktikum->mata_kuliah;
 
             if ($mataKuliahId) {
                 $mataKuliah = MataKuliah::findOrFail($mataKuliahId);
@@ -370,41 +363,6 @@ class PraktikumController extends Controller
                 'mata_kuliah_id' => $mataKuliahId,
                 'kepengurusan_lab_id' => $validatedData['kepengurusan_lab_id'],
             ]);
-
-            $existingKelasIds = $praktikum->kelas()->pluck('id')->toArray();
-            $updatedKelasIds = [];
-
-            foreach ($validatedData['jadwal'] as $jadwal) {
-                if (isset($jadwal['id']) && $jadwal['id']) {
-                    $kelas = Kelas::where('praktikum_id', $praktikum->id)
-                        ->findOrFail($jadwal['id']);
-
-                    $kelas->update([
-                        'nama_kelas' => $jadwal['kelas'],
-                        'hari' => $jadwal['hari'],
-                        'jam_mulai' => $jadwal['jam_mulai'],
-                        'jam_selesai' => $jadwal['jam_selesai'],
-                        'ruangan' => $jadwal['ruangan'],
-                    ]);
-                    $updatedKelasIds[] = $kelas->id;
-                } else {
-                    $kelas = Kelas::create([
-                        'nama_kelas' => $jadwal['kelas'],
-                        'praktikum_id' => $praktikum->id,
-                        'status' => 'aktif',
-                        'hari' => $jadwal['hari'],
-                        'jam_mulai' => $jadwal['jam_mulai'],
-                        'jam_selesai' => $jadwal['jam_selesai'],
-                        'ruangan' => $jadwal['ruangan'],
-                    ]);
-                    $updatedKelasIds[] = $kelas->id;
-                }
-            }
-
-            $kelasToDelete = array_diff($existingKelasIds, $updatedKelasIds);
-            if (!empty($kelasToDelete)) {
-                Kelas::whereIn('id', $kelasToDelete)->delete();
-            }
 
             DB::commit();
             return back()->with('message', 'Praktikum berhasil diperbarui');

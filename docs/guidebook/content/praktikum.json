@@ -1,0 +1,705 @@
+{
+  "id": "praktikum",
+  "title": "Modul Praktikum",
+  "introduction": "Modul Praktikum menghubungkan mata kuliah, kelas dan jadwal, peserta, asisten, pertemuan, modul, tugas, absensi, nilai, sertifikat, dan laporan. Selesaikan persiapan kelas serta penugasan sebelum mencatat kegiatan. Praktikan memakai menu belajarnya sendiri untuk membaca instruksi dan mengumpulkan pekerjaan.",
+  "flow": "Buat praktikum → tambah kelas dan jadwal → bagi subkelas bila perlu → tugaskan asisten dan daftarkan peserta → buat pertemuan → unggah modul dan berikan tugas → catat absensi → praktikan mengumpulkan pekerjaan → asisten menilai → periksa hasil → terbitkan sertifikat dan cetak laporan. Jadwal kelas adalah pola hari dan jam; pertemuan memiliki tanggal pelaksanaan tertentu.",
+  "prerequisites": [
+    "Pilih laboratorium dan tahun kepengurusan yang benar. Perubahan memerlukan konteks aktif serta izin tindakan.",
+    "Mata kuliah tersedia pada data master. Siapkan jadwal, pembagian kelas, asisten, dan peserta.",
+    "Asisten harus ditugaskan pada praktikum yang dikelola. Role Asisten saja tidak cukup untuk seluruh tindakan.",
+    "Tentukan kelas atau subkelas pelaksanaan sebelum memasukkan peserta, pertemuan, modul, dan tugas."
+  ],
+  "access": [
+    [
+      "Pengelola praktikum berwenang",
+      "Persiapan",
+      "Membuat praktikum, mengatur kelas, jadwal, dan peserta sesuai izin."
+    ],
+    [
+      "Petugas penugasan aslab",
+      "Penugasan asisten",
+      "Menetapkan asisten sesuai kewenangan dan lingkup laboratorium."
+    ],
+    [
+      "Asisten yang ditugaskan atau pengelola berwenang",
+      "Pengelolaan kegiatan",
+      "Mengelola pertemuan, modul, tugas, absensi, serta penilaian sesuai izin masing-masing."
+    ],
+    [
+      "Praktikan aktif",
+      "Pekerjaan sendiri",
+      "Membaca instruksi, mengumpulkan pekerjaan, menindaklanjuti hasil, dan mengambil sertifikatnya."
+    ],
+    [
+      "Petugas penerbitan dan pelaporan",
+      "Dokumen hasil",
+      "Memeriksa data, menyiapkan template, menerbitkan sertifikat, dan membuat laporan."
+    ],
+    [
+      "Pengguna dengan akses baca",
+      "Baca saja",
+      "Melihat data sesuai lingkup. Tidak diberi prosedur berulang; pemeriksaan untuk keputusan tetap dijelaskan."
+    ]
+  ],
+  "groups": [
+    {
+      "id": "persiapan",
+      "title": "Pengelola persiapan praktikum",
+      "tasks": [
+        {
+          "id": "buat",
+          "title": "Membuat praktikum",
+          "summary": "Satu praktikum mengacu pada mata kuliah dan kepengurusan. Pembuatan praktikum berbeda dari penambahan kelas atau pertemuan.",
+          "before": [
+            "Akun memiliki izin membuat praktikum pada kepengurusan aktif.",
+            "Mata kuliah belum dipakai sebagai praktikum pada tahun kepengurusan yang sama, termasuk di laboratorium lain."
+          ],
+          "steps": [
+            "Buka **Praktikum** dan periksa daftar pada laboratorium serta tahun yang dipilih.",
+            "Gunakan aksi tambah untuk membuka **Tambah Praktikum**, lalu pilih **Mata Kuliah**.",
+            "Pilih **Simpan**, lalu buka detailnya. Periksa mata kuliah dan kepengurusan sebelum menambah kelas."
+          ],
+          "success": "Praktikum muncul pada daftar dan detailnya dapat dibuka. Kelas, peserta, serta pertemuan masih perlu disiapkan.",
+          "failure": "Jika mata kuliah tidak tersedia, periksa data master dan praktikum yang sudah ada. Jangan memilih mata kuliah lain agar formulir dapat disimpan."
+        },
+        {
+          "id": "kelas",
+          "title": "Menambahkan kelas dan jadwal",
+          "summary": "Jadwal melekat pada kelas. Pertemuan dipakai untuk tanggal pelaksanaan, bukan membuat kelas baru setiap minggu.",
+          "before": [
+            "Praktikum yang benar sudah dibuka dan akun berwenang.",
+            "Nama kelas, hari, jam, dan ruangan telah ditentukan."
+          ],
+          "steps": [
+            "Pada detail praktikum, pilih **Tambah Kelas**.",
+            "Isi nama kelas, hari, jam mulai, jam selesai, dan ruangan. Periksa urutan jam serta benturan jadwal.",
+            "Simpan dan periksa kartu kelas pada **Kelas Praktikum**.",
+            "Jika jadwal berubah, gunakan **Edit Kelas**, perbaiki data, dan simpan. Periksa tanggal pertemuan yang sudah dibuat secara terpisah."
+          ],
+          "success": "Kelas tampil dengan hari, jam, dan ruangan yang benar.",
+          "failure": "Periksa izin dan kepengurusan jika aksi tidak tersedia. Jangan menghapus kelas untuk memperbaiki jadwal yang sudah memiliki kegiatan.",
+          "figures": [
+            {
+              "id": "ruang-kelas",
+              "path": "output/guidebook/praktikum/detail.png",
+              "caption": "Ruang kerja praktikum dengan kelas dan subkelas",
+              "after_step": 1
+            },
+            {
+              "id": "form-kelas",
+              "path": "output/guidebook/praktikum/form-kelas.png",
+              "caption": "Formulir kelas beserta jadwal",
+              "after_step": 2
+            }
+          ]
+        },
+        {
+          "id": "subkelas",
+          "title": "Membagi kelas menjadi subkelas",
+          "summary": "Subkelas memisahkan kelompok pelaksanaan dalam satu kelas utama. Subkelas tidak dapat dipecah lagi.",
+          "before": [
+            "Kelas induk dan pembagian kelompok tersedia.",
+            "Periksa peserta, pertemuan, dan tugas lama sebelum memindahkan lingkup."
+          ],
+          "steps": [
+            "Buka **Pecah Kelas** pada kelas utama. Isi nama subkelas dan jadwal bila diperlukan, lalu simpan.",
+            "Ulangi untuk kelompok lain dan periksa hasil di bawah kelas induk.",
+            "Pada **Peserta**, gunakan tindakan pemindahan untuk menempatkan peserta ke subkelas yang benar. Periksa orang dan tujuan sebelum menyimpan.",
+            "Jika pertemuan lama masih di induk, gunakan **Pindahkan ke Sub-Kelas** pada daftar pertemuan. Pilih kegiatan dan tujuan, lalu periksa pula lingkup tugas lama."
+          ],
+          "success": "Peserta dan pertemuan berada pada kelompok pelaksanaan yang tepat.",
+          "failure": "Pembuatan subkelas tidak otomatis memindahkan seluruh data. Jangan menghapus kelas atau subkelas yang masih digunakan."
+        },
+        {
+          "id": "peserta",
+          "title": "Mendaftarkan praktikan secara satuan dan massal",
+          "summary": "Gunakan akun yang sudah ada bila sesuai agar identitas tidak ganda. Pilih kelas pelaksanaan atau subkelas.",
+          "before": [
+            "Identitas peserta dan pembagian kelas telah diperiksa.",
+            "Akun berwenang mengelola peserta."
+          ],
+          "steps": [
+            "Buka **Peserta** dari kelas atau subkelas. Cari NIM sebelum menambah orang.",
+            "Untuk akun yang tersedia, buka **Tambah Existing User sebagai Praktikan**. Cari dan pilih pengguna, tetapkan kelas bila diminta, lalu **Tambah**.",
+            "Untuk orang baru, buka **Tambah Praktikan Baru**. Isi NIM, nama, kelas, dan nomor HP bila diperlukan, lalu **Tambah**.",
+            "Untuk penambahan massal, buka **Import Data Praktikan**. Siapkan kolom wajib **nim**, **nama**, **kelas**, dan kolom opsional **no_hp**. Nama kelas harus persis sesuai daftar pada dialog.",
+            "Pilih XLSX atau XLS maksimum 2 MB, lalu **Import**. Periksa jumlah, identitas, dan kelas hasilnya."
+          ],
+          "success": "Peserta tercatat pada praktikum serta kelas yang tepat. Pengguna akun baru mengikuti petunjuk akses pengelola dan mengganti password saat diminta.",
+          "failure": "Impor dapat memperbarui NIM yang sudah ada. Periksa baris yang berhasil sebelum mengulangi berkas; jangan menuliskan password dalam panduan atau laporan."
+        },
+        {
+          "id": "pindah",
+          "title": "Memperbaiki pembagian kelas peserta",
+          "summary": "Pemindahan memperbaiki penempatan peserta dan dapat memengaruhi akses kegiatan berikutnya.",
+          "before": [
+            "NIM, kelas sumber, dan tujuan sudah diperiksa.",
+            "Petugas mengetahui kegiatan dan nilai yang telah tercatat."
+          ],
+          "steps": [
+            "Pada **Peserta**, gunakan aksi kelas yang tersedia atau **Pindah Kelas Massal**.",
+            "Pilih **Kelas Tujuan** dan centang hanya peserta yang dimaksud. Periksa jumlah pilihan sebelum menyimpan.",
+            "Simpan dan periksa daftar kelas sumber serta tujuan.",
+            "Periksa akses tugas dan pertemuan berikutnya. Koordinasikan tindak lanjut data kegiatan lama dengan asisten pengampu."
+          ],
+          "success": "Peserta muncul pada kelas tujuan yang benar.",
+          "failure": "Pemindahan peserta bukan bukti bahwa absensi, pengumpulan, dan nilai lama ikut dipindahkan. Periksa data terkait secara terpisah."
+        }
+      ]
+    },
+    {
+      "id": "penugasan",
+      "title": "Petugas penugasan asisten",
+      "tasks": [
+        {
+          "id": "aslab",
+          "title": "Menugaskan asisten praktikum",
+          "summary": "Penugasan memberi konteks pengelolaan kepada asisten; izin tindakan tetap berlaku.",
+          "before": [
+            "Asisten memiliki keanggotaan aktif pada kepengurusan praktikum.",
+            "Orang yang dipilih tidak menjadi praktikan pada praktikum yang sama."
+          ],
+          "steps": [
+            "Dari aksi praktikum, buka **Kelola Aslab** dan periksa penugasan yang ada.",
+            "Gunakan aksi penambahan, pilih asisten, dan isi catatan bila diperlukan.",
+            "Simpan, periksa namanya, lalu minta asisten membuka ruang kerja praktikum.",
+            "Jika mencabut penugasan, cocokkan orang dan praktikum serta periksa kebutuhan absensi dan pelaporan sebelum menghapus."
+          ],
+          "success": "Asisten terdaftar pada praktikum dan dapat menjalankan tindakan sesuai izinnya.",
+          "failure": "Jika orang tidak tersedia, periksa role, kepengurusan aktif, dan apakah ia terdaftar sebagai praktikan. Keanggotaan laboratorium saja tidak menggantikan penugasan."
+        }
+      ]
+    },
+    {
+      "id": "pelaksanaan",
+      "title": "Tugas bersama asisten dan pengelola kegiatan",
+      "tasks": [
+        {
+          "id": "pertemuan",
+          "title": "Membuat dan memperbarui pertemuan",
+          "summary": "Pertemuan menyimpan judul serta tanggal kegiatan pada kelas pelaksanaan.",
+          "before": [
+            "Kelas atau subkelas tersedia.",
+            "Judul, tanggal, serta izin pengelolaan pertemuan sudah dipastikan."
+          ],
+          "steps": [
+            "Buka **Pertemuan** dan cocokkan praktikum, kelas, serta subkelas aktif.",
+            "Pilih **Buat Pertemuan** bila tersedia. Isi judul, tanggal, kelas, serta deskripsi bila diperlukan.",
+            "Pilih **Simpan Pertemuan** dan periksa judul, tanggal, serta kelas pada daftar.",
+            "Untuk koreksi, gunakan edit dan simpan. Periksa hubungan modul, tugas, dan absensi sebelum memindahkan atau menghapus pertemuan."
+          ],
+          "success": "Pertemuan muncul pada kelas dan tanggal yang tepat.",
+          "failure": "Jika kelas induk memiliki subkelas, buat pertemuan pada subkelas. Jika tombol tidak muncul, periksa izin pertemuan selain penugasan asisten.",
+          "figures": [
+            {
+              "id": "pertemuan",
+              "path": "output/guidebook/praktikum/pertemuan.png",
+              "caption": "Daftar pertemuan dan data lama pada kelas induk",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "modul",
+          "title": "Mengunggah modul pertemuan",
+          "summary": "Modul PDF terhubung ke pertemuan dan dapat menjadi lampiran laporan akhir.",
+          "before": [
+            "Pertemuan tersedia pada kelas atau subkelas yang benar.",
+            "PDF maksimum 10 MB, judul, dan jumlah halaman sudah diperiksa."
+          ],
+          "steps": [
+            "Buka **Modul** dari kelas dan pilih **Tambah**.",
+            "Pilih kelas untuk menyaring data, lalu **Pilih Pertemuan**. Hindari pertemuan induk yang sudah dipecah.",
+            "Isi **Judul Modul**, **Deskripsi Singkat** bila perlu, **Jumlah Halaman** minimal satu, dan **File Modul** berupa PDF.",
+            "Tentukan pilihan **Buat link publik (dapat diakses tanpa login)** sesuai kebutuhan berbagi bahan.",
+            "Pilih **Simpan Modul**, lalu buka **Lihat Modul** untuk memeriksa berkas dan pertemuannya."
+          ],
+          "success": "Modul terdaftar pada pertemuan yang tepat dan PDF dapat dibuka.",
+          "failure": "Periksa format, ukuran, jumlah halaman, serta kelas jika unggah ditolak. Pastikan berkas dapat dibuka sebelum menganggap unggahan selesai.",
+          "figures": [
+            {
+              "id": "form-modul",
+              "path": "output/guidebook/praktikum/form-modul.png",
+              "caption": "Formulir modul dengan pilihan pertemuan dan PDF",
+              "after_step": 3
+            }
+          ]
+        },
+        {
+          "id": "bagikan",
+          "title": "Memperbarui dan membagikan modul",
+          "summary": "Pengelola menentukan versi bahan dan kebutuhan tautan publik.",
+          "before": [
+            "Modul yang benar telah diidentifikasi.",
+            "Bahan yang dibagikan boleh diakses oleh penerima tautan."
+          ],
+          "steps": [
+            "Cari modul berdasarkan kelas dan pertemuan. Gunakan edit untuk memperbarui informasi atau berkas, lalu simpan.",
+            "Buka kembali PDF dan periksa versi yang tampil.",
+            "Gunakan tindakan membuka link yang tersedia, lalu **Copy Link**. Gunakan **Tutup Link** jika akses publik tidak lagi diperlukan.",
+            "Periksa penerima serta pertemuan sebelum membagikan. Praktikan juga dapat membaca bahan melalui menu modul pada akunnya."
+          ],
+          "success": "Versi modul dan akses tautan sesuai kebutuhan.",
+          "failure": "Jika link gagal, periksa status akses publik. Jangan mengunggah ulang hanya untuk mengatasi tautan yang ditutup."
+        },
+        {
+          "id": "absensi",
+          "title": "Mencatat kehadiran praktikan dan asisten",
+          "summary": "Petugas mencatat absensi pada pertemuan. Alur ini berbeda dari check-in wajah Modul Piket.",
+          "before": [
+            "Pertemuan dan kelas benar.",
+            "Peserta aktif serta penugasan asisten lengkap."
+          ],
+          "steps": [
+            "Buka **Pertemuan**, pilih kegiatan, lalu **Absensi**. Cocokkan judul dan kelas.",
+            "Pada **Absensi Praktikan**, pilih **HADIR**, **IZIN**, **SAKIT**, atau **ALPHA** sesuai keadaan. Isi keterangan bila perlu dan periksa seluruh halaman daftar.",
+            "Pilih **Simpan Absensi Praktikan**, lalu periksa hasilnya.",
+            "Buka **Absensi Asisten**. Isi status serta keterangan setiap asisten, lalu pilih **Simpan Absensi Asisten**.",
+            "Buka kembali pertemuan dan periksa kedua daftar. Penyimpanan ulang memperbarui catatan sehingga koreksi harus berdasarkan pemeriksaan."
+          ],
+          "success": "Kedua daftar tersimpan pada pertemuan yang benar. Menyimpan praktikan tidak sekaligus menyimpan asisten.",
+          "failure": "Jika nama tidak muncul, periksa kelas, kepesertaan aktif, atau penugasan asisten. Jangan menggantinya dengan orang lain.",
+          "figures": [
+            {
+              "id": "absensi",
+              "path": "output/guidebook/praktikum/absensi.png",
+              "caption": "Status kehadiran praktikan per pertemuan",
+              "after_step": 2
+            },
+            {
+              "id": "absensi-asisten",
+              "path": "output/guidebook/praktikum/absensi-asisten.png",
+              "caption": "Absensi asisten disimpan terpisah",
+              "after_step": 4
+            }
+          ]
+        },
+        {
+          "id": "ekspor-absensi",
+          "title": "Mengunduh daftar kehadiran",
+          "summary": "Berkas ekspor membantu pemeriksaan dan administrasi kegiatan.",
+          "before": [
+            "Absensi telah disimpan dan kelas yang diperiksa dipilih."
+          ],
+          "steps": [
+            "Pada **Pertemuan**, pilih kelas atau subkelas yang dimaksud.",
+            "Pilih **Export Absensi**, lalu **Absensi Praktikan** atau **Absensi Aslab**.",
+            "Buka Excel hasil unduhan dan cocokkan kelas, nama, serta catatan pertemuan.",
+            "Jika perlu koreksi, perbaiki melalui absensi pertemuan oleh petugas berwenang, lalu unduh ulang."
+          ],
+          "success": "Berkas absensi_praktikan.xlsx atau absensi_aslab.xlsx tersedia dan lingkupnya benar.",
+          "failure": "Jika ekspor tidak aktif, pilih kelas terlebih dahulu. Periksa penyimpanan absensi dan pembagian kelas jika hasil kosong."
+        },
+        {
+          "id": "tugas",
+          "title": "Memberikan dan mengatur tugas",
+          "summary": "Tugas memerlukan sasaran kelas serta tenggat yang jelas.",
+          "before": [
+            "Kelas dan pertemuan sasaran tersedia.",
+            "Instruksi, deadline, dan soal sudah disiapkan."
+          ],
+          "steps": [
+            "Buka **Tugas** dari kelas atau subkelas, lalu **Tambah Tugas**.",
+            "Isi **Judul Tugas**, periksa **Target Kelas** bila ditampilkan, dan pilih **Pertemuan** bila tugas terkait kegiatan tertentu.",
+            "Isi **Deskripsi** dan **File Tugas** bila diperlukan. Soal menerima PDF, DOC, atau DOCX maksimum 10 MB.",
+            "Isi **Deadline** berupa tanggal dan jam. Periksa sasaran serta instruksi, lalu pilih **Tambah**.",
+            "Periksa daftar tugas. Untuk perubahan, gunakan edit dan simpan, lalu periksa deadline serta status **Aktif** atau **Nonaktif**."
+          ],
+          "success": "Tugas muncul dengan sasaran, pertemuan, dan tenggat yang benar.",
+          "failure": "Jika praktikan tidak melihat tugas, periksa keanggotaan aktif, kelas, subkelas, status tugas, serta pertemuannya.",
+          "figures": [
+            {
+              "id": "form-tugas",
+              "path": "output/guidebook/praktikum/form-tugas.png",
+              "caption": "Formulir tugas dengan sasaran kelas dan deadline",
+              "after_step": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "praktikan",
+      "title": "Praktikan",
+      "tasks": [
+        {
+          "id": "kumpul",
+          "title": "Memeriksa instruksi dan mengumpulkan tugas",
+          "summary": "Praktikan mengirim pekerjaan atas akunnya sendiri setelah memeriksa instruksi.",
+          "before": [
+            "Terdaftar aktif pada kelas sasaran tugas.",
+            "Pekerjaan siap dan tautan dapat diakses penilai."
+          ],
+          "steps": [
+            "Buka tugas dari **Praktikum Saya** atau daftar tugas yang tersedia. Periksa judul, kelas, instruksi, dan deadline.",
+            "Baca atau unduh soal serta modul yang diperlukan.",
+            "Tambahkan minimal satu file atau satu link. File pengumpulan menerima PDF, DOC, DOCX, ZIP, atau RAR maksimum 10 MB per file. Tautan harus berupa URL valid.",
+            "Periksa lampiran serta link, isi catatan bila perlu, lalu **Kumpulkan Tugas**.",
+            "Pastikan detail atau riwayat menampilkan pengumpulan dan waktu kirim. Periksa lampiran yang tersimpan."
+          ],
+          "success": "Status menjadi dikumpulkan, atau terlambat jika melewati deadline. Diterimanya kiriman terlambat tidak menghapus konsekuensi penilaian.",
+          "failure": "Jika muncul sudah dikumpulkan, periksa riwayat. Jika akses ditolak, minta pengelola memeriksa pendaftaran dan kelas."
+        },
+        {
+          "id": "ulang",
+          "title": "Membatalkan dan mengirim ulang pekerjaan",
+          "summary": "Pembatalan menghapus kiriman dan berkasnya; hanya untuk milik sendiri yang belum dinilai.",
+          "before": [
+            "Pengumpulan yang diganti sudah dipastikan.",
+            "Versi pengganti siap dan dampak tenggat dipahami."
+          ],
+          "steps": [
+            "Buka detail pengumpulan dan periksa status. Jika **Sudah Dinilai**, hubungi penilai karena pembatalan tidak tersedia.",
+            "Jika **Batalkan** tersedia, baca **Batalkan Pengumpulan Tugas?**, lalu pilih **Ya, Batalkan** setelah memastikan pilihan.",
+            "Pastikan kiriman lama tidak lagi tercatat, kemudian kirim versi pengganti melalui **Kumpulkan Tugas**.",
+            "Periksa waktu dan status kiriman baru. Jika tugas ditolak, baca alasan dan gunakan alur penggantian yang tersedia; penolakan tidak otomatis menghapus kiriman lama."
+          ],
+          "success": "Versi pengganti tercatat dengan waktu kirim baru.",
+          "failure": "Jika pembatalan atau pengiriman tidak tersedia, hubungi penilai. Jangan mengirim berulang saat kiriman lama masih ada."
+        },
+        {
+          "id": "hasil",
+          "title": "Membaca hasil dan menindaklanjuti feedback",
+          "summary": "Pemeriksaan hasil membantu menentukan perbaikan atau klarifikasi.",
+          "before": [
+            "Pengumpulan milik sendiri dapat dibuka."
+          ],
+          "steps": [
+            "Buka **Riwayat Tugas** atau detail pengumpulan pada praktikum terkait.",
+            "Periksa status dikumpulkan, terlambat, ditolak, atau dinilai. Baca nilai dan feedback yang tersedia.",
+            "Jika ditolak, siapkan perbaikan sesuai alasan. Jika sudah dinilai tetapi diduga salah, sampaikan judul tugas dan bagian yang perlu diperiksa kepada penilai."
+          ],
+          "success": "Praktikan mengetahui hasil dan tindak lanjut tanpa membuat kiriman ganda.",
+          "failure": "Belum dinilai tidak berarti nilainya nol. Periksa lagi setelah penilai menyelesaikan pemeriksaan."
+        }
+      ]
+    },
+    {
+      "id": "penilaian",
+      "title": "Asisten atau penilai yang berwenang",
+      "tasks": [
+        {
+          "id": "periksa-pengumpulan",
+          "title": "Memeriksa pengumpulan sebelum menilai",
+          "summary": "Pemeriksaan ini dilakukan penilai sebelum menentukan pekerjaan yang perlu dinilai atau ditindaklanjuti. Screenshot menggunakan hasil lama pada tampilan baca; nama dan NIM peserta disamarkan. Tampilan merupakan pratinjau frontend lokal dengan perbaikan impor tabel dan data localhost, tanpa perubahan nilai di server.",
+          "before": [
+            "Praktikum, kelas, dan tugas yang akan diperiksa telah dipilih.",
+            "Akun dapat membaca pengumpulan; pemberian nilai tetap memerlukan izin penilaian tersendiri."
+          ],
+          "steps": [
+            "Pada daftar **Tugas**, pilih **Lihat pengumpulan**. Periksa judul, kelas, deadline, serta ringkasan **Total Pengumpulan**, **Sudah Dinilai**, **Belum Dinilai**, dan **Terlambat**.",
+            "Gunakan **Semua Status**, **Sudah Kumpul**, atau **Belum Kumpul** untuk mempersempit daftar. Jumlah pengumpulan berbeda dari jumlah peserta; pada contoh, 19 pengumpulan sudah dinilai dan satu peserta belum mengumpulkan.",
+            "Pilih **Atur Kolom**. Gunakan **Minimal** untuk merapikan tampilan, lalu centang **Feedback** atau kolom lain yang diperlukan. Pilih **Sembunyikan Kolom** setelah selesai; pengaturan tampilan tidak mengubah nilai.",
+            "Buka **Belum Kumpul** untuk menindaklanjuti peserta yang belum menyerahkan pekerjaan. Kembalikan kolom lengkap bila diperlukan agar informasi dapat dibandingkan. Angka nol pada baris tanpa kiriman belum membuktikan nilai nol telah ditetapkan.",
+            "Pada peserta yang sudah mengumpulkan, periksa lampiran, skor per komponen, total, dan feedback. Jika tertulis **Tidak ada file**, periksa apakah tugas memang dinilai langsung; status dinilai saja tidak membuktikan ada lampiran."
+          ],
+          "success": "Penilai dapat membedakan pekerjaan yang sudah dinilai, yang perlu diperiksa, dan peserta yang belum mengumpulkan sebelum mengambil tindakan.",
+          "failure": "Jika tombol input nilai tidak muncul, periksa izin penilaian. Gunakan akun berwenang untuk perubahan; akses baca pada screenshot tidak menunjukkan hak menyimpan nilai.",
+          "figures": [
+            {
+              "id": "ringkasan-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-ringkasan.png",
+              "caption": "Ringkasan pengumpulan dan status penilaian pada pratinjau perbaikan",
+              "after_step": 1
+            },
+            {
+              "id": "atur-kolom-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-atur-kolom.png",
+              "caption": "Pilihan kolom untuk pemeriksaan nilai pada pratinjau perbaikan",
+              "after_step": 3
+            },
+            {
+              "id": "belum-kumpul-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-belum-kumpul.png",
+              "caption": "Daftar peserta yang belum mengumpulkan pada pratinjau perbaikan",
+              "after_step": 4
+            }
+          ]
+        },
+        {
+          "id": "rubrik",
+          "title": "Menyiapkan komponen rubrik",
+          "summary": "Siapkan komponen rubrik sebelum memberi nilai melalui antarmuka penilaian.",
+          "before": [
+            "Tugas benar dan akun berwenang mengatur rubrik.",
+            "Kriteria, bobot, dan nilai maksimal telah ditentukan."
+          ],
+          "steps": [
+            "Pada **Tugas**, buka **Lihat pengumpulan**, lalu **Kelola Komponen Rubrik**.",
+            "Pilih **Tambah Komponen**. Isi nama, deskripsi bila perlu, bobot, dan nilai maksimal lebih besar dari nol sampai 100.",
+            "Simpan dan ulangi untuk komponen lain. Total bobot tidak boleh melebihi 100 persen; untuk rancangan nilai penuh, pastikan jumlahnya 100 persen.",
+            "Periksa kriteria sebelum menilai. Jika bobot berubah setelah penilaian, periksa seluruh hasil yang terpengaruh."
+          ],
+          "success": "Komponen dan bobot siap digunakan.",
+          "failure": "Jika halaman kosong, laporkan gangguan kepada pengelola. Screenshot penilaian pada buku ini memakai pratinjau perbaikan lokal; pemasangan perbaikan di deployment belum dilakukan.",
+          "figures": [
+            {
+              "id": "rubrik",
+              "path": "output/guidebook/praktikum/penilaian-rubrik.png",
+              "caption": "Komponen rubrik dengan bobot dan nilai maksimal pada pratinjau perbaikan",
+              "after_step": 3
+            }
+          ]
+        },
+        {
+          "id": "nilai",
+          "title": "Memeriksa pekerjaan dan menyimpan nilai",
+          "summary": "Nilai yang terisi di layar belum tersimpan sampai tindakan simpan berhasil. Screenshot menunjukkan hasil nilai lama pada akun baca; tombol pemberian nilai hanya tersedia bagi akun yang berwenang.",
+          "before": [
+            "Rubrik tersedia dan akun berwenang menilai.",
+            "Halaman pengumpulan dapat dibuka setelah gangguan tampilan diselesaikan."
+          ],
+          "steps": [
+            "Buka **Lihat pengumpulan**. Cocokkan peserta, kelas, waktu kirim, dan lampirannya.",
+            "Buka file atau link, baca catatan, lalu periksa kesesuaian dengan instruksi.",
+            "Pilih **Aktifkan Input Nilai** atau aksi penilaian rubrik yang tersedia. Isi skor setiap komponen dari nol sampai nilai maksimalnya.",
+            "Isi feedback dan periksa perhitungan: skor dibagi nilai maksimal, dikalikan bobot. Nilai rubrik adalah jumlah kontribusi komponen.",
+            "Pilih **Simpan Semua Nilai** atau simpan per peserta bila tersedia. Muat ulang dan periksa skor, feedback, serta status **dinilai**."
+          ],
+          "success": "Nilai tersimpan dan dapat dibaca kembali. Peserta tanpa berkas dapat muncul pada matriks; nilai pada baris itu tidak membuktikan berkas sudah dikumpulkan.",
+          "failure": "Jika penyimpanan gagal, periksa batas skor, kepesertaan, dan izin. Muat ulang sebelum mengulang agar hasil yang sudah tersimpan diketahui.",
+          "figures": [
+            {
+              "id": "feedback-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-feedback.png",
+              "caption": "Contoh feedback dan hasil pemeriksaan pekerjaan pada pratinjau perbaikan",
+              "after_step": 4
+            },
+            {
+              "id": "hasil-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-hasil.png",
+              "caption": "Skor per komponen dan total nilai yang sudah tersimpan pada pratinjau perbaikan",
+              "after_step": 5
+            }
+          ]
+        },
+        {
+          "id": "tolak",
+          "title": "Menolak pengumpulan yang perlu diperbaiki",
+          "summary": "Penolakan menjelaskan masalah pekerjaan dan berbeda dari pemberian nilai nol.",
+          "before": [
+            "Pengumpulan belum dinilai.",
+            "Alasan penolakan berdasarkan pemeriksaan telah disiapkan."
+          ],
+          "steps": [
+            "Periksa identitas dan pekerjaan pada daftar pengumpulan.",
+            "Gunakan aksi penolakan, lalu isi alasan serta bagian yang harus diperbaiki.",
+            "Simpan atau konfirmasikan dan periksa status **ditolak** serta feedback.",
+            "Arahkan praktikan membaca alasan. Jika perlu mengirim ulang, tangani kiriman lama melalui pembatalan yang diizinkan."
+          ],
+          "success": "Alasan penolakan tersimpan dan dapat ditindaklanjuti praktikan.",
+          "failure": "Pengumpulan yang sudah dinilai tidak dapat ditolak melalui alur ini. Penolakan tidak otomatis menghapus kiriman lama."
+        },
+        {
+          "id": "impor-nilai",
+          "title": "Mengimpor dan mengekspor nilai",
+          "summary": "Gunakan template dari tugas yang sama agar peserta dan komponennya sesuai.",
+          "before": [
+            "Rubrik dan peserta benar.",
+            "Salinan nilai sebelumnya disiapkan bila perlu sebelum perubahan massal."
+          ],
+          "steps": [
+            "Pada pengumpulan, pilih **Download Template**. Pertahankan struktur kolom dan identitas peserta.",
+            "Isi skor sesuai batas komponen. Periksa tugas, kelas, dan peserta sebelum menyimpan Excel.",
+            "Pilih **Import Nilai**, unggah XLSX atau XLS maksimum 10 MB, dan jalankan impor. Baca hasil lalu periksa nilai pada aplikasi.",
+            "Untuk rekap beberapa tugas, buka daftar **Tugas**, pilih **Export Nilai**, tentukan pengelompokan serta tugas, lalu **Export**.",
+            "Buka berkas hasil dan cocokkan peserta, komponen, serta nilai sebelum digunakan."
+          ],
+          "success": "Nilai impor dapat dibaca kembali dan hasil ekspor sesuai pilihan.",
+          "failure": "Jika hasil impor tidak jelas, periksa nilai yang masuk sebelum mengulangi seluruh berkas. Jangan mengubah ID template agar diterima.",
+          "figures": [
+            {
+              "id": "ekspor-penilaian",
+              "path": "output/guidebook/praktikum/penilaian-export.png",
+              "caption": "Pilihan tugas dan pengelompokan ekspor nilai pada pratinjau perbaikan",
+              "after_step": 4
+            }
+          ]
+        },
+        {
+          "id": "bonus",
+          "title": "Memberikan nilai tambahan",
+          "summary": "Tambahan dicatat dengan alasan yang dapat diperiksa.",
+          "before": [
+            "Sesuai ketentuan tugas dan akun berwenang.",
+            "Peserta serta alasan sudah jelas."
+          ],
+          "steps": [
+            "Pada pengumpulan, pilih **Nilai Tambahan**.",
+            "Pilih praktikan, isi nilai, kategori, serta alasan, lalu periksa tugasnya.",
+            "Simpan lalu periksa komponen tambahan dan total yang tampil. Gunakan pengelolaan nilai tambahan peserta yang sama untuk koreksi."
+          ],
+          "success": "Nilai tambahan serta alasan tercatat pada peserta yang benar.",
+          "failure": "Jangan memakai tambahan untuk menggantikan skor rubrik yang salah; periksa nilai pokok sebelum memutuskan koreksi."
+        }
+      ]
+    },
+    {
+      "id": "dokumen",
+      "title": "Tugas bersama penerbit sertifikat dan penyusun laporan",
+      "tasks": [
+        {
+          "id": "template",
+          "title": "Menyiapkan template sertifikat",
+          "summary": "Template ditetapkan per praktikum dan kategori. Prosedur yang sama berlaku untuk praktikan serta asisten.",
+          "before": [
+            "Akun berwenang pada kepengurusan aktif.",
+            "Desain telah diperiksa dan DOCX maksimum 2 MB tersedia."
+          ],
+          "steps": [
+            "Buka **Kelola Sertifikat**. Pilih **Sertifikat Praktikan** atau **Sertifikat Asisten**.",
+            "Siapkan Word dengan placeholder yang diperlukan: ${nama}, ${nim}, ${peran}, ${praktikum}, ${tanggal}, ${nomor}, ${lab}, dan ${qr_code}. Tulis persis dengan kurung kurawalnya.",
+            "Pada **File Template**, pilih DOCX yang sesuai kategori, lalu **Upload Template**.",
+            "Periksa **Status Template**. Jika template asisten belum tersedia, aplikasi memakai template praktikan; unggah template khusus jika pernyataan atau desain berbeda."
+          ],
+          "success": "Template aktif tiap kategori sudah diketahui.",
+          "failure": "Jika template belum tersedia, sertifikat tidak dapat dibuat. Periksa format, ukuran, dan kategori.",
+          "figures": [
+            {
+              "id": "sertifikat-praktikan",
+              "path": "output/guidebook/praktikum/sertifikat.png",
+              "caption": "Sertifikat praktikan dan variabel template",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "generate",
+          "title": "Menerbitkan sertifikat praktikan atau asisten",
+          "summary": "Petugas memilih penerima setelah memeriksa kelayakan. Tombol generate tidak otomatis memutuskan kelulusan atau syarat kehadiran.",
+          "before": [
+            "Template kategori benar.",
+            "Daftar penerima, nilai, kehadiran, dan ketentuan penerbitan telah diperiksa."
+          ],
+          "steps": [
+            "Pilih **Sertifikat Praktikan** atau **Sertifikat Asisten** sesuai penerima.",
+            "Cari dan centang orang yang berhak. Periksa jumlah serta cakupan pilihan semua, termasuk halaman lain.",
+            "Pilih **Generate Untuk ... Orang**. Baca **Konfirmasi Generate Sertifikat** dan cocokkan kategori serta jumlah.",
+            "Pilih **Ya, Generate Sekarang** hanya jika benar. Penerbitan ulang menimpa sertifikat orang dan kategori yang sama.",
+            "Baca jumlah hasil berhasil. Minta penerima memeriksa **Sertifikat Saya** dan cocokkan identitas serta isi sebelum dibagikan."
+          ],
+          "success": "Sertifikat tersedia bagi penerima yang berhasil diproses dan isinya diperiksa.",
+          "failure": "Jika hasil nol atau sebagian, periksa penerima, relasi praktikum, serta template. Jangan menerbitkan ulang massal sebelum memeriksa hasil sebelumnya.",
+          "figures": [
+            {
+              "id": "sertifikat-asisten",
+              "path": "output/guidebook/praktikum/sertifikat-asisten.png",
+              "caption": "Kategori sertifikat asisten dan daftar penerima",
+              "after_step": 1
+            }
+          ]
+        },
+        {
+          "id": "ambil-sertifikat",
+          "title": "Mengunduh sertifikat sendiri",
+          "summary": "Berlaku bagi praktikan maupun asisten yang menerima sertifikat.",
+          "before": [
+            "Sertifikat telah diterbitkan untuk akun sendiri."
+          ],
+          "steps": [
+            "Buka **Sertifikat Saya**.",
+            "Cari sertifikat praktikum dan periksa kategori, nomor, serta tanggal yang tersedia.",
+            "Unduh dan buka berkas. Cocokkan nama, NIM atau identitas, peran, serta isi; periksa tujuan verifikasi jika ada QR.",
+            "Jika salah, sampaikan identitas sertifikat kepada penerbit untuk pemeriksaan."
+          ],
+          "success": "Dokumen milik sendiri diperoleh dan identitasnya benar.",
+          "failure": "Jika tidak ada, pastikan kategori serta akun benar, lalu minta petugas memeriksa hasil generate."
+        },
+        {
+          "id": "laporan",
+          "title": "Memeriksa dan membuat laporan praktikum",
+          "summary": "Laporan PDF merangkum pelaksanaan, asisten dan kehadirannya, serta modul. Laporan ini berbeda dari ekspor nilai dan absensi praktikan.",
+          "before": [
+            "Mata kuliah, kelas, pertemuan, penugasan, dan PDF modul lengkap.",
+            "Absensi asisten tersimpan dan tanda tangan profil tersedia bila diperlukan.",
+            "Nama dosen, NIP, semester, dan tahun akademik telah dikonfirmasi."
+          ],
+          "steps": [
+            "Buka detail praktikum dan pilih **Cetak laporan**.",
+            "Pada **Data dosen penanggung jawab**, isi **Nama Dosen**, **Semester**, **Tahun Akademik**, dan **NIP**. Baca seluruh peringatan.",
+            "Perbaiki data sumber yang belum lengkap, termasuk tanda tangan, absensi asisten, atau modul, lalu buka kembali formulir.",
+            "Pilih **Buka preview**. Periksa identitas, dosen, kelas, urutan pertemuan, asisten, kehadiran, dan lampiran PDF modul.",
+            "Unduh atau cetak melalui penampil PDF setelah benar. Periksa berkas tersimpan; siapkan ekspor nilai atau absensi praktikan terpisah bila dibutuhkan."
+          ],
+          "success": "PDF laporan tersedia dan sesuai data yang diperiksa. Berkas PDF modul yang tersedia digabungkan sebagai lampiran.",
+          "failure": "Peringatan data belum lengkap bukan tanda siap disahkan. Jika PDF gagal, periksa berkas modul dan pesan aplikasi. Jangan memakai nama atau NIP contoh untuk laporan resmi.",
+          "figures": [
+            {
+              "id": "laporan",
+              "path": "output/guidebook/praktikum/laporan.png",
+              "caption": "Formulir laporan dan peringatan kelengkapan data",
+              "after_step": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "issues": [
+    [
+      "Tidak dapat mengelola",
+      "Periksa kepengurusan aktif, izin, laboratorium, dan penugasan asisten."
+    ],
+    [
+      "Mata kuliah tidak tersedia",
+      "Periksa data master dan penggunaan pada tahun kepengurusan yang sama."
+    ],
+    [
+      "Data salah kelas",
+      "Gunakan subkelas jika induk dipecah dan periksa pemindahan data lama."
+    ],
+    [
+      "Nama tidak ada di absensi",
+      "Periksa peserta aktif atau penugasan asisten. Kedua daftar disimpan terpisah."
+    ],
+    [
+      "Unggah gagal",
+      "Modul PDF maksimum 10 MB; soal PDF/DOC/DOCX maksimum 10 MB; pengumpulan mengikuti format dan batas per file."
+    ],
+    [
+      "Kiriman sudah ada",
+      "Periksa riwayat. Pembatalan hanya untuk milik sendiri yang belum dinilai; penolakan tidak otomatis menghapusnya."
+    ],
+    [
+      "Halaman pengumpulan kosong",
+      "Deployment yang diperiksa mengalami gangguan komponen tabel. Screenshot penilaian pada panduan memakai pratinjau perbaikan lokal. Laporkan halaman kepada pengelola; server belum diubah dan nilai tidak dianggap tersimpan hanya karena ada screenshot."
+    ],
+    [
+      "Nilai belum tersimpan",
+      "Periksa rubrik, batas skor, dan hasil simpan, lalu muat ulang."
+    ],
+    [
+      "Sertifikat tidak muncul",
+      "Periksa kategori template, penerima, hasil generate, dan akun. Generate ulang menimpa dokumen sebelumnya."
+    ],
+    [
+      "Laporan belum lengkap",
+      "Lengkapi data sumber, tanda tangan, absensi asisten, serta PDF modul sebelum preview ulang."
+    ]
+  ],
+  "evidence": [
+    "routes/web.php",
+    "app/Http/Controllers/PraktikumController.php",
+    "app/Http/Controllers/KelasController.php",
+    "app/Http/Controllers/PraktikanController.php",
+    "app/Http/Controllers/AslabPraktikumController.php",
+    "app/Http/Controllers/PertemuanPraktikumController.php",
+    "app/Http/Controllers/PraktikumAbsensiController.php",
+    "app/Http/Controllers/ModulPraktikumController.php",
+    "app/Http/Controllers/TugasPraktikumController.php",
+    "app/Http/Controllers/PengumpulanTugasController.php",
+    "app/Http/Controllers/KomponenRubrikController.php",
+    "app/Http/Controllers/PraktikumSertifikatController.php",
+    "app/Http/Controllers/PraktikumReportController.php",
+    "app/Policies/PraktikumPolicy.php",
+    "app/Http/Middleware/CheckAslabAccess.php",
+    "resources/js/Pages/Praktikum/Show.jsx",
+    "resources/js/Pages/Praktikum/Sertifikat.jsx",
+    "resources/js/Pages/TugasPraktikum/TugasSubmissions.jsx",
+    "resources/js/Pages/Praktikan/DaftarTugasDetail.jsx"
+  ],
+  "limitations": [
+    "Screenshot Praktikum berasal dari aplikasi lokal pada akun Asisten yang ditugaskan di PWEB tanggal 15 Oktober 2026. Formulir hanya dibuka; tidak dibuat peserta, absensi, tugas, nilai, atau sertifikat baru. Data yang terlihat adalah contoh lokal.",
+    "Screenshot tambahan penilaian memakai data yang sudah ada pada localhost tanggal 15 Oktober 2026, dengan identitas peserta disamarkan. Karena tampilan asli mengalami galat tabel, screenshot dibuat melalui pratinjau frontend lokal dengan impor komponen tabel diperbaiki; server dan data nilai tidak diubah. Akun screenshot mendapat tampilan baca pada halaman nilai. Prosedur simpan, impor, penolakan, dan pemberian tambahan tetap dijelaskan dari source dan belum dijalankan. Laporan dibuka sampai formulir pemeriksaan, belum menjadi laporan final karena data sumber belum lengkap."
+  ]
+}

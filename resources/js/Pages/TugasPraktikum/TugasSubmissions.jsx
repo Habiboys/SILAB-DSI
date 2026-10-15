@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { firstMessage } from "@/Utils/notifications";
 import Button from "../../Components/Button";
 import ConfirmModal from "../../Components/ConfirmModal";
-import { DataGrid } from "../../Components/DataTable";
+import { DataGrid, DataTable } from "../../Components/DataTable";
 import ManageNilaiTambahanModal from "../../Components/ManageNilaiTambahanModal";
 import Modal from "../../Components/Modal";
 import ModernPdfViewer from "../../Components/ModernPdfViewer";

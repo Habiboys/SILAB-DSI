@@ -34,3 +34,4 @@ vendor/
 /public/build
 __pycache__/
 *.pyc
+/output/

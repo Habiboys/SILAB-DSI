@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Storage;
+
 use App\Models\KepengurusanLab;
 use App\Models\Proker;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -373,12 +375,7 @@ class LpjKepengurusanController extends Controller
                 $kegiatan = $proker->kegiatan
                     ->filter(fn ($kg) => $kg->status_approval === 'disetujui')
                     ->map(function ($kg) use ($fmtTgl, $toBase64) {
-                        $dokKg = $kg->dokumentasiKegiatan->take(3)->map(function ($d) use ($toBase64) {
-                            return [
-                                'judul' => $d->judul,
-                                'src'   => $toBase64($d->file_path),
-                            ];
-                        })->filter(fn ($d) => $d['src'] !== null)->values()->toArray();
+                        $dokKg = $this->activityPhotos($kg->dokumentasiKegiatan, $toBase64);
 
                         return [
                             'nama_kegiatan'   => $kg->nama_kegiatan,
@@ -500,4 +497,21 @@ class LpjKepengurusanController extends Controller
             || $user->can('proker.update')
             || $user->can('kegiatan.edit');
     }
+    private function activityPhotos(iterable $documents, callable $toBase64): array
+    {
+        $photos = [];
+        foreach ($documents as $document) {
+            if (! $document->file_path) continue;
+            $path = Storage::disk('public')->path($document->file_path);
+            if (! is_file($path)) continue;
+            $mime = @mime_content_type($path);
+            if (! is_string($mime) || ! str_starts_with($mime, 'image/')) continue;
+            $src = $toBase64($document->file_path);
+            if ($src === null) continue;
+            $photos[] = ['judul' => $document->judul, 'src' => $src];
+            if (count($photos) === 3) break;
+        }
+        return $photos;
+    }
+
 }

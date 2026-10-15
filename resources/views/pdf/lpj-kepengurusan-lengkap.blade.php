@@ -396,7 +396,6 @@
 
 {{-- ══ ISI PER DIVISI ════════════════════════════════════════════════════ --}}
 @php
-    $prokerNo = 0;
     $toAlpha = function ($num) {
         $letters = '';
         while ($num > 0) {
@@ -406,8 +405,22 @@
         }
         return $letters;
     };
+    $fmtPeriode = function ($mulai, $selesai) {
+        $kosong = fn ($value) => $value === null || $value === '' || $value === '-';
+        if ($kosong($mulai) && $kosong($selesai)) {
+            return '-';
+        }
+        if ($kosong($mulai)) {
+            return $selesai;
+        }
+        if ($kosong($selesai)) {
+            return $mulai;
+        }
+        return $mulai.' – '.$selesai;
+    };
 @endphp
 @foreach($detail['divisi'] as $divisiIdx => $divisi)
+    @php $prokerNo = 0; @endphp
 
     <div style="page-break-before: always;">
         <p class="divisi-header">{{ $divisi['nama'] }}</p>
@@ -440,7 +453,7 @@
                 <tr>
                     <td class="label">Periode</td>
                     <td class="sep">:</td>
-                    <td>{{ $proker['tanggal_mulai'] }} – {{ $proker['tanggal_selesai'] }}</td>
+                    <td>{{ $fmtPeriode($proker['tanggal_mulai'], $proker['tanggal_selesai']) }}</td>
                 </tr>
                 @if($proker['deskripsi'])
                 <tr>

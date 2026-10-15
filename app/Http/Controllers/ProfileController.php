@@ -106,14 +106,14 @@ class ProfileController extends Controller
             if ($profile?->foto_profile && Storage::disk('public')->exists($profile->foto_profile)) {
                 Storage::disk('public')->delete($profile->foto_profile);
             }
-            $profileData['foto_profile'] = $request->file('foto_profile')->store('profile-photos', 'public');
+            $profileData['foto_profile'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('foto_profile'), 'profile-photos');
         }
 
         if ($request->hasFile('tanda_tangan')) {
             if ($profile?->tanda_tangan && Storage::disk('public')->exists($profile->tanda_tangan)) {
                 Storage::disk('public')->delete($profile->tanda_tangan);
             }
-            $profileData['tanda_tangan'] = $request->file('tanda_tangan')->store('tanda-tangan', 'public');
+            $profileData['tanda_tangan'] = app(\App\Services\ImageUploadCompressor::class)->store($request->file('tanda_tangan'), 'tanda-tangan');
         }
 
         if ($profile) {
