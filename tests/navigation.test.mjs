@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { backDestination, buildBreadcrumbs, internalUrl, matchPage, navigationContext, recordPage, restoreParent, withContext } from '../resources/js/Utils/navigation.js';
+import { backDestination, consumeBackHistory, buildBreadcrumbs, internalUrl, matchPage, navigationContext, recordPage, restoreParent, withContext } from '../resources/js/Utils/navigation.js';
 
 const origin = 'http://localhost';
 const definitions = {
@@ -65,9 +65,9 @@ test('cancel uses the business parent instead of unrelated history', () => {
     const history = recordPage([], page('/praktikum?lab_id=a'), origin);
     assert.match(backDestination(page('/kegiatan/create'), '/kegiatan', history, routes, origin, 'cancel'), /^\/kegiatan\?/);
 });
-test('history cannot cross laboratories or periods', () => {
+test('undo restores the previous laboratory and period exactly', () => {
     const history = recordPage([], page('/kegiatan?lab_id=b&page=8', 'b'), origin);
-    assert.doesNotMatch(backDestination(page('/kegiatan/id-a'), '/kegiatan', history, routes, origin), /page=8|lab_id=b/);
+    assert.equal(backDestination(page('/kegiatan/id-a'), '/kegiatan', history, routes, origin), '/kegiatan?lab_id=b&page=8');
 });
 test('refresh and same-page filtering preserve the original parent', () => {
     let history = recordPage([], page('/kegiatan?lab_id=a&page=2'), origin);
@@ -159,4 +159,23 @@ test('breadcrumbs do not repeat the laboratory already selected in the navbar', 
 test('a fallback pointing at the current page cannot create a self loop', () => {
     const current = page('/praktikan/daftar-tugas');
     assert.match(backDestination(current, '/praktikan/daftar-tugas', [], routes, origin), /^\/dashboard/);
+});
+
+
+test('consuming undo immediately removes the abandoned route before any navigate event', () => {
+    let history = [];
+    for (const url of ['/dashboard', '/praktikum?page=4', '/praktikum/practice-a', '/praktikum/tugas/task-a/submissions']) history = recordPage(history, page(url), origin);
+    const current = page('/praktikum/tugas/task-a/submissions');
+    const target = backDestination(current, '/praktikum', history, routes, origin);
+    history = consumeBackHistory(history, current, target, origin);
+    assert.equal(history.at(-1).url, '/praktikum/practice-a');
+    assert.equal(history.length, 3);
+    assert.equal(backDestination(page(target), '/praktikum', history, routes, origin), '/praktikum?page=4');
+    history = consumeBackHistory(history, page(target), '/praktikum?page=4', origin);
+    assert.equal(backDestination(page('/praktikum?page=4'), '/dashboard', history, routes, origin), '/dashboard');
+});
+
+test('undo returns to the previous form route instead of skipping to its parent', () => {
+    const history = recordPage([], page('/kegiatan/create'), origin);
+    assert.equal(backDestination(page('/praktikum'), '/dashboard', history, routes, origin), '/kegiatan/create');
 });

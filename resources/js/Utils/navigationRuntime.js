@@ -1,5 +1,5 @@
 import { router } from '@inertiajs/react';
-import { matchPage, navigationContext, recordPage, withContext } from './navigation';
+import { backDestination, consumeBackHistory, matchPage, navigationContext, recordPage, withContext } from './navigation';
 
 let currentPage;
 let history = [];
@@ -8,6 +8,32 @@ const STORAGE_KEY = 'silab.navigation.v1';
 
 export const navigationHistory = () => history;
 export const navigationRoutes = () => (typeof Ziggy !== 'undefined' ? Ziggy : globalThis.Ziggy)?.routes || {};
+
+let backInFlight = false;
+function persistHistory() {
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ owner, history })); } catch { /* Storage is optional. */ }
+}
+
+export function goBack(page, fallback, mode = 'back') {
+    if (backInFlight) return;
+    const origin = window.location.origin;
+    const before = history;
+    const destination = backDestination(page, fallback, history, navigationRoutes(), origin, mode);
+    if (new URL(destination, origin).pathname === new URL(page.url, origin).pathname) return;
+    history = consumeBackHistory(history, page, destination, origin);
+    persistHistory();
+    backInFlight = true;
+    let succeeded = false;
+    router.visit(destination, {
+        replace: true,
+        headers: { 'X-Silab-Navigation': 'back' },
+        onSuccess: () => { succeeded = true; },
+        onFinish: () => {
+            if (!succeeded) { history = before; persistHistory(); }
+            backInFlight = false;
+        },
+    });
+}
 
 export function rememberPage(page) {
     const nextOwner = page.props?.auth?.user?.id;
@@ -28,7 +54,7 @@ export function rememberPage(page) {
     currentPage = page;
     if (!nextOwner || !matchPage(page.url, navigationRoutes(), window.location.origin)) history = [];
     else history = recordPage(history, page, window.location.origin);
-    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ owner, history })); } catch { /* Navigation still works without browser storage. */ }
+    persistHistory();
 }
 
 export function installNavigation(initialPage) {
@@ -46,6 +72,7 @@ export function installNavigation(initialPage) {
             if (urls.length) visit.headers['X-Silab-Return-Stack'] = JSON.stringify(urls);
             return;
         }
+        if (visit.headers?.['X-Silab-Navigation'] === 'back') return;
         const origin = window.location.origin;
         const destination = matchPage(visit.url, navigationRoutes(), origin);
         if (!destination) return;

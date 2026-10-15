@@ -3,7 +3,6 @@ import { useKepengurusanAccess } from '@/Hooks/useKepengurusanAccess';
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import {
     AlertCircle,
-    BookOpen,
     CheckCircle,
     Clock,
     Download,
@@ -895,9 +894,6 @@ export default function TugasSubmissions({
 
                     <div className="space-y-4">
                         <div className="flex min-w-0 items-start gap-3">
-                            <div className="flex-shrink-0">
-                                <BookOpen className="h-8 w-8 text-base-content/50" />
-                            </div>
                             <div className="min-w-0 flex-1">
                                 <h2 className="break-words text-xl font-bold text-base-content">
                                     Pengumpulan Tugas: {tugas.judul_tugas}
