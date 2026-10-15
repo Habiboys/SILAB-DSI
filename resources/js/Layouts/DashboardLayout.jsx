@@ -53,7 +53,7 @@ const DashboardLayout = ({ children, title = 'SILAB', pageTitle, description, ac
         <Navbar onMobileMenuClick={() => setIsMobileSidebarOpen(true)} />
 
         <main className="w-full flex-1 px-4 pb-6 pt-3 sm:px-6 sm:pb-8 sm:pt-4 lg:px-8">
-          {(breadcrumbs ?? breadcrumbItems).length > 0 && (
+          {(new URL(url, window.location.origin).pathname === '/dashboard' || (breadcrumbs ?? breadcrumbItems).length > 0) && (
             <div className="mb-2">
               <Breadcrumb items={breadcrumbs ?? breadcrumbItems} />
             </div>

@@ -6,15 +6,19 @@ import { navigationHistory } from '../Utils/navigationRuntime';
 
 const Breadcrumb = ({ items = [] }) => {
   const page = usePage();
+  const isDashboard = new URL(page.url, window.location.origin).pathname === '/dashboard';
   const contextualHref = (href) => restoreParent(href, page, navigationHistory(), window.location.origin);
   return (
   <nav className="breadcrumbs overflow-x-auto text-sm text-base-content/70" aria-label="Breadcrumb">
     <ul className="min-w-max">
       <li>
-        <Link href={contextualHref(route('dashboard'))} className="min-h-11 gap-2 font-medium hover:text-primary">
+        {isDashboard ? <span className="inline-flex min-h-11 items-center gap-2 font-semibold text-base-content" aria-current="page">
           <Home className="h-4 w-4" aria-hidden="true" />
           Dashboard
-        </Link>
+        </span> : <Link href={contextualHref(route('dashboard'))} className="min-h-11 gap-2 font-medium hover:text-primary">
+          <Home className="h-4 w-4" aria-hidden="true" />
+          Dashboard
+        </Link>}
       </li>
       {items.map((item, index) => {
         const isCurrent = index === items.length - 1 || !item.href;
