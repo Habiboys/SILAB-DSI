@@ -95,7 +95,7 @@ function sameContext(a, b) {
     return CONTEXT_KEYS.every((key) => !a[key] || !b[key] || a[key] === b[key]);
 }
 
-export function recordPage(history, page, origin) {
+export function recordPage(history, page, origin, prune = true) {
     const url = internalUrl(page.url, origin);
     if (!url) return history;
     const entry = { url: `${url.pathname}${url.search}${url.hash}`, context: navigationContext(page) };
@@ -103,6 +103,7 @@ export function recordPage(history, page, origin) {
     if (last && internalUrl(last.url, origin)?.pathname === url.pathname && sameContext(last.context, entry.context)) {
         return [...history.slice(0, -1), entry];
     }
+    if (!prune) return [...history, entry].slice(-60);
     const previous = history.findLastIndex((item) => internalUrl(item.url, origin)?.pathname === url.pathname && sameContext(item.context, entry.context));
     return previous >= 0 ? [...history.slice(0, previous), entry] : [...history, entry].slice(-60);
 }

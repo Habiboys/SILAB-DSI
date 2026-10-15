@@ -35,7 +35,7 @@ export function goBack(page, fallback, mode = 'back') {
     });
 }
 
-export function rememberPage(page) {
+export function rememberPage(page, prune = false) {
     const nextOwner = page.props?.auth?.user?.id;
     if (owner !== nextOwner) {
         owner = nextOwner;
@@ -53,13 +53,18 @@ export function rememberPage(page) {
     }
     currentPage = page;
     if (!nextOwner || !matchPage(page.url, navigationRoutes(), window.location.origin)) history = [];
-    else history = recordPage(history, page, window.location.origin);
+    else history = recordPage(history, page, window.location.origin, prune);
     persistHistory();
 }
 
 export function installNavigation(initialPage) {
     rememberPage(initialPage);
-    router.on('navigate', (event) => rememberPage(event.detail.page));
+    let traversingBrowserHistory = false;
+    window.addEventListener('popstate', () => { traversingBrowserHistory = true; }, true);
+    router.on('navigate', (event) => {
+        rememberPage(event.detail.page, traversingBrowserHistory);
+        traversingBrowserHistory = false;
+    });
     router.on('before', (event) => {
         const visit = event.detail.visit;
         if (!currentPage?.props?.auth?.user) return;

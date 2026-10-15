@@ -113,7 +113,7 @@
                     index = saved.history.findLastIndex(entry => typeof entry?.url === 'string' && internal(entry.url));
                 }
             } catch { saved = null; }
-            const target = index >= 0 ? internal(saved.history[index].url) : internal(document.referrer);
+            const target = index >= 0 ? internal(saved.history[index].url) : null;
             if (target) link.href = target.pathname + target.search + target.hash;
             link.addEventListener('click', event => {
                 if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
