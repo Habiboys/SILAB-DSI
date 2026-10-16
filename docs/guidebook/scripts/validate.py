@@ -110,7 +110,7 @@ def validate(path, updated=False, report=None):
             data=json.loads(report_path.read_text(encoding='utf-8-sig'))
             assert data['tables_of_contents']==1 and data['tables_of_figures']>=1
             for heading in data['headings']:
-                patterns={1:r'Bab \d+',2:r'\d+\.\d+',3:r'\d+\.\d+\.\d+'}
+                patterns={1:r'BAB \d+',2:r'\d+\.\d+',3:r'\d+\.\d+\.\d+'}
                 assert re.fullmatch(patterns[heading['level']], heading['number']), 'Unnumbered outline: '+heading['text']
         print(f'PASS: {len(levels)} headings, {len(step_ids)} task lists, {len(names)} bookmarks; updated={updated}')
 

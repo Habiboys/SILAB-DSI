@@ -12,6 +12,29 @@ class ReportAndContextTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_praktikum_preview_and_download_generate_pdf_with_a_mata_kuliah(): void
+    {
+        $this->withoutMiddleware();
+        $lab = Laboratorium::create(['nama' => 'Report praktikum', 'is_active' => true]);
+        $year = TahunKepengurusan::create(['tahun' => '2025/2026', 'mulai' => '2025-01-01', 'selesai' => '2026-12-31', 'isactive' => true]);
+        $period = KepengurusanLab::create(['laboratorium_id' => $lab->id, 'tahun_kepengurusan_id' => $year->id, 'is_active' => true]);
+        $course = \App\Models\MataKuliah::create(['kode_mata_kuliah' => 'TEST101', 'nama' => 'Praktikum Test', 'sks' => 1, 'semester' => 2, 'status' => 'aktif']);
+        $praktikum = \App\Models\Praktikum::create(['mata_kuliah' => $course->nama, 'mata_kuliah_id' => $course->id, 'kepengurusan_lab_id' => $period->id]);
+
+        foreach (['preview' => 'inline', 'download' => 'attachment'] as $action => $disposition) {
+            $response = $this->get(route('praktikum.laporan.'.$action, [
+                'praktikum' => $praktikum->id,
+                'dosen_nama' => 'Husnil Kamil, M.T.',
+                'dosen_nip' => '11111111111111111',
+                'semester' => 'Genap',
+                'tahun_akademik' => '2025 / 2026',
+            ]));
+            $response->assertOk()->assertHeader('content-type', 'application/pdf');
+            $this->assertStringStartsWith($disposition.';', $response->headers->get('content-disposition'));
+            $this->assertStringStartsWith('%PDF-', $response->getContent());
+        }
+    }
+
     public function test_status_endpoint_receives_an_http_request_and_reports_missing_lab(): void
     {
         $user = User::factory()->create();

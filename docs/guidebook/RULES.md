@@ -109,3 +109,11 @@ Bagian Cara Menggunakan Panduan serta Keterangan Contoh dan Batas Penyusunan bes
 
 Footer hanya berisi nomor halaman otomatis, rata tengah di bawah, tanpa nama panduan atau teks tambahan. Cover tetap tanpa nomor terlihat. Bagian awal memakai Romawi kecil dan isi memakai angka Arab mulai 1.
 
+## Revisi pengenalan aplikasi
+
+Nomor bab ditulis BAB 1, BAB 2, dan seterusnya dengan huruf kapital semua; nama bab tetap kapital pada baris kedua. BAB 1 berjudul PENGENALAN APLIKASI dan memuat pengertian SILAB, tujuh modul utama, enam role pengguna, pembagian jabatan pada role Dosen dan Asisten, serta cara masuk dan memilih kepengurusan. Tujuh modul adalah Kepengurusan, Piket, Inventaris, Praktikum, Keuangan, Kuesioner, dan Surat Menyurat. Enam role adalah Superadmin, Ketua Departemen, Admin, Dosen, Asisten, dan Praktikan. Bedakan jumlah modul aplikasi dari cakupan prosedur buku: pengenalan Surat Menyurat tidak berarti bab prosedurnya sudah disertakan.
+
+## Penghapusan tabel pembagian akses modul
+
+Tabel Peran–Akses–Tugas dengan caption Pembagian akses dihapus dari seluruh modul, beserta paragraf penjelasan pengguna baca saja yang mengikutinya. Subbab pembuka bernama Pengantar Modul dan tetap berisi pengantar, alur singkat, serta prasyarat. Ketentuan ini menggantikan kewajiban tabel pembagian akses pada bagian Isi modul dan pembagian peran. Penjelasan enam role dan pembagian jabatan dalam BAB 1 tetap dipertahankan.
+

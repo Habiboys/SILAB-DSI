@@ -174,7 +174,7 @@ class Guidebook:
         np = element('w:numPr'); np.append(element('w:ilvl', val=level)); np.append(element('w:numId', val=nid)); pp.append(np)
 
     def _numbering(self):
-        aid = self._abstract([('decimal', 'Bab %1', 'Heading1'), ('decimal', '%1.%2', 'Heading2'), ('decimal', '%1.%2.%3', 'Heading3')])
+        aid = self._abstract([('decimal', 'BAB %1', 'Heading1'), ('decimal', '%1.%2', 'Heading2'), ('decimal', '%1.%2.%3', 'Heading3')])
         self.heading_num = self._instance(aid)
         for i in range(3): self._numpr(self.doc.styles['Heading ' + str(i + 1)].element.get_or_add_pPr(), self.heading_num, i)
         self.list_abstract = self._abstract([('decimal', '%1.', None)])
@@ -346,7 +346,7 @@ class Guidebook:
         self.cover()
         self._section('lowerRoman')
         self.paragraph('Pengantar', 'Front Matter Title')
-        self.paragraph('Buku ini membantu pengguna menjalankan tugas SILAB sesuai peran dan kewenangannya. Edisi ini memuat modul ' + self.module_names + '. Setiap modul dimulai dengan pengantar dan pembagian akses, lalu menjelaskan tugas setiap peran.')
+        self.paragraph('Buku ini membantu pengguna menjalankan tugas SILAB sesuai peran dan kewenangannya. Edisi ini memuat modul ' + self.module_names + '. Setiap modul dimulai dengan pengantar, alur singkat, dan prasyarat, lalu menjelaskan tugas setiap peran.')
         self.paragraph('Hak akses dapat berbeda menurut role, jabatan, laboratorium, dan kepengurusan. Gunakan prosedur yang sesuai dengan menu dan tindakan yang tersedia pada akun Anda.')
         self.paragraph('Daftar isi', 'Front Matter Title').paragraph_format.page_break_before = True
         field(self.paragraph(), 'TOC \\o "1-3" \\h \\z \\u', 'Daftar isi akan diperbarui oleh Microsoft Word.')
@@ -372,12 +372,10 @@ class Guidebook:
 
     def module(self, data):
         self.chapter(data['title'])
-        self.subchapter('Pengantar dan pembagian akses')
+        self.subchapter('Pengantar modul')
         self.paragraph(data['introduction'])
         self.label('Alur singkat'); self.paragraph(data['flow'])
         self.label('Sebelum menggunakan modul'); self.bullets(data['prerequisites'])
-        self.table(['Peran', 'Akses', 'Tugas'], data['access'], [4, 4, 8], 'Pembagian akses ' + data['title'])
-        self.paragraph('Pengguna dengan akses baca saja cukup memakai menu jadwal atau rekap yang tersedia. Prosedur tindakan berikut hanya berlaku bagi petugas dan pengelola berwenang; pemeriksaan data yang mendasari keputusan dijelaskan dalam tugas peninjau.')
         for group in data['groups']:
             self.subchapter(group['title'])
             for task in group['tasks']: self.task(task, data['id'])
@@ -386,20 +384,53 @@ class Guidebook:
         self.table(['Kendala', 'Tindak lanjut'], data['issues'], [5, 11], 'Kendala dan tindak lanjut ' + data['title'])
 
     def introduction(self):
-        self.chapter('Pengenalan sistem dan peran')
+        self.chapter('Pengenalan aplikasi')
+        self.subchapter('Gambaran umum SILAB')
+        self.paragraph('SILAB (Sistem Informasi Manajemen Laboratorium) adalah aplikasi berbasis web yang mengintegrasikan pengelolaan laboratorium, mulai dari kepengurusan, inventaris, keuangan, dan piket hingga praktikum serta kuesioner. SILAB membantu asisten, praktikan, dosen, dan kepala laboratorium menjalankan kegiatan, memantau data, serta menyusun laporan dalam satu sistem.')
+        self.subchapter('Tujuh modul utama')
+        self.paragraph('SILAB memiliki tujuh modul utama yang saling mendukung pengelolaan laboratorium. Setiap modul digunakan sesuai kebutuhan kegiatan dan kewenangan pengguna.')
+        self.table(['Modul', 'Kegunaan'], [
+            ['Kepengurusan', 'Mengelola periode kepengurusan, anggota, jabatan, program kerja, kegiatan, evaluasi, dan laporan laboratorium.'],
+            ['Piket', 'Mengelola jadwal piket, kehadiran, check-in, checkout, dan permintaan perubahan jadwal.'],
+            ['Inventaris', 'Mengelola data aset, pengadaan, peminjaman, pengembalian, dan kondisi barang laboratorium.'],
+            ['Praktikum', 'Mengelola kelas, peserta, asisten, pertemuan, modul pembelajaran, absensi, tugas, nilai, sertifikat, dan laporan praktikum.'],
+            ['Keuangan', 'Mencatat pemasukan, pengeluaran, pembayaran kas anggota, serta rekap keuangan.'],
+            ['Kuesioner', 'Menyusun kuesioner, mengumpulkan jawaban responden, dan memeriksa hasil untuk evaluasi.'],
+            ['Surat Menyurat', 'Mengelola kebutuhan surat dan dokumen administrasi laboratorium.'],
+        ], [4, 12], 'Tujuh modul utama SILAB')
+        self.subchapter('Enam role pengguna')
+        self.paragraph('SILAB melibatkan enam role pengguna, yaitu Superadmin, Ketua Departemen, Admin, Dosen, Asisten, dan Praktikan. Role menentukan peran umum akun dalam sistem. Menu dan tindakan yang tersedia mengikuti kewenangan masing-masing pengguna.')
+        self.table(['Role', 'Peran dalam sistem'], [
+            ['Superadmin', 'Mengelola sistem dan pengaturan akses pengguna secara menyeluruh.'],
+            ['Ketua Departemen', 'Memantau pengelolaan laboratorium serta meninjau pengajuan dan laporan yang memerlukan keputusan departemen.'],
+            ['Admin', 'Mengelola administrasi dan data aplikasi sesuai kewenangan yang diberikan.'],
+            ['Dosen', 'Terlibat dalam pengelolaan, pemantauan, dan peninjauan kegiatan laboratorium sesuai jabatan serta penugasannya.'],
+            ['Asisten', 'Menjalankan kegiatan operasional laboratorium, kepengurusan, piket, dan pendampingan praktikum sesuai jabatan serta penugasannya.'],
+            ['Praktikan', 'Mengikuti praktikum, mengakses materi dan tugas, mengumpulkan pekerjaan, serta melihat hasil yang tersedia.'],
+        ], [4, 12], 'Enam role pengguna SILAB')
+        self.subchapter('Pembagian jabatan Dosen dan Asisten')
+        self.paragraph('Dari enam role tersebut, Dosen dan Asisten memiliki pembagian lebih lanjut berdasarkan jabatan dalam kepengurusan laboratorium. Jabatan menunjukkan tanggung jawab pengguna pada laboratorium dan periode tertentu. Karena itu, pengguna dengan role yang sama dapat memiliki tugas dan kewenangan yang berbeda.')
+        self.paragraph('Pada role Dosen, pembagian jabatan mencakup Kepala Laboratorium (Kalab) dan dosen anggota kepengurusan. Kepala Laboratorium menjalankan tanggung jawab pengelolaan dan peninjauan kegiatan laboratorium, sedangkan dosen anggota terlibat sesuai tanggung jawab yang diberikan.')
+        self.paragraph('Pada role Asisten, pembagian jabatan dapat mencakup Sekretaris, Bendahara, Wakil Bendahara, koordinator, dan anggota divisi sesuai struktur kepengurusan. Sebagai contoh, Bendahara menangani pencatatan keuangan, Sekretaris menangani administrasi surat, dan koordinator menjalankan tanggung jawab sesuai bidangnya.')
+        self.paragraph('Role dan jabatan perlu dibedakan: Dosen dan Asisten adalah role akun, sedangkan Kepala Laboratorium, Bendahara, Sekretaris, dan koordinator merupakan jabatan. Akses tindakan mengikuti izin, jabatan, laboratorium, periode kepengurusan, serta penugasan yang berlaku.')
         self.subchapter('Masuk dan memilih kepengurusan')
         self.paragraph('Masuk menggunakan akun Anda, lalu periksa laboratorium dan tahun kepengurusan pada navigasi atas sebelum melakukan tindakan. Pilihan ini menentukan lingkup data yang ditampilkan dan dapat dikelola.')
         self.figure({'id': 'login', 'path': 'output/absensi-piket/login.png', 'caption': 'Halaman login SILAB'})
-        self.subchapter('Memahami peran dan kewenangan')
-        self.paragraph('Satu akun dapat menjalankan lebih dari satu peran. Petugas mencatat kegiatan sendiri; pengelola mengatur data sesuai izin; peninjau memeriksa pengajuan sebelum mengambil keputusan. Setiap modul menyediakan ringkasan akses agar pengguna tidak perlu membaca prosedur yang tidak berlaku baginya.')
-        self.paragraph('Kepengurusan arsip dapat membatasi perubahan data. Jika tombol tidak tersedia, periksa konteks aktif dan kewenangan bersama administrator, bukan menggunakan akun milik orang lain.')
 
     def general_issues(self):
         self.chapter('Penanganan kendala umum')
         self.subchapter('Menangani akses dan pengiriman')
         self.bullets(['Jika sesi berakhir, masuk kembali dan periksa apakah tindakan sebelumnya sudah tersimpan.', 'Jika menu atau tombol tidak tersedia, periksa laboratorium, kepengurusan aktif, serta kewenangan akun.', 'Jika jaringan terputus, periksa status data sebelum mengirim ulang agar tidak membuat pengajuan ganda.'])
         self.subchapter('Meminta bantuan')
-        self.paragraph('Sertakan nama modul, tanggal kejadian, tahap yang gagal, dan pesan kesalahan. Screenshot harus menunjukkan masalah tanpa memperlihatkan password, token, atau data pribadi yang tidak diperlukan.')
+        self.paragraph('Jika terjadi error atau kendala saat menggunakan SILAB, hubungi nomor 085142247464 atau kirim email ke nouvalhabibie18@gmail.com. Gunakan format berikut agar masalah dapat ditelusuri.')
+        self.label('Format laporan melalui nomor kontak')
+        self.paragraph('Halo, saya ingin melaporkan kendala pada SILAB.')
+        self.bullets(['Nama: [nama pelapor]', 'Role dan jabatan: [role serta jabatan, jika ada]', 'Laboratorium dan periode: [nama laboratorium dan periode kepengurusan]', 'Modul atau halaman: [nama modul dan halaman yang bermasalah]', 'Waktu kejadian: [tanggal dan jam]', 'Langkah sebelum error: [urutan tindakan hingga error muncul]', 'Pesan error: [salin pesan yang tampil]', 'Hasil yang diharapkan: [tindakan yang seharusnya berhasil]', 'Lampiran: [screenshot error]'])
+        self.label('Format laporan melalui email')
+        self.paragraph('Kepada: nouvalhabibie18@gmail.com')
+        self.paragraph('Subjek: [SILAB] Laporan Error - [Nama Modul] - [Nama Pelapor]')
+        self.paragraph('Isi email menggunakan format laporan di atas. Lampirkan screenshot yang memperlihatkan pesan error dan bagian halaman terkait.')
+        self.paragraph('Jangan mengirim password, kode OTP, token, atau cookie sesi. Samarkan data pribadi yang tidak diperlukan pada screenshot.')
 
     def save(self, path):
         path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)

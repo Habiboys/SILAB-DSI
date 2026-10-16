@@ -22,7 +22,7 @@ try {
     if ($null -eq $outline) { $outline = $guideDoc.ListTemplates.Add($true, 'SILAB Guidebook Headings') }
     foreach ($level in 1..3) {
         $listLevel = $outline.ListLevels.Item($level)
-        $listLevel.NumberFormat = @('Bab %1','%1.%2','%1.%2.%3')[$level-1]
+        $listLevel.NumberFormat = @('BAB %1','%1.%2','%1.%2.%3')[$level-1]
         $listLevel.NumberStyle = 0
         $listLevel.StartAt = 1
         $listLevel.ResetOnHigher = $level-1

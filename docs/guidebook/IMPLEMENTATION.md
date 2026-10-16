@@ -95,3 +95,7 @@ Default builder menambahkan content/kuesioner.json setelah Kepengurusan, dengan 
 
 Heading 1 mempertahankan nomor multitingkat Bab dan memisahkan nama bab dengan line break dalam paragraf heading yang sama. Ini menjaga nomor subbab, caption, dan navigasi otomatis. Heading 2/3 serta judul bagian awal menggunakan title case, mempertahankan singkatan dan kata penghubung. Inden 1,25 cm diterapkan pada komponen paragraf naratif, bukan pada Normal secara global agar tabel serta caption tidak ikut bergeser. Hasil revisi: Panduan SILAB revisi judul dan paragraf.docx; QA: output/guidebook/judul-paragraf-qa.
 
+## Pengambilan ulang pratinjau laporan
+
+Pada 16 Oktober 2026, Gambar 6.10 dan 6.12 diambil ulang dengan frontend build workspace terbaru dan data localhost. Frontend Docker lama masih menampilkan kegagalan pratinjau; browser capture menyajikan aset build lokal tanpa mengubah deployment. Worker PDF lokal dan kedua endpoint pratinjau memberi HTTP 200, canvas PDF terlihat, dan pesan gagal tidak ditemukan. Setelah login, request selain GET/HEAD/OPTIONS diblokir; tidak ada data laporan atau persetujuan yang disimpan. Aset baru memakai akhiran `-recheck.png`; aset lama dipertahankan. Hasil buku: `output/guidebook/Panduan SILAB revisi screenshot laporan.docx`; QA: `output/guidebook/screenshot-laporan-qa`. Revisi pengenalan aplikasi, tujuh modul, enam role, dan penulisan BAB kapital tetap dipertahankan.
+

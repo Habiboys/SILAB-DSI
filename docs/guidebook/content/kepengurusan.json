@@ -398,12 +398,12 @@
             "Cocokkan identitas, personalia, uraian kegiatan, kesimpulan, dan kelengkapan SK sebelum menyerahkannya kepada dosen atau Kalab untuk tindak lanjut."
           ],
           "success": "PDF rangkuman dapat diunduh dan diperiksa sebelum digunakan sebagai laporan. Contoh di buku memperlihatkan keluaran dengan data SK belum dilengkapi.",
-          "failure": "Pada pemeriksaan lokal, PDF rangkuman valid berhasil dibuat meskipun penampil gagal. Jangan menilai isi sudah benar hanya karena proses unduhan selesai.",
+          "failure": "Jika pratinjau gagal, gunakan Download PDF dan buka berkas secara terpisah. Periksa kelengkapan isi sebelum menggunakan laporan.",
           "figures": [
             {
               "id": "form-kalab",
-              "path": "output/guidebook/kepengurusan/laporan-kalab.png",
-              "caption": "Formulir Laporan Kalab dan pilihan unduh PDF",
+              "path": "output/guidebook/kepengurusan/laporan-kalab-recheck.png",
+              "caption": "Formulir Laporan Kalab dengan pratinjau PDF yang berhasil dimuat",
               "after_step": 2
             },
             {
@@ -434,8 +434,8 @@
           "figures": [
             {
               "id": "form-lpj",
-              "path": "output/guidebook/kepengurusan/lpj-labor.png",
-              "caption": "Halaman Laporan LPJ Labor dan pilihan unduh",
+              "path": "output/guidebook/kepengurusan/lpj-labor-recheck.png",
+              "caption": "Halaman Laporan LPJ Labor dengan pratinjau PDF yang berhasil dimuat",
               "after_step": 2
             },
             {
@@ -509,6 +509,6 @@
   ],
   "limitations": [
     "Screenshot Kepengurusan diambil dari localhost tanggal 15 Oktober 2026 menggunakan akun Asisten. Formulir proker, parameter, dan evaluasi hanya dibuka; tidak disimpan. Anggota disamarkan pada screenshot daftar. Tindakan pengelola dan persetujuan dijelaskan dari source serta label UI karena akun screenshot tidak memiliki semua kewenangan.",
-    "Data contoh memiliki proker yang sudah disetujui tetapi belum memiliki kegiatan pada filter yang diperiksa. Prosedur kegiatan dijelaskan dari source; tidak dibuat kegiatan atau persetujuan baru. Laporan PDF rangkuman dan lengkap berhasil dihasilkan untuk pemeriksaan. Penampil pratinjau di aplikasi gagal memuat PDF; contoh halaman PDF di panduan berasal dari keluaran yang valid. Data SK dan evaluasi contoh belum lengkap sehingga keluaran tersebut bukan laporan resmi yang sudah disahkan."
+    "Data contoh memiliki proker yang sudah disetujui tetapi belum memiliki kegiatan pada filter yang diperiksa. Prosedur kegiatan dijelaskan dari source; tidak dibuat kegiatan atau persetujuan baru. Screenshot Laporan Kalab dan LPJ Labor diambil ulang tanggal 16 Oktober 2026 menggunakan frontend build terbaru dari workspace dengan data localhost. Kedua pratinjau PDF berhasil dimuat; frontend lama Docker masih mengalami gangguan dan belum diperbarui melalui pengambilan screenshot ini. Permintaan mutasi diblokir setelah login. Data SK dan evaluasi contoh belum lengkap sehingga keluaran tersebut bukan laporan resmi yang sudah disahkan."
   ]
 }

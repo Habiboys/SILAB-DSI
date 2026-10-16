@@ -46,7 +46,6 @@ class PraktikumReportController extends Controller
         $praktikum->load([
             'mataKuliah',
             'kepengurusanLab',
-            'mataKuliah.dosen',
             'kelas.parent',
             'kelas',
             'pertemuan',
