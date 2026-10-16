@@ -424,13 +424,10 @@ class Guidebook:
         self.subchapter('Meminta bantuan')
         self.paragraph('Jika terjadi error atau kendala saat menggunakan SILAB, hubungi nomor 085142247464 atau kirim email ke nouvalhabibie18@gmail.com. Gunakan format berikut agar masalah dapat ditelusuri.')
         self.label('Format laporan melalui nomor kontak')
-        self.paragraph('Halo, saya ingin melaporkan kendala pada SILAB.')
-        self.bullets(['Nama: [nama pelapor]', 'Role dan jabatan: [role serta jabatan, jika ada]', 'Laboratorium dan periode: [nama laboratorium dan periode kepengurusan]', 'Modul atau halaman: [nama modul dan halaman yang bermasalah]', 'Waktu kejadian: [tanggal dan jam]', 'Langkah sebelum error: [urutan tindakan hingga error muncul]', 'Pesan error: [salin pesan yang tampil]', 'Hasil yang diharapkan: [tindakan yang seharusnya berhasil]', 'Lampiran: [screenshot error]'])
+        self.bullets(['Nama, role, dan jabatan: [identitas pelapor serta jabatan, jika ada]', 'Laboratorium dan periode: [nama laboratorium dan periode kepengurusan]', 'Modul atau halaman: [nama modul dan halaman yang bermasalah]', 'Waktu kejadian: [tanggal dan jam]', 'Langkah sebelum error: [urutan tindakan hingga error muncul]', 'Pesan error: [salin pesan yang tampil]', 'Lampiran: [screenshot error]'])
         self.label('Format laporan melalui email')
-        self.paragraph('Kepada: nouvalhabibie18@gmail.com')
         self.paragraph('Subjek: [SILAB] Laporan Error - [Nama Modul] - [Nama Pelapor]')
-        self.paragraph('Isi email menggunakan format laporan di atas. Lampirkan screenshot yang memperlihatkan pesan error dan bagian halaman terkait.')
-        self.paragraph('Jangan mengirim password, kode OTP, token, atau cookie sesi. Samarkan data pribadi yang tidak diperlukan pada screenshot.')
+        self.paragraph('Isi email mengikuti format di atas, dilengkapi screenshot error. Jangan sertakan password, OTP, token, atau cookie sesi; samarkan data pribadi yang tidak diperlukan.')
 
     def save(self, path):
         path = Path(path); path.parent.mkdir(parents=True, exist_ok=True)
